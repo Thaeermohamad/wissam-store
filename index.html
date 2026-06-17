@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مخزن ومبيعات مركز وسام</title>
-    <!-- Tailwind CSS للـ Design المتجاوب والسريع -->
-    <script src="https://jsdelivr.net"></script>
+    <!-- Tailwind CSS للـ Design المتجاوب -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         @import url('https://googleapis.com');
         body { font-family: 'Tajawal', sans-serif; }
@@ -20,11 +20,11 @@
                 📦 مركز وسام للإلكترونيات
             </h1>
             <nav class="flex flex-wrap gap-2 justify-center">
-                <button onclick="switchTab('dashboard')" class="tab-btn bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">📊 التقارير</button>
-                <button onclick="switchTab('inventory')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🏭 المخزن</button>
-                <button onclick="switchTab('sales')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">💰 المبيعات</button>
-                <button onclick="switchTab('returns')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🔄 المرتجعات</button>
-                <button onclick="switchTab('debts')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">⏳ الديون</button>
+                <button onclick="switchTab('dashboard', this)" class="tab-btn bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">📊 التقارير</button>
+                <button onclick="switchTab('inventory', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🏭 المخزن</button>
+                <button onclick="switchTab('sales', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">💰 المبيعات</button>
+                <button onclick="switchTab('returns', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🔄 المرتجعات</button>
+                <button onclick="switchTab('debts', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">⏳ الديون</button>
             </nav>
         </div>
     </header>
@@ -145,4 +145,4 @@
         <!-- ================= قسم الديون ================= -->
         <section id="debts-tab" class="tab-content hidden">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              
+                
