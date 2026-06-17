@@ -1,1179 +1,148 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مخزن ومبيعات مركز وسام للإلكترونيات</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-    }
-    body {
-      background: #f4f7f9;
-      padding: 1rem;
-      direction: rtl;
-    }
-    .app-container {
-      max-width: 1100px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 24px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-      overflow: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, #1e3c5c, #0f2b40);
-      color: white;
-      padding: 1.5rem;
-      text-align: center;
-      font-weight: 700;
-      font-size: 1.8rem;
-    }
-    .tabs {
-      display: flex;
-      background: white;
-      border-bottom: 1px solid #e9edf4;
-      overflow-x: auto;
-    }
-    .tab {
-      padding: 1rem 1.2rem;
-      font-weight: 600;
-      color: #5e6f8c;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      white-space: nowrap;
-      font-size: 1rem;
-      transition: 0.2s;
-    }
-    .tab.active {
-      color: #0f2b40;
-      border-bottom: 3px solid #2d7fc1;
-      background: #f0f5fe;
-    }
-    .content {
-      padding: 2rem;
-      background: #f4f7f9;
-      min-height: 400px;
-    }
-    .section {
-      display: none;
-    }
-    .section.active {
-      display: block;
-    }
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
-    }
-    button {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      font-size: 0.9rem;
-      padding: 0.7rem 1.4rem;
-      border-radius: 14px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      margin: 0.3rem;
-      background: #2d7fc1;
-      color: white;
-    }
-    button.green { background: #1e7b4a; }
-    button.red { background: #b3313a; }
-    button.orange { background: #c26d1a; }
-    button.outline {
-      background: transparent;
-      border: 1px solid #2d7fc1;
-      color: #1e5a8a;
-    }
-    input, select {
-      padding: 0.7rem 1rem;
-      border-radius: 14px;
-      border: 1px solid #dce3ec;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      margin: 0.3rem;
-      font-size: 0.9rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th {
-      background: #f0f5fe;
-      padding: 0.8rem;
-      text-align: right;
-      color: #1e3c5c;
-    }
-    td {
-      padding: 0.8rem;
-      border-bottom: 1px solid #eef2f6;
-    }
-    .summary-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin: 1rem 0;
-    }
-    .summary-item {
-      background: #f0f5fe;
-      padding: 1rem 1.5rem;
-      border-radius: 16px;
-      font-weight: 600;
-      flex: 1;
-      min-width: 140px;
-    }
-    .badge {
-      background: #fce4e4;
-      color: #b3313a;
-      padding: 0.3rem 0.8rem;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 0.8rem;
-      display: inline-block;
-    }
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: #1e3c5c;
-      color: white;
-      padding: 1rem 2rem;
-      border-radius: 40px;
-      text-align: center;
-      max-width: 400px;
-      margin: 0 auto;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      z-index: 1000;
-      display: none;
-    }
-    .flex-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-      margin: 1rem 0;
-    }
-    .search-box {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: white;
-      border: 1px solid #dce3ec;
-      border-radius: 30px;
-      padding: 0.5rem 1rem;
-      flex: 2;
-    }
-    .search-box input {
-      border: none;
-      outline: none;
-      width: 100%;
-      margin: 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مخزن ومبيعات مركز وسام</title>
+    <!-- Tailwind CSS للـ Design المتجاوب والسريع -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        @import url('https://googleapis.com');
+        body { font-family: 'Tajawal', sans-serif; }
+    </style>
 </head>
-<body>
-<div class="app-container">
-  <div class="header">
-    📱 مخزن مركز وسام للإلكترونيات
-  </div>
-  <div class="tabs" id="tabContainer">
-    <button class="tab active" data-tab="inventory">📦 المخزن</button>
-    <button class="tab" data-tab="sales">💰 المبيعات</button>
-    <button class="tab" data-tab="returns">↩️ المرتجعات</button>
-    <button class="tab" data-tab="debts">💸 الديون</button>
-    <button class="tab" data-tab="reports">📊 التقارير</button>
-  </div>
-  <div class="content" id="contentArea">
-    <!-- المحتوى سيظهر هنا -->
-  </div>
-</div>
-<div class="toast" id="toast"></div>
+<body class="bg-gray-50 text-gray-800 pb-12">
 
-<script>
-  // ============ قاعدة البيانات ============
-  const DB_NAME = 'WissamStoreDB';
-  const DB_VERSION = 2;
-  let db;
+    <!-- شريط التنقل العلوي -->
+    <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                📦 مركز وسام للإلكترونيات
+            </h1>
+            <nav class="flex flex-wrap gap-2 justify-center">
+                <button onclick="switchTab('dashboard')" class="tab-btn bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">📊 التقارير</button>
+                <button onclick="switchTab('inventory')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🏭 المخزن</button>
+                <button onclick="switchTab('sales')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">💰 المبيعات</button>
+                <button onclick="switchTab('returns')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🔄 المرتجعات</button>
+                <button onclick="switchTab('debts')" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">⏳ الديون</button>
+            </nav>
+        </div>
+    </header>
 
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      
-      request.onupgradeneeded = (e) => {
-        const database = e.target.result;
-        if (!database.objectStoreNames.contains('inventory')) {
-          const invStore = database.createObjectStore('inventory', { keyPath: 'id', autoIncrement: true });
-          invStore.createIndex('name', 'name', { unique: false });
-        }
-        if (!database.objectStoreNames.contains('sales')) {
-          const salesStore = database.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
-        }
-        if (!database.objectStoreNames.contains('returns')) {
-          database.createObjectStore('returns', { keyPath: 'id', autoIncrement: true });
-        }
-        if (!database.objectStoreNames.contains('debts')) {
-          database.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
-        }
-      };
-      
-      request.onsuccess = (e) => {
-        db = e.target.result;
-        resolve(db);
-      };
-      
-      request.onerror = () => reject('فشل فتح قاعدة البيانات');
-    });
-  }
-
-  function addRecord(storeName, data) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.add(data);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject();
-    });
-  }
-
-  function updateRecord(storeName, data) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.put(data);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject();
-    });
-  }
-
-  function deleteRecord(storeName, id) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.delete(id);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject();
-    });
-  }
-
-  function getAll(storeName) {
-    return new Promise((resolve) => {
-      const tx = db.transaction(storeName, 'readonly');
-      const store = tx.objectStore(storeName);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-    });
-  }
-
-  // ============ Toast ============
-  function showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 2500);
-  }
-
-  // ============ التبويبات ============
-  function switchTab(tabName) {
-    // إخفاء كل الأقسام
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    // إظهار القسم المطلوب
-    const section = document.getElementById('section-' + tabName);
-    if (section) {
-      section.classList.add('active');
-    }
-    // تحديث التبويبات
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const activeTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
-    if (activeTab) {
-      activeTab.classList.add('active');
-    }
-  }
-
-  // ============ عرض المحتوى ============
-  function renderContent() {
-    const contentArea = document.getElementById('contentArea');
-    contentArea.innerHTML = `
-      <!-- المخزن -->
-      <div id="section-inventory" class="section active">
-        <div class="card">
-          <div class="flex-row">
-            <div class="search-box">
-              <span>🔍</span>
-              <input id="invSearch" placeholder="بحث في المخزن..." oninput="searchInventory()">
+    <main class="container mx-auto px-4 mt-6">
+        
+        <!-- ================= قسم التقارير ================= -->
+        <section id="dashboard-tab" class="tab-content block">
+            <h2 class="text-xl font-bold mb-4 text-gray-700">📊 ملخص عام الأعمال</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <p class="text-xs text-gray-500">إجمالي قطع المخزن</p>
+                    <p id="stat-total-items" class="text-xl font-bold text-blue-600">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <p class="text-xs text-gray-500">إجمالي المبيعات</p>
+                    <p id="stat-total-sales" class="text-xl font-bold text-green-600">0 د.إ</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <p class="text-xs text-gray-500">صافي الأرباح</p>
+                    <p id="stat-total-profit" class="text-xl font-bold text-emerald-600">0 د.إ</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <p class="text-xs text-gray-500">الديون المعلقة</p>
+                    <p id="stat-total-debts" class="text-xl font-bold text-red-600">0 د.إ</p>
+                </div>
             </div>
-            <button onclick="showAddInventory()" class="green">➕ إضافة قطعة</button>
-          </div>
-          <div class="summary-grid">
-            <div class="summary-item"><span>📦 عدد القطع</span> <strong id="invCount">0</strong></div>
-            <div class="summary-item"><span>💵 قيمة المخزن</span> <strong id="invValue">0</strong></div>
-            <div class="summary-item"><span>⚠️ أقل من 5</span> <strong id="invLow">0</strong></div>
-          </div>
-          <div id="invFormContainer" style="display:none; margin:1rem 0;"></div>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>القطعة</th><th>سعر الشراء</th><th>سعر البيع</th><th>الكمية</th><th>الحد الأدنى</th><th>إجراء</th></tr></thead>
-              <tbody id="invTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
 
-      <!-- المبيعات -->
-      <div id="section-sales" class="section">
-        <div class="card">
-          <h3>💰 تسجيل بيع جديد</h3>
-          <div class="flex-row">
-            <select id="saleItem" style="flex:2"></select>
-            <input id="saleQty" type="number" placeholder="الكمية" value="1" min="1">
-            <input id="salePrice" type="number" placeholder="السعر" step="0.01">
-          </div>
-          <div class="flex-row">
-            <input id="buyerName" placeholder="اسم المشتري (اختياري)">
-            <select id="paymentMethod">
-              <option value="نقدي">نقدي</option>
-              <option value="آجل">آجل</option>
-            </select>
-            <input id="saleDate" type="date">
-          </div>
-          <button onclick="addSale()" class="green">💾 تسجيل البيع</button>
-        </div>
-        <div class="summary-grid">
-          <div class="summary-item"><span>💵 نقدي</span> <strong id="cashSales">0</strong></div>
-          <div class="summary-item"><span>📋 آجل</span> <strong id="creditSales">0</strong></div>
-          <div class="summary-item"><span>📊 إجمالي المبيعات</span> <strong id="totalSales">0</strong></div>
-        </div>
-        <div class="card">
-          <h4>سجل المبيعات</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>المشتري</th><th>الدفع</th><th>التاريخ</th></tr></thead>
-              <tbody id="salesTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- المرتجعات -->
-      <div id="section-returns" class="section">
-        <div class="card">
-          <h3>↩️ تسجيل مرتجع</h3>
-          <div class="flex-row">
-            <select id="returnItem" style="flex:2"></select>
-            <input id="returnQty" type="number" placeholder="الكمية" value="1">
-            <input id="returnAmount" type="number" placeholder="المبلغ المسترجع" step="0.01">
-          </div>
-          <div class="flex-row">
-            <select id="returnReason">
-              <option>عطل</option>
-              <option>خطأ</option>
-              <option>أخرى</option>
-            </select>
-            <input id="returnDate" type="date">
-          </div>
-          <button onclick="addReturn()" class="orange">تسجيل مرتجع</button>
-        </div>
-        <div class="summary-item" style="margin:1rem 0;">
-          <span>💰 إجمالي المرتجعات</span> <strong id="totalReturns">0</strong>
-        </div>
-        <div class="card">
-          <h4>سجل المرتجعات</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>السبب</th><th>التاريخ</th></tr></thead>
-              <tbody id="returnsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- الديون -->
-      <div id="section-debts" class="section">
-        <div class="summary-grid">
-          <div class="summary-item"><span>💸 الديون القائمة</span> <strong id="pendingDebts">0</strong></div>
-        </div>
-        <div class="card">
-          <h4>قائمة الديون القائمة</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>المشتري</th><th>المبلغ</th><th>المسدد</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr></thead>
-              <tbody id="debtsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <h4>الديون المسددة</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>المشتري</th><th>المبلغ</th><th>تاريخ التسديد</th></tr></thead>
-              <tbody id="paidDebtsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- التقارير -->
-      <div id="section-reports" class="section">
-        <div class="card">
-          <h3>📊 ملخص المخزن</h3>
-          <p>عدد القطع: <strong id="reportInvCount">0</strong> | القيمة الإجمالية: <strong id="reportInvValue">0</strong></p>
-        </div>
-        <div class="card">
-          <h3>💰 المبيعات</h3>
-          <p>نقدي: <strong id="reportCash">0</strong> | آجل: <strong id="reportCredit">0</strong> | الإجمالي: <strong id="reportTotalSales">0</strong></p>
-        </div>
-        <div class="card">
-          <h3>↩️ المرتجعات</h3>
-          <p>عددها: <strong id="reportReturnsCount">0</strong> | قيمتها: <strong id="reportReturnsValue">0</strong></p>
-        </div>
-        <div class="card">
-          <h3>📈 الأرباح</h3>
-          <h2 id="reportProfit">0</h2>
-        </div>
-      </div>
-    `;
-
-    // ضبط التاريخ الافتراضي
-    const saleDateInput = document.getElementById('saleDate');
-    const returnDateInput = document.getElementById('returnDate');
-    if (saleDateInput) saleDateInput.valueAsDate = new Date();
-    if (returnDateInput) returnDateInput.valueAsDate = new Date();
-
-    // تحميل البيانات
-    loadInventoryData();
-    loadSalesData();
-    loadReturnsData();
-    loadDebtsData();
-    loadReportsData();
-  }
-
-  // ============ دوال المخزن ============
-  async function loadInventoryData() {
-    const items = await getAll('inventory');
-    const totalValue = items.reduce((sum, it) => sum + (it.purchasePrice * it.quantity), 0);
-    const lowStock = items.filter(it => it.quantity < 5);
-    
-    const countEl = document.getElementById('invCount');
-    const valueEl = document.getElementById('invValue');
-    const lowEl = document.getElementById('invLow');
-    if (countEl) countEl.textContent = items.length;
-    if (valueEl) valueEl.textContent = totalValue.toFixed(2);
-    if (lowEl) lowEl.textContent = lowStock.length;
-
-    const tbody = document.getElementById('invTableBody');
-    if (tbody) {
-      tbody.innerHTML = items.map(it => `
-        <tr>
-          <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
-          <td>${it.purchasePrice}</td>
-          <td>${it.sellingPrice}</td>
-          <td>${it.quantity}</td>
-          <td>${it.minThreshold || '-'}</td>
-          <td>
-            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
-            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // تحديث قوائم الاختيار
-    await updateSelects();
-  }
-
-  async function updateSelects() {
-    const items = await getAll('inventory');
-    const saleSelect = document.getElementById('saleItem');
-    const returnSelect = document.getElementById('returnItem');
-    
-    if (saleSelect) {
-      saleSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.quantity} متوفر)</option>`).join('');
-      if (items.length > 0) {
-        saleSelect.dispatchEvent(new Event('change'));
-      }
-    }
-    if (returnSelect) {
-      returnSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
-    }
-  }
-
-  window.searchInventory = async function() {
-    const term = document.getElementById('invSearch')?.value?.toLowerCase() || '';
-    const all = await getAll('inventory');
-    const filtered = all.filter(i => i.name.toLowerCase().includes(term));
-    const tbody = document.getElementById('invTableBody');
-    if (tbody) {
-      tbody.innerHTML = filtered.map(it => `
-        <tr>
-          <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
-          <td>${it.purchasePrice}</td>
-          <td>${it.sellingPrice}</td>
-          <td>${it.quantity}</td>
-          <td>${it.minThreshold || '-'}</td>
-          <td>
-            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
-            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-  };
-
-  window.showAddInventory = function() {
-    const container = document.getElementById('invFormContainer');
-    if (container) {
-      container.style.display = 'block';
-      container.innerHTML = `
-        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
-          <h4>إضافة قطعة جديدة</h4>
-          <input id="invName" placeholder="اسم القطعة" style="width:100%;margin:0.5rem 0;">
-          <input id="invPurchase" type="number" placeholder="سعر الشراء" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="invSelling" type="number" placeholder="سعر البيع" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="invQty" type="number" placeholder="الكمية" value="1" style="width:100%;margin:0.5rem 0;">
-          <input id="invMin" type="number" placeholder="الحد الأدنى (اختياري)" style="width:100%;margin:0.5rem 0;">
-          <button onclick="addInventoryItem()" class="green">حفظ</button>
-          <button onclick="document.getElementById('invFormContainer').style.display='none'" class="outline">إلغاء</button>
-        </div>
-      `;
-    }
-  };
-
-  window.addInventoryItem = async function() {
-    const name = document.getElementById('invName')?.value?.trim();
-    const purchase = parseFloat(document.getElementById('invPurchase')?.value);
-    const selling = parseFloat(document.getElementById('invSelling')?.value);
-    const qty = parseInt(document.getElementById('invQty')?.value) || 0;
-    const min = parseInt(document.getElementById('invMin')?.value) || 0;
-    
-    if (!name || isNaN(purchase) || isNaN(selling)) {
-      showToast('يرجى تعبئة الحقول المطلوبة');
-      return;
-    }
-    
-    await addRecord('inventory', {
-      name,
-      purchasePrice: purchase,
-      sellingPrice: selling,
-      quantity: qty,
-      minThreshold: min
-    });
-    
-    showToast('تمت إضافة القطعة');
-    const container = document.getElementById('invFormContainer');
-    if (container) container.style.display = 'none';
-    await loadInventoryData();
-  };
-
-  window.editInventory = async function(id) {
-    const all = await getAll('inventory');
-    const item = all.find(i => i.id === id);
-    if (!item) return;
-    
-    const container = document.getElementById('invFormContainer');
-    if (container) {
-      container.style.display = 'block';
-      container.innerHTML = `
-        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
-          <h4>تعديل القطعة</h4>
-          <input id="editName" value="${item.name}" style="width:100%;margin:0.5rem 0;">
-          <input id="editPurchase" type="number" value="${item.purchasePrice}" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="editSelling" type="number" value="${item.sell<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مخزن ومبيعات مركز وسام للإلكترونيات</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-    }
-    body {
-      background: #f4f7f9;
-      padding: 1rem;
-      direction: rtl;
-    }
-    .app-container {
-      max-width: 1100px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 24px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-      overflow: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, #1e3c5c, #0f2b40);
-      color: white;
-      padding: 1.5rem;
-      text-align: center;
-      font-weight: 700;
-      font-size: 1.8rem;
-    }
-    .tabs {
-      display: flex;
-      background: white;
-      border-bottom: 1px solid #e9edf4;
-      overflow-x: auto;
-    }
-    .tab {
-      padding: 1rem 1.2rem;
-      font-weight: 600;
-      color: #5e6f8c;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      white-space: nowrap;
-      font-size: 1rem;
-      transition: 0.2s;
-    }
-    .tab.active {
-      color: #0f2b40;
-      border-bottom: 3px solid #2d7fc1;
-      background: #f0f5fe;
-    }
-    .content {
-      padding: 2rem;
-      background: #f4f7f9;
-      min-height: 400px;
-    }
-    .section {
-      display: none;
-    }
-    .section.active {
-      display: block;
-    }
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
-    }
-    button {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      font-size: 0.9rem;
-      padding: 0.7rem 1.4rem;
-      border-radius: 14px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      margin: 0.3rem;
-      background: #2d7fc1;
-      color: white;
-    }
-    button.green { background: #1e7b4a; }
-    button.red { background: #b3313a; }
-    button.orange { background: #c26d1a; }
-    button.outline {
-      background: transparent;
-      border: 1px solid #2d7fc1;
-      color: #1e5a8a;
-    }
-    input, select {
-      padding: 0.7rem 1rem;
-      border-radius: 14px;
-      border: 1px solid #dce3ec;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      margin: 0.3rem;
-      font-size: 0.9rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th {
-      background: #f0f5fe;
-      padding: 0.8rem;
-      text-align: right;
-      color: #1e3c5c;
-    }
-    td {
-      padding: 0.8rem;
-      border-bottom: 1px solid #eef2f6;
-    }
-    .summary-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin: 1rem 0;
-    }
-    .summary-item {
-      background: #f0f5fe;
-      padding: 1rem 1.5rem;
-      border-radius: 16px;
-      font-weight: 600;
-      flex: 1;
-      min-width: 140px;
-    }
-    .badge {
-      background: #fce4e4;
-      color: #b3313a;
-      padding: 0.3rem 0.8rem;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 0.8rem;
-      display: inline-block;
-    }
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: #1e3c5c;
-      color: white;
-      padding: 1rem 2rem;
-      border-radius: 40px;
-      text-align: center;
-      max-width: 400px;
-      margin: 0 auto;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      z-index: 1000;
-      display: none;
-    }
-    .flex-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-      margin: 1rem 0;
-    }
-    .search-box {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: white;
-      border: 1px solid #dce3ec;
-      border-radius: 30px;
-      padding: 0.5rem 1rem;
-      flex: 2;
-    }
-    .search-box input {
-      border: none;
-      outline: none;
-      width: 100%;
-      margin: 0;
-    }
-  </style>
-</head>
-<body>
-<div class="app-container">
-  <div class="header">
-    📱 مخزن مركز وسام للإلكترونيات
-  </div>
-  <div class="tabs" id="tabContainer">
-    <button class="tab active" data-tab="inventory">📦 المخزن</button>
-    <button class="tab" data-tab="sales">💰 المبيعات</button>
-    <button class="tab" data-tab="returns">↩️ المرتجعات</button>
-    <button class="tab" data-tab="debts">💸 الديون</button>
-    <button class="tab" data-tab="reports">📊 التقارير</button>
-  </div>
-  <div class="content" id="contentArea">
-    <!-- المحتوى سيظهر هنا -->
-  </div>
-</div>
-<div class="toast" id="toast"></div>
-
-<script>
-  // ============ قاعدة البيانات ============
-  const DB_NAME = 'WissamStoreDB';
-  const DB_VERSION = 2;
-  let db;
-
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      
-      request.onupgradeneeded = (e) => {
-        const database = e.target.result;
-        if (!database.objectStoreNames.contains('inventory')) {
-          const invStore = database.createObjectStore('inventory', { keyPath: 'id', autoIncrement: true });
-          invStore.createIndex('name', 'name', { unique: false });
-        }
-        if (!database.objectStoreNames.contains('sales')) {
-          const salesStore = database.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
-        }
-        if (!database.objectStoreNames.contains('returns')) {
-          database.createObjectStore('returns', { keyPath: 'id', autoIncrement: true });
-        }
-        if (!database.objectStoreNames.contains('debts')) {
-          database.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
-        }
-      };
-      
-      request.onsuccess = (e) => {
-        db = e.target.result;
-        resolve(db);
-      };
-      
-      request.onerror = () => reject('فشل فتح قاعدة البيانات');
-    });
-  }
-
-  function addRecord(storeName, data) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.add(data);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject();
-    });
-  }
-
-  function updateRecord(storeName, data) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.put(data);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject();
-    });
-  }
-
-  function deleteRecord(storeName, id) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.delete(id);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject();
-    });
-  }
-
-  function getAll(storeName) {
-    return new Promise((resolve) => {
-      const tx = db.transaction(storeName, 'readonly');
-      const store = tx.objectStore(storeName);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-    });
-  }
-
-  // ============ Toast ============
-  function showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 2500);
-  }
-
-  // ============ التبويبات ============
-  function switchTab(tabName) {
-    // إخفاء كل الأقسام
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    // إظهار القسم المطلوب
-    const section = document.getElementById('section-' + tabName);
-    if (section) {
-      section.classList.add('active');
-    }
-    // تحديث التبويبات
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const activeTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
-    if (activeTab) {
-      activeTab.classList.add('active');
-    }
-  }
-
-  // ============ عرض المحتوى ============
-  function renderContent() {
-    const contentArea = document.getElementById('contentArea');
-    contentArea.innerHTML = `
-      <!-- المخزن -->
-      <div id="section-inventory" class="section active">
-        <div class="card">
-          <div class="flex-row">
-            <div class="search-box">
-              <span>🔍</span>
-              <input id="invSearch" placeholder="بحث في المخزن..." oninput="searchInventory()">
+            <!-- تنبيهات النقص -->
+            <div id="low-stock-alert" class="hidden bg-amber-50 border-r-4 border-amber-500 p-4 rounded-lg mb-6">
+                <h3 class="text-amber-800 font-bold text-sm mb-1">⚠️ تنبيه نقص مخزون!</h3>
+                <p class="text-xs text-amber-700 mb-2">القطع التالية اقتربت من النفاد (الكمية أقل من 5):</p>
+                <ul id="low-stock-list" class="list-disc list-inside text-xs text-amber-900 font-medium"></ul>
             </div>
-            <button onclick="showAddInventory()" class="green">➕ إضافة قطعة</button>
-          </div>
-          <div class="summary-grid">
-            <div class="summary-item"><span>📦 عدد القطع</span> <strong id="invCount">0</strong></div>
-            <div class="summary-item"><span>💵 قيمة المخزن</span> <strong id="invValue">0</strong></div>
-            <div class="summary-item"><span>⚠️ أقل من 5</span> <strong id="invLow">0</strong></div>
-          </div>
-          <div id="invFormContainer" style="display:none; margin:1rem 0;"></div>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>القطعة</th><th>سعر الشراء</th><th>سعر البيع</th><th>الكمية</th><th>الحد الأدنى</th><th>إجراء</th></tr></thead>
-              <tbody id="invTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- المبيعات -->
-      <div id="section-sales" class="section">
-        <div class="card">
-          <h3>💰 تسجيل بيع جديد</h3>
-          <div class="flex-row">
-            <select id="saleItem" style="flex:2"></select>
-            <input id="saleQty" type="number" placeholder="الكمية" value="1" min="1">
-            <input id="salePrice" type="number" placeholder="السعر" step="0.01">
-          </div>
-          <div class="flex-row">
-            <input id="buyerName" placeholder="اسم المشتري (اختياري)">
-            <select id="paymentMethod">
-              <option value="نقدي">نقدي</option>
-              <option value="آجل">آجل</option>
-            </select>
-            <input id="saleDate" type="date">
-          </div>
-          <button onclick="addSale()" class="green">💾 تسجيل البيع</button>
-        </div>
-        <div class="summary-grid">
-          <div class="summary-item"><span>💵 نقدي</span> <strong id="cashSales">0</strong></div>
-          <div class="summary-item"><span>📋 آجل</span> <strong id="creditSales">0</strong></div>
-          <div class="summary-item"><span>📊 إجمالي المبيعات</span> <strong id="totalSales">0</strong></div>
-        </div>
-        <div class="card">
-          <h4>سجل المبيعات</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>المشتري</th><th>الدفع</th><th>التاريخ</th></tr></thead>
-              <tbody id="salesTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        <!-- ================= قسم المخزن ================= -->
+        <section id="inventory-tab" class="tab-content hidden">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+                <h2 class="text-lg font-bold mb-4 text-gray-700">➕ إضافة / تعديل قطعة</h2>
+                <form id="product-form" onsubmit="saveProduct(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <input type="hidden" id="prod-id">
+                    <input type="text" id="prod-name" placeholder="اسم القطعة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
+                    <input type="number" id="prod-qty" placeholder="الكمية المتوفرة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
+                    <input type="number" step="0.01" id="prod-cost" placeholder="سعر الشراء (التكلفة)" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
+                    <input type="number" step="0.01" id="prod-price" placeholder="سعر البيع" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
+                    <button type="submit" class="bg-green-600 text-white rounded-lg p-2 text-sm font-medium hover:bg-green-700 transition">حفظ القطعة</button>
+                </form>
+            </div>
 
-      <!-- المرتجعات -->
-      <div id="section-returns" class="section">
-        <div class="card">
-          <h3>↩️ تسجيل مرتجع</h3>
-          <div class="flex-row">
-            <select id="returnItem" style="flex:2"></select>
-            <input id="returnQty" type="number" placeholder="الكمية" value="1">
-            <input id="returnAmount" type="number" placeholder="المبلغ المسترجع" step="0.01">
-          </div>
-          <div class="flex-row">
-            <select id="returnReason">
-              <option>عطل</option>
-              <option>خطأ</option>
-              <option>أخرى</option>
-            </select>
-            <input id="returnDate" type="date">
-          </div>
-          <button onclick="addReturn()" class="orange">تسجيل مرتجع</button>
-        </div>
-        <div class="summary-item" style="margin:1rem 0;">
-          <span>💰 إجمالي المرتجعات</span> <strong id="totalReturns">0</strong>
-        </div>
-        <div class="card">
-          <h4>سجل المرتجعات</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>السبب</th><th>التاريخ</th></tr></thead>
-              <tbody id="returnsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b border-gray-100"><h3 class="font-bold text-gray-700">📦 جدول قطع المخزن</h3></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm text-gray-600">
+                        <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">الاسم</th>
+                                <th class="p-3">الكمية</th>
+                                <th class="p-3">التكلفة</th>
+                                <th class="p-3">سعر البيع</th>
+                                <th class="p-3 text-center">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-      <!-- الديون -->
-      <div id="section-debts" class="section">
-        <div class="summary-grid">
-          <div class="summary-item"><span>💸 الديون القائمة</span> <strong id="pendingDebts">0</strong></div>
-        </div>
-        <div class="card">
-          <h4>قائمة الديون القائمة</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>المشتري</th><th>المبلغ</th><th>المسدد</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr></thead>
-              <tbody id="debtsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <h4>الديون المسددة</h4>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead><tr><th>المشتري</th><th>المبلغ</th><th>تاريخ التسديد</th></tr></thead>
-              <tbody id="paidDebtsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        <!-- ================= قسم المبيعات ================= -->
+        <section id="sales-tab" class="tab-content hidden">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+                <h2 class="text-lg font-bold mb-4 text-gray-700">💰 تسجيل عملية بيع</h2>
+                <form id="sale-form" onsubmit="processSale(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <select id="sale-product" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500"></select>
+                    <input type="number" id="sale-qty" placeholder="الكمية المباعة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
+                    <select id="sale-type" onchange="toggleDebtField()" class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
+                        <option value="نقدي">نقدي</option>
+                        <option value="آجل">آجل (دين)</option>
+                    </select>
+                    <input type="text" id="sale-customer" placeholder="اسم العميل (للآجل)" disabled class="border border-gray-300 rounded-lg p-2 text-sm bg-gray-100 focus:outline-blue-500">
+                    <button type="submit" class="bg-blue-600 text-white rounded-lg p-2 text-sm font-medium hover:bg-blue-700 transition">إتمام البيع</button>
+                </form>
+            </div>
 
-      <!-- التقارير -->
-      <div id="section-reports" class="section">
-        <div class="card">
-          <h3>📊 ملخص المخزن</h3>
-          <p>عدد القطع: <strong id="reportInvCount">0</strong> | القيمة الإجمالية: <strong id="reportInvValue">0</strong></p>
-        </div>
-        <div class="card">
-          <h3>💰 المبيعات</h3>
-          <p>نقدي: <strong id="reportCash">0</strong> | آجل: <strong id="reportCredit">0</strong> | الإجمالي: <strong id="reportTotalSales">0</strong></p>
-        </div>
-        <div class="card">
-          <h3>↩️ المرتجعات</h3>
-          <p>عددها: <strong id="reportReturnsCount">0</strong> | قيمتها: <strong id="reportReturnsValue">0</strong></p>
-        </div>
-        <div class="card">
-          <h3>📈 الأرباح</h3>
-          <h2 id="reportProfit">0</h2>
-        </div>
-      </div>
-    `;
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b border-gray-100"><h3 class="font-bold text-gray-700">📜 سجل فواتير المبيعات</h3></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm text-gray-600">
+                        <thead class="bg-gray-100 text-gray-700 text-xs">
+                            <tr>
+                                <th class="p-3">التاريخ</th>
+                                <th class="p-3">المنتج</th>
+                                <th class="p-3">الكمية</th>
+                                <th class="p-3">الإجمالي</th>
+                                <th class="p-3">النوع</th>
+                                <th class="p-3">العميل</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-    // ضبط التاريخ الافتراضي
-    const saleDateInput = document.getElementById('saleDate');
-    const returnDateInput = document.getElementById('returnDate');
-    if (saleDateInput) saleDateInput.valueAsDate = new Date();
-    if (returnDateInput) returnDateInput.valueAsDate = new Date();
+        <!-- ================= قسم المرتجعات ================= -->
+        <section id="returns-tab" class="tab-content hidden">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+                <h2 class="text-lg font-bold mb-4 text-gray-700">🔄 تسجيل قطعة مرتجعة</h2>
+                <form id="return-form" onsubmit="processReturn(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="return-product" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500"></select>
+                    <input type="number" id="return-qty" placeholder="الكمية المرتجعة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
+                    <button type="submit" class="bg-amber-600 text-white rounded-lg p-2 text-sm font-medium hover:bg-amber-700 transition">إرجاع للمخزن</button>
+                </form>
+            </div>
+        </section>
 
-    // تحميل البيانات
-    loadInventoryData();
-    loadSalesData();
-    loadReturnsData();
-    loadDebtsData();
-    loadReportsData();
-  }
-
-  // ============ دوال المخزن ============
-  async function loadInventoryData() {
-    const items = await getAll('inventory');
-    const totalValue = items.reduce((sum, it) => sum + (it.purchasePrice * it.quantity), 0);
-    const lowStock = items.filter(it => it.quantity < 5);
-    
-    const countEl = document.getElementById('invCount');
-    const valueEl = document.getElementById('invValue');
-    const lowEl = document.getElementById('invLow');
-    if (countEl) countEl.textContent = items.length;
-    if (valueEl) valueEl.textContent = totalValue.toFixed(2);
-    if (lowEl) lowEl.textContent = lowStock.length;
-
-    const tbody = document.getElementById('invTableBody');
-    if (tbody) {
-      tbody.innerHTML = items.map(it => `
-        <tr>
-          <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
-          <td>${it.purchasePrice}</td>
-          <td>${it.sellingPrice}</td>
-          <td>${it.quantity}</td>
-          <td>${it.minThreshold || '-'}</td>
-          <td>
-            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
-            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // تحديث قوائم الاختيار
-    await updateSelects();
-  }
-
-  async function updateSelects() {
-    const items = await getAll('inventory');
-    const saleSelect = document.getElementById('saleItem');
-    const returnSelect = document.getElementById('returnItem');
-    
-    if (saleSelect) {
-      saleSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.quantity} متوفر)</option>`).join('');
-      if (items.length > 0) {
-        saleSelect.dispatchEvent(new Event('change'));
-      }
-    }
-    if (returnSelect) {
-      returnSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
-    }
-  }
-
-  window.searchInventory = async function() {
-    const term = document.getElementById('invSearch')?.value?.toLowerCase() || '';
-    const all = await getAll('inventory');
-    const filtered = all.filter(i => i.name.toLowerCase().includes(term));
-    const tbody = document.getElementById('invTableBody');
-    if (tbody) {
-      tbody.innerHTML = filtered.map(it => `
-        <tr>
-          <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
-          <td>${it.purchasePrice}</td>
-          <td>${it.sellingPrice}</td>
-          <td>${it.quantity}</td>
-          <td>${it.minThreshold || '-'}</td>
-          <td>
-            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
-            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-  };
-
-  window.showAddInventory = function() {
-    const container = document.getElementById('invFormContainer');
-    if (container) {
-      container.style.display = 'block';
-      container.innerHTML = `
-        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
-          <h4>إضافة قطعة جديدة</h4>
-          <input id="invName" placeholder="اسم القطعة" style="width:100%;margin:0.5rem 0;">
-          <input id="invPurchase" type="number" placeholder="سعر الشراء" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="invSelling" type="number" placeholder="سعر البيع" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="invQty" type="number" placeholder="الكمية" value="1" style="width:100%;margin:0.5rem 0;">
-          <input id="invMin" type="number" placeholder="الحد الأدنى (اختياري)" style="width:100%;margin:0.5rem 0;">
-          <button onclick="addInventoryItem()" class="green">حفظ</button>
-          <button onclick="document.getElementById('invFormContainer').style.display='none'" class="outline">إلغاء</button>
-        </div>
-      `;
-    }
-  };
-
-  window.addInventoryItem = async function() {
-    const name = document.getElementById('invName')?.value?.trim();
-    const purchase = parseFloat(document.getElementById('invPurchase')?.value);
-    const selling = parseFloat(document.getElementById('invSelling')?.value);
-    const qty = parseInt(document.getElementById('invQty')?.value) || 0;
-    const min = parseInt(document.getElementById('invMin')?.value) || 0;
-    
-    if (!name || isNaN(purchase) || isNaN(selling)) {
-      showToast('يرجى تعبئة الحقول المطلوبة');
-      return;
-    }
-    
-    await addRecord('inventory', {
-      name,
-      purchasePrice: purchase,
-      sellingPrice: selling,
-      quantity: qty,
-      minThreshold: min
-    });
-    
-    showToast('تمت إضافة القطعة');
-    const container = document.getElementById('invFormContainer');
-    if (container) container.style.display = 'none';
-    await loadInventoryData();
-  };
-
-  window.editInventory = async function(id) {
-    const all = await getAll('inventory');
-    const item = all.find(i => i.id === id);
-    if (!item) return;
-    
-    const container = document.getElementById('invFormContainer');
-    if (container) {
-      container.style.display = 'block';
-      container.innerHTML = `
-        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
-          <h4>تعديل القطعة</h4>
-          <input id="editName" value="${item.name}" style="width:100%;margin:0.5rem 0;">
-          <input id="editPurchase" type="number" value="${item.purchasePrice}" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="editSelling" type="number" value="${item.sell
+        <!-- ================= قسم الديون ================= -->
+        <section id="debts-tab" class="tab-content hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              
