@@ -4,145 +4,496 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مخزن ومبيعات مركز وسام</title>
-    <!-- Tailwind CSS للـ Design المتجاوب -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        @import url('https://googleapis.com');
-        body { font-family: 'Tajawal', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #f4f7f9; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tabs button { flex: 1; padding: 12px 8px; border: none; min-width: 70px; background: #ddd; cursor: pointer; font-size: 15px; font-weight: bold; border-radius: 8px 8px 0 0; }
+        .tabs button.active { background: #2d7fc1; color: white; }
+        .tab-content { display: none; background: white; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .tab-content.active { display: block; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+        input, select, button { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
+        input:focus, select:focus { outline: 2px solid #2d7fc1; border-color: transparent; }
+        button { background: #2d7fc1; color: white; border: none; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        button.green { background: #27ae60; }
+        button.red { background: #e74c3c; }
+        button.orange { background: #e67e22; }
+        button.small { padding: 5px 10px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th { background: #f0f5fe; padding: 10px; text-align: right; font-size: 13px; color: #1e3c5c; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #fafbfc; }
+        .alert { background: #fff3cd; border-right: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
+        .summary { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+        .summary-box { flex: 1; min-width: 120px; background: #f0f5fe; padding: 15px; border-radius: 12px; text-align: center; }
+        .summary-box .number { font-size: 1.3rem; font-weight: bold; color: #1e3c5c; }
+        .summary-box .label { font-size: 12px; color: #666; margin-top: 3px; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e3c5c; color: white; padding: 12px 24px; border-radius: 30px; display: none; z-index: 999; font-weight: 500; }
+        h3 { margin: 20px 0 10px; color: #1e3c5c; }
+        @media (max-width: 600px) { .tabs button { font-size: 13px; padding: 10px 5px; } .form-row { flex-direction: column; } input, select { width: 100%; } }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 pb-12">
+<body>
 
-    <!-- شريط التنقل العلوي -->
-    <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                📦 مركز وسام للإلكترونيات
-            </h1>
-            <nav class="flex flex-wrap gap-2 justify-center">
-                <button onclick="switchTab('dashboard', this)" class="tab-btn bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">📊 التقارير</button>
-                <button onclick="switchTab('inventory', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🏭 المخزن</button>
-                <button onclick="switchTab('sales', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">💰 المبيعات</button>
-                <button onclick="switchTab('returns', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">🔄 المرتجعات</button>
-                <button onclick="switchTab('debts', this)" class="tab-btn bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">⏳ الديون</button>
-            </nav>
+<div class="container">
+    <h1 style="text-align:center; margin-bottom:5px; color:#1e3c5c;">📦 مخزن ومبيعات مركز وسام</h1>
+    <p style="text-align:center; color:#666; margin-bottom:15px;">جميع الأسعار بالليرة السورية (ل.س)</p>
+    
+    <div class="tabs">
+        <button class="active" onclick="showTab('store')">🏭 المخزن</button>
+        <button onclick="showTab('sales')">💰 المبيعات</button>
+        <button onclick="showTab('returns')">🔄 المرتجعات</button>
+        <button onclick="showTab('debts')">⏳ الديون</button>
+    </div>
+    
+    <!-- المخزن -->
+    <div id="tab-store" class="tab-content active">
+        <div class="form-row">
+            <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
+            <input type="number" id="itemQty" placeholder="الكمية" style="width:85px" min="1">
+            <input type="number" id="itemCost" placeholder="سعر الشراء (ل.س)" step="1" style="width:120px" min="0">
+            <input type="number" id="itemPrice" placeholder="سعر البيع (ل.س)" step="1" style="width:120px" min="0">
+            <button class="green" onclick="addItem()">➕ إضافة</button>
         </div>
-    </header>
+        <div id="lowStockAlert" class="alert" style="display:none;"></div>
+        <div class="summary">
+            <div class="summary-box"><div class="number" id="totalItems">0</div><div class="label">عدد القطع</div></div>
+            <div class="summary-box"><div class="number" id="totalCost">0</div><div class="label">إجمالي التكلفة (ل.س)</div></div>
+            <div class="summary-box"><div class="number" id="totalValue">0</div><div class="label">قيمة البيع (ل.س)</div></div>
+        </div>
+        <table>
+            <thead><tr><th>القطعة</th><th>الكمية</th><th>التكلفة (ل.س)</th><th>البيع (ل.س)</th><th>الربح (ل.س)</th><th>حذف</th></tr></thead>
+            <tbody id="storeTable"></tbody>
+        </table>
+    </div>
+    
+    <!-- المبيعات -->
+    <div id="tab-sales" class="tab-content">
+        <div class="form-row">
+            <select id="saleItem" style="flex:2"></select>
+            <input type="number" id="saleQty" placeholder="الكمية" value="1" style="width:85px" min="1">
+            <select id="saleType" style="width:100px" onchange="toggleCustomer()">
+                <option value="نقدي">نقدي</option><option value="آجل">آجل</option>
+            </select>
+            <input type="text" id="saleCustomer" placeholder="اسم الزبون (للآجل)" style="width:135px; display:none;">
+            <button class="green" onclick="makeSale()">💾 بيع</button>
+        </div>
+        <div class="summary">
+            <div class="summary-box"><div class="number" id="cashTotal">0</div><div class="label">نقدي (ل.س)</div></div>
+            <div class="summary-box"><div class="number" id="creditTotal">0</div><div class="label">آجل (ل.س)</div></div>
+            <div class="summary-box"><div class="number" id="allSalesTotal">0</div><div class="label">الإجمالي (ل.س)</div></div>
+        </div>
+        <table>
+            <thead><tr><th>التاريخ</th><th>القطعة</th><th>الكمية</th><th>المبلغ (ل.س)</th><th>النوع</th><th>الزبون</th></tr></thead>
+            <tbody id="salesTable"></tbody>
+        </table>
+    </div>
+    
+    <!-- المرتجعات -->
+    <div id="tab-returns" class="tab-content">
+        <div class="form-row">
+            <select id="returnItem" style="flex:2"></select>
+            <input type="number" id="returnQty" placeholder="الكمية" value="1" style="width:85px" min="1">
+            <select id="returnReason" style="width:100px"><option>عطل</option><option>خطأ</option><option>أخرى</option></select>
+            <input type="number" id="returnAmount" placeholder="المبلغ (ل.س)" step="1" style="width:110px" min="0">
+            <button class="orange" onclick="makeReturn()">📥 إرجاع</button>
+        </div>
+        <div class="summary-box" style="margin-bottom:15px;"><div class="number" id="totalReturns">0</div><div class="label">إجمالي المرتجعات (ل.س)</div></div>
+        <table>
+            <thead><tr><th>التاريخ</th><th>القطعة</th><th>الكمية</th><th>المبلغ (ل.س)</th><th>السبب</th></tr></thead>
+            <tbody id="returnsTable"></tbody>
+        </table>
+    </div>
+    
+    <!-- الديون -->
+    <div id="tab-debts" class="tab-content">
+        <div class="summary">
+            <div class="summary-box"><div class="number" id="pendingDebts">0</div><div class="label">الديون المعلقة (ل.س)</div></div>
+            <div class="summary-box"><div class="number" id="paidDebtsTotal">0</div><div class="label">المسدد (ل.س)</div></div>
+        </div>
+        <h3>⏳ <span style="color:#856404;">ديون معلقة</span></h3>
+        <table>
+            <thead><tr><th>الزبون</th><th>القطعة</th><th>المبلغ (ل.س)</th><th>التاريخ</th><th>تسديد</th></tr></thead>
+            <tbody id="debtsTable"></tbody>
+        </table>
+        <h3>✅ <span style="color:#155724;">ديون مسددة</span></h3>
+        <table>
+            <thead><tr><th>الزبون</th><th>القطعة</th><th>المبلغ (ل.س)</th><th>تاريخ التسديد</th></tr></thead>
+            <tbody id="paidDebtsTable"></tbody>
+        </table>
+    </div>
+</div>
 
-    <main class="container mx-auto px-4 mt-6">
+<div id="msg" class="msg"></div>
+
+<!-- الجزء الثاني: JavaScript سيكون هنا -->
+    <script>
+// ==================== قاعدة البيانات ====================
+let db;
+const request = indexedDB.open('WissamFullV5', 1);
+
+request.onupgradeneeded = function(e) {
+    const db = e.target.result;
+    if (!db.objectStoreNames.contains('items')) {
+        db.createObjectStore('items', { keyPath: 'id', autoIncrement: true });
+    }
+    if (!db.objectStoreNames.contains('sales')) {
+        db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+    }
+    if (!db.objectStoreNames.contains('returns')) {
+        db.createObjectStore('returns', { keyPath: 'id', autoIncrement: true });
+    }
+    if (!db.objectStoreNames.contains('debts')) {
+        db.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
+    }
+};
+
+request.onsuccess = function(e) {
+    db = e.target.result;
+    console.log('✅ قاعدة البيانات جاهزة');
+    loadAll();
+};
+
+request.onerror = function() {
+    alert('❌ فشل فتح قاعدة البيانات! استخدم متصفح حديث.');
+};
+
+// ==================== دوال مساعدة ====================
+function showMsg(text) {
+    const m = document.getElementById('msg');
+    m.textContent = text;
+    m.style.display = 'block';
+    clearTimeout(m._timeout);
+    m._timeout = setTimeout(() => m.style.display = 'none', 2500);
+}
+
+function formatPrice(num) {
+    return Number(num).toLocaleString('ar-SY') + ' ل.س';
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('tab-' + tab).classList.add('active');
+    event.target.classList.add('active');
+    
+    loadAll();
+}
+
+function loadAll() {
+    loadStore();
+    loadSales();
+    loadReturns();
+    loadDebts();
+    fillSelects();
+}
+
+function toggleCustomer() {
+    const type = document.getElementById('saleType').value;
+    const field = document.getElementById('saleCustomer');
+    if (type === 'آجل') {
+        field.style.display = 'inline';
+        field.required = true;
+    } else {
+        field.style.display = 'none';
+        field.required = false;
+        field.value = '';
+    }
+}
+
+function fillSelects() {
+    const tx = db.transaction('items', 'readonly');
+    const request = tx.objectStore('items').getAll();
+    
+    request.onsuccess = function() {
+        const items = request.result;
+        const opts = items.map(i => '<option value="' + i.id + '">' + i.name + ' (متوفر: ' + i.quantity + ')</option>').join('');
         
-        <!-- ================= قسم التقارير ================= -->
-        <section id="dashboard-tab" class="tab-content block">
-            <h2 class="text-xl font-bold mb-4 text-gray-700">📊 ملخص عام الأعمال</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500">إجمالي قطع المخزن</p>
-                    <p id="stat-total-items" class="text-xl font-bold text-blue-600">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500">إجمالي المبيعات</p>
-                    <p id="stat-total-sales" class="text-xl font-bold text-green-600">0 د.إ</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500">صافي الأرباح</p>
-                    <p id="stat-total-profit" class="text-xl font-bold text-emerald-600">0 د.إ</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500">الديون المعلقة</p>
-                    <p id="stat-total-debts" class="text-xl font-bold text-red-600">0 د.إ</p>
-                </div>
-            </div>
+        const saleSelect = document.getElementById('saleItem');
+        const returnSelect = document.getElementById('returnItem');
+        if (saleSelect) saleSelect.innerHTML = opts || '<option>لا توجد قطع</option>';
+        if (returnSelect) returnSelect.innerHTML = opts || '<option>لا توجد قطع</option>';
+    };
+}
 
-            <!-- تنبيهات النقص -->
-            <div id="low-stock-alert" class="hidden bg-amber-50 border-r-4 border-amber-500 p-4 rounded-lg mb-6">
-                <h3 class="text-amber-800 font-bold text-sm mb-1">⚠️ تنبيه نقص مخزون!</h3>
-                <p class="text-xs text-amber-700 mb-2">القطع التالية اقتربت من النفاد (الكمية أقل من 5):</p>
-                <ul id="low-stock-list" class="list-disc list-inside text-xs text-amber-900 font-medium"></ul>
-            </div>
-        </section>
+// ==================== المخزن ====================
+function addItem() {
+    const name = document.getElementById('itemName').value.trim();
+    const qty = parseInt(document.getElementById('itemQty').value);
+    const cost = parseFloat(document.getElementById('itemCost').value);
+    const price = parseFloat(document.getElementById('itemPrice').value);
+    
+    if (!name || !qty || qty <= 0 || isNaN(cost) || cost < 0 || isNaN(price) || price < 0) {
+        showMsg('⚠️ املأ جميع الحقول بشكل صحيح');
+        return;
+    }
+    
+    const tx = db.transaction('items', 'readwrite');
+    tx.objectStore('items').add({ name: name, quantity: qty, cost: cost, price: price });
+    
+    tx.oncomplete = function() {
+        showMsg('✅ تمت إضافة: ' + name);
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemQty').value = '';
+        document.getElementById('itemCost').value = '';
+        document.getElementById('itemPrice').value = '';
+        loadAll();
+    };
+}
 
-        <!-- ================= قسم المخزن ================= -->
-        <section id="inventory-tab" class="tab-content hidden">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-                <h2 class="text-lg font-bold mb-4 text-gray-700">➕ إضافة / تعديل قطعة</h2>
-                <form id="product-form" onsubmit="saveProduct(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    <input type="hidden" id="prod-id">
-                    <input type="text" id="prod-name" placeholder="اسم القطعة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
-                    <input type="number" id="prod-qty" placeholder="الكمية المتوفرة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
-                    <input type="number" step="0.01" id="prod-cost" placeholder="سعر الشراء (التكلفة)" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
-                    <input type="number" step="0.01" id="prod-price" placeholder="سعر البيع" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
-                    <button type="submit" class="bg-green-600 text-white rounded-lg p-2 text-sm font-medium hover:bg-green-700 transition">حفظ القطعة</button>
-                </form>
-            </div>
+function loadStore() {
+    const tx = db.transaction('items', 'readonly');
+    const request = tx.objectStore('items').getAll();
+    
+    request.onsuccess = function() {
+        const items = request.result;
+        
+        const tbody = document.getElementById('storeTable');
+        tbody.innerHTML = items.map(function(item) {
+            const profit = item.price - item.cost;
+            const profitColor = profit >= 0 ? 'color:#27ae60;' : 'color:#e74c3c;';
+            return '<tr>' +
+                '<td><strong>' + item.name + '</strong> ' + (item.quantity < 5 ? '<span class="badge badge-warning">⚠️ منخفض</span>' : '') + '</td>' +
+                '<td>' + item.quantity + '</td>' +
+                '<td>' + formatPrice(item.cost) + '</td>' +
+                '<td>' + formatPrice(item.price) + '</td>' +
+                '<td style="' + profitColor + 'font-weight:bold;">' + formatPrice(profit) + '</td>' +
+                '<td><button class="red small" onclick="deleteItem(' + item.id + ')">🗑️</button></td>' +
+                '</tr>';
+        }).join('');
+        
+        const lowItems = items.filter(function(i) { return i.quantity < 5; });
+        const alertDiv = document.getElementById('lowStockAlert');
+        if (lowItems.length > 0) {
+            alertDiv.style.display = 'block';
+            alertDiv.innerHTML = '⚠️ <strong>تنبيه نقص مخزون:</strong> ' + 
+                lowItems.map(function(i) { return i.name + ' (الكمية: ' + i.quantity + ')'; }).join(' | ');
+        } else {
+            alertDiv.style.display = 'none';
+        }
+        
+        document.getElementById('totalItems').textContent = items.length + ' قطعة';
+        document.getElementById('totalCost').textContent = formatPrice(
+            items.reduce(function(s, i) { return s + (i.cost * i.quantity); }, 0)
+        );
+        document.getElementById('totalValue').textContent = formatPrice(
+            items.reduce(function(s, i) { return s + (i.price * i.quantity); }, 0)
+        );
+    };
+}
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="p-4 bg-gray-50 border-b border-gray-100"><h3 class="font-bold text-gray-700">📦 جدول قطع المخزن</h3></div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right text-sm text-gray-600">
-                        <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
-                            <tr>
-                                <th class="p-3">الاسم</th>
-                                <th class="p-3">الكمية</th>
-                                <th class="p-3">التكلفة</th>
-                                <th class="p-3">سعر البيع</th>
-                                <th class="p-3 text-center">إجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventory-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+function deleteItem(id) {
+    if (!confirm('هل أنت متأكد من حذف هذه القطعة؟')) return;
+    
+    const tx = db.transaction('items', 'readwrite');
+    tx.objectStore('items').delete(id);
+    tx.oncomplete = function() {
+        showMsg('🗑️ تم الحذف');
+        loadAll();
+    };
+}
 
-        <!-- ================= قسم المبيعات ================= -->
-        <section id="sales-tab" class="tab-content hidden">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-                <h2 class="text-lg font-bold mb-4 text-gray-700">💰 تسجيل عملية بيع</h2>
-                <form id="sale-form" onsubmit="processSale(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    <select id="sale-product" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500"></select>
-                    <input type="number" id="sale-qty" placeholder="الكمية المباعة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
-                    <select id="sale-type" onchange="toggleDebtField()" class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
-                        <option value="نقدي">نقدي</option>
-                        <option value="آجل">آجل (دين)</option>
-                    </select>
-                    <input type="text" id="sale-customer" placeholder="اسم العميل (للآجل)" disabled class="border border-gray-300 rounded-lg p-2 text-sm bg-gray-100 focus:outline-blue-500">
-                    <button type="submit" class="bg-blue-600 text-white rounded-lg p-2 text-sm font-medium hover:bg-blue-700 transition">إتمام البيع</button>
-                </form>
-            </div>
+// ==================== المبيعات ====================
+function makeSale() {
+    const itemId = parseInt(document.getElementById('saleItem').value);
+    const qty = parseInt(document.getElementById('saleQty').value);
+    const type = document.getElementById('saleType').value;
+    const customer = document.getElementById('saleCustomer').value.trim();
+    
+    if (!itemId || !qty || qty <= 0) {
+        showMsg('⚠️ تأكد من البيانات');
+        return;
+    }
+    if (type === 'آجل' && !customer) {
+        showMsg('⚠️ أدخل اسم الزبون للبيع الآجل');
+        return;
+    }
+    
+    const tx1 = db.transaction('items', 'readonly');
+    const req = tx1.objectStore('items').get(itemId);
+    
+    req.onsuccess = function() {
+        const item = req.result;
+        if (!item) { showMsg('❌ القطعة غير موجودة'); return; }
+        if (item.quantity < qty) { showMsg('❌ المخزون غير كافٍ! المتوفر: ' + item.quantity); return; }
+        
+        item.quantity -= qty;
+        const tx2 = db.transaction('items', 'readwrite');
+        tx2.objectStore('items').put(item);
+        
+        const total = item.price * qty;
+        const date = new Date().toLocaleDateString('ar-SY');
+        
+        const tx3 = db.transaction('sales', 'readwrite');
+        tx3.objectStore('sales').add({
+            itemName: item.name, quantity: qty, price: item.price,
+            cost: item.cost, total: total, type: type,
+            customer: type === 'آجل' ? customer : '', date: date
+        });
+        
+        if (type === 'آجل') {
+            const tx4 = db.transaction('debts', 'readwrite');
+            tx4.objectStore('debts').add({
+                customer: customer, itemName: item.name,
+                amount: total, date: date, status: 'معلق', paidDate: ''
+            });
+        }
+        
+        tx3.oncomplete = function() {
+            showMsg('✅ تم البيع! ' + item.name + ' - ' + formatPrice(total));
+            document.getElementById('saleQty').value = '1';
+            document.getElementById('saleCustomer').value = '';
+            document.getElementById('saleType').value = 'نقدي';
+            toggleCustomer();
+            loadAll();
+        };
+    };
+}
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="p-4 bg-gray-50 border-b border-gray-100"><h3 class="font-bold text-gray-700">📜 سجل فواتير المبيعات</h3></div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right text-sm text-gray-600">
-                        <thead class="bg-gray-100 text-gray-700 text-xs">
-                            <tr>
-                                <th class="p-3">التاريخ</th>
-                                <th class="p-3">المنتج</th>
-                                <th class="p-3">الكمية</th>
-                                <th class="p-3">الإجمالي</th>
-                                <th class="p-3">النوع</th>
-                                <th class="p-3">العميل</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sales-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+function loadSales() {
+    const tx = db.transaction('sales', 'readonly');
+    const req = tx.objectStore('sales').getAll();
+    
+    req.onsuccess = function() {
+        const sales = req.result;
+        
+        const tbody = document.getElementById('salesTable');
+        tbody.innerHTML = sales.reverse().map(function(s) {
+            return '<tr>' +
+                '<td>' + s.date + '</td>' +
+                '<td>' + s.itemName + '</td>' +
+                '<td>' + s.quantity + '</td>' +
+                '<td>' + formatPrice(s.total) + '</td>' +
+                '<td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + s.type + '</span></td>' +
+                '<td>' + (s.customer || '-') + '</td>' +
+                '</tr>';
+        }).join('');
+        
+        const cash = sales.filter(function(s) { return s.type === 'نقدي'; }).reduce(function(sum, s) { return sum + s.total; }, 0);
+        const credit = sales.filter(function(s) { return s.type === 'آجل'; }).reduce(function(sum, s) { return sum + s.total; }, 0);
+        document.getElementById('cashTotal').textContent = formatPrice(cash);
+        document.getElementById('creditTotal').textContent = formatPrice(credit);
+        document.getElementById('allSalesTotal').textContent = formatPrice(cash + credit);
+    };
+}
 
-        <!-- ================= قسم المرتجعات ================= -->
-        <section id="returns-tab" class="tab-content hidden">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-                <h2 class="text-lg font-bold mb-4 text-gray-700">🔄 تسجيل قطعة مرتجعة</h2>
-                <form id="return-form" onsubmit="processReturn(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <select id="return-product" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500"></select>
-                    <input type="number" id="return-qty" placeholder="الكمية المرتجعة" required class="border border-gray-300 rounded-lg p-2 text-sm focus:outline-blue-500">
-                    <button type="submit" class="bg-amber-600 text-white rounded-lg p-2 text-sm font-medium hover:bg-amber-700 transition">إرجاع للمخزن</button>
-                </form>
-            </div>
-        </section>
+// ==================== المرتجعات ====================
+function makeReturn() {
+    const itemId = parseInt(document.getElementById('returnItem').value);
+    const qty = parseInt(document.getElementById('returnQty').value);
+    const reason = document.getElementById('returnReason').value;
+    const amount = parseFloat(document.getElementById('returnAmount').value);
+    
+    if (!itemId || !qty || qty <= 0 || isNaN(amount) || amount < 0) {
+        showMsg('⚠️ تأكد من البيانات');
+        return;
+    }
+    
+    const tx1 = db.transaction('items', 'readonly');
+    const req = tx1.objectStore('items').get(itemId);
+    
+    req.onsuccess = function() {
+        const item = req.result;
+        if (item) {
+            item.quantity += qty;
+            const tx2 = db.transaction('items', 'readwrite');
+            tx2.objectStore('items').put(item);
+        }
+        
+        const tx3 = db.transaction('returns', 'readwrite');
+        tx3.objectStore('returns').add({
+            itemName: item ? item.name : 'غير معروف',
+            quantity: qty, amount: amount, reason: reason,
+            date: new Date().toLocaleDateString('ar-SY')
+        });
+        
+        tx3.oncomplete = function() {
+            showMsg('✅ تم الإرجاع! ' + formatPrice(amount));
+            document.getElementById('returnQty').value = '1';
+            document.getElementById('returnAmount').value = '';
+            loadAll();
+        };
+    };
+}
 
-        <!-- ================= قسم الديون ================= -->
-        <section id="debts-tab" class="tab-content hidden">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                
+function loadReturns() {
+    const tx = db.transaction('returns', 'readonly');
+    const req = tx.objectStore('returns').getAll();
+    
+    req.onsuccess = function() {
+        const returns = req.result;
+        
+        const tbody = document.getElementById('returnsTable');
+        tbody.innerHTML = returns.reverse().map(function(r) {
+            return '<tr><td>' + r.date + '</td><td>' + r.itemName + '</td><td>' + r.quantity + '</td><td>' + formatPrice(r.amount) + '</td><td>' + r.reason + '</td></tr>';
+        }).join('');
+        
+        const total = returns.reduce(function(s, r) { return s + r.amount; }, 0);
+        document.getElementById('totalReturns').textContent = formatPrice(total);
+    };
+}
+
+// ==================== الديون ====================
+function loadDebts() {
+    const tx = db.transaction('debts', 'readonly');
+    const req = tx.objectStore('debts').getAll();
+    
+    req.onsuccess = function() {
+        const debts = req.result;
+        const pending = debts.filter(function(d) { return d.status === 'معلق'; });
+        const paid = debts.filter(function(d) { return d.status === 'مسدد'; });
+        
+        const tbody = document.getElementById('debtsTable');
+        tbody.innerHTML = pending.length > 0 ? pending.map(function(d) {
+            return '<tr><td><strong>' + d.customer + '</strong></td><td>' + d.itemName + '</td><td>' + formatPrice(d.amount) + '</td><td>' + d.date + '</td><td><button class="green small" onclick="payDebt(' + d.id + ')">✅ تسديد</button></td></tr>';
+        }).join('') : '<tr><td colspan="5" style="text-align:center;color:#999;">🎉 لا توجد ديون معلقة</td></tr>';
+        
+        const paidTbody = document.getElementById('paidDebtsTable');
+        paidTbody.innerHTML = paid.length > 0 ? paid.reverse().map(function(d) {
+            return '<tr><td>' + d.customer + '</td><td>' + d.itemName + '</td><td>' + formatPrice(d.amount) + '</td><td>' + d.paidDate + '</td></tr>';
+        }).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد ديون مسددة بعد</td></tr>';
+        
+        document.getElementById('pendingDebts').textContent = formatPrice(
+            pending.reduce(function(s, d) { return s + d.amount; }, 0)
+        );
+        document.getElementById('paidDebtsTotal').textContent = formatPrice(
+            paid.reduce(function(s, d) { return s + d.amount; }, 0)
+        );
+    };
+}
+
+function payDebt(id) {
+    if (!confirm('تأكيد تسديد الدين؟')) return;
+    
+    const tx1 = db.transaction('debts', 'readonly');
+    const req = tx1.objectStore('debts').get(id);
+    
+    req.onsuccess = function() {
+        const debt = req.result;
+        if (debt) {
+            debt.status = 'مسدد';
+            debt.paidDate = new Date().toLocaleDateString('ar-SY');
+            
+            const tx2 = db.transaction('debts', 'readwrite');
+            tx2.objectStore('debts').put(debt);
+            
+            tx2.oncomplete = function() {
+                showMsg('✅ تم تسديد الدين من: ' + debt.customer);
+                loadAll();
+            };
+        }
+    };
+}
+
+console.log('🚀 تطبيق مخزن ومبيعات مركز وسام جاهز');
+</script>
+</body>
+</html>
+    
