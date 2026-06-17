@@ -2,81 +2,55 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>مخزن ومبيعات مركز وسام للإلكترونيات</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
     }
     body {
       background: #f4f7f9;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
       padding: 1rem;
       direction: rtl;
     }
     .app-container {
-      width: 100%;
       max-width: 1100px;
+      margin: 0 auto;
       background: white;
       border-radius: 24px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.08);
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      margin: 0 auto;
     }
     .header {
-      background: linear-gradient(135deg, #1e3c5c 0%, #0f2b40 100%);
+      background: linear-gradient(135deg, #1e3c5c, #0f2b40);
       color: white;
-      padding: 1.2rem 1.8rem;
+      padding: 1.5rem;
       text-align: center;
       font-weight: 700;
       font-size: 1.8rem;
-      letter-spacing: 1px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-    .header span {
-      background: rgba(255,255,255,0.15);
-      padding: 0.2rem 1rem;
-      border-radius: 30px;
-      font-size: 1rem;
-      font-weight: 500;
     }
     .tabs {
       display: flex;
       background: white;
       border-bottom: 1px solid #e9edf4;
       overflow-x: auto;
-      white-space: nowrap;
-      scrollbar-width: thin;
-      padding: 0 0.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
     .tab {
-      padding: 1rem 0.9rem;
+      padding: 1rem 1.2rem;
       font-weight: 600;
-      font-size: 0.95rem;
       color: #5e6f8c;
       cursor: pointer;
       border-bottom: 3px solid transparent;
-      transition: 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
       background: none;
       border-top: none;
       border-left: none;
       border-right: none;
       white-space: nowrap;
+      font-size: 1rem;
+      transition: 0.2s;
     }
     .tab.active {
       color: #0f2b40;
@@ -84,9 +58,9 @@
       background: #f0f5fe;
     }
     .content {
-      padding: 1.8rem 1.2rem;
+      padding: 2rem;
       background: #f4f7f9;
-      flex: 1;
+      min-height: 400px;
     }
     .section {
       display: none;
@@ -101,109 +75,71 @@
       margin-bottom: 1.5rem;
       box-shadow: 0 8px 20px rgba(0,0,0,0.04);
     }
-    .flex-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.8rem;
-      align-items: center;
-      margin-bottom: 1.2rem;
-    }
-    input, select, button {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      font-size: 0.9rem;
-      padding: 0.7rem 1rem;
-      border-radius: 14px;
-      border: 1px solid #dce3ec;
-      background: white;
-      outline: none;
-      transition: 0.2s;
-    }
-    input:focus, select:focus {
-      border-color: #2d7fc1;
-      box-shadow: 0 0 0 3px rgba(45,127,193,0.15);
-    }
     button {
-      background: #2d7fc1;
-      color: white;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      font-size: 0.9rem;
+      padding: 0.7rem 1.4rem;
+      border-radius: 14px;
       border: none;
       font-weight: 600;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      background: #1e5a8a;
-      padding: 0.7rem 1.4rem;
+      margin: 0.3rem;
+      background: #2d7fc1;
+      color: white;
     }
-    button.green {
-      background: #1e7b4a;
-    }
-    button.red {
-      background: #b3313a;
-    }
-    button.orange {
-      background: #c26d1a;
-    }
+    button.green { background: #1e7b4a; }
+    button.red { background: #b3313a; }
+    button.orange { background: #c26d1a; }
     button.outline {
       background: transparent;
       border: 1px solid #2d7fc1;
       color: #1e5a8a;
     }
-    .search-box {
-      background: white;
+    input, select {
+      padding: 0.7rem 1rem;
+      border-radius: 14px;
       border: 1px solid #dce3ec;
-      border-radius: 30px;
-      padding: 0.5rem 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex: 2;
-      min-width: 200px;
-    }
-    .search-box input {
-      border: none;
-      width: 100%;
-      padding: 0.4rem;
-      background: transparent;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0.3rem;
+      font-size: 0.9rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 0.8rem;
-      font-size: 0.9rem;
+      margin-top: 1rem;
     }
     th {
       background: #f0f5fe;
-      text-align: right;
       padding: 0.8rem;
+      text-align: right;
       color: #1e3c5c;
     }
     td {
       padding: 0.8rem;
       border-bottom: 1px solid #eef2f6;
     }
-    .badge {
-      background: #fce4e4;
-      color: #b3313a;
-      padding: 0.2rem 0.8rem;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 0.8rem;
-    }
     .summary-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin: 1rem 0;
     }
     .summary-item {
       background: #f0f5fe;
-      padding: 0.9rem 1.2rem;
+      padding: 1rem 1.5rem;
       border-radius: 16px;
       font-weight: 600;
-      display: flex;
-      justify-content: space-between;
-      min-width: 140px;
       flex: 1;
+      min-width: 140px;
+    }
+    .badge {
+      background: #fce4e4;
+      color: #b3313a;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      display: inline-block;
     }
     .toast {
       position: fixed;
@@ -212,7 +148,7 @@
       right: 20px;
       background: #1e3c5c;
       color: white;
-      padding: 0.9rem 1.5rem;
+      padding: 1rem 2rem;
       border-radius: 40px;
       text-align: center;
       max-width: 400px;
@@ -221,146 +157,321 @@
       z-index: 1000;
       display: none;
     }
-    @media (max-width: 600px) {
-      .header { font-size: 1.4rem; }
-      .tab { font-size: 0.8rem; padding: 0.7rem 0.5rem; }
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 1rem 0;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      border: 1px solid #dce3ec;
+      border-radius: 30px;
+      padding: 0.5rem 1rem;
+      flex: 2;
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      width: 100%;
+      margin: 0;
     }
   </style>
 </head>
 <body>
 <div class="app-container">
   <div class="header">
-    📱 مخزن مركز وسام <span>للإلكترونيات</span>
+    📱 مخزن مركز وسام للإلكترونيات
   </div>
-  <div class="tabs">
+  <div class="tabs" id="tabContainer">
     <button class="tab active" data-tab="inventory">📦 المخزن</button>
     <button class="tab" data-tab="sales">💰 المبيعات</button>
     <button class="tab" data-tab="returns">↩️ المرتجعات</button>
     <button class="tab" data-tab="debts">💸 الديون</button>
     <button class="tab" data-tab="reports">📊 التقارير</button>
   </div>
-  <div class="content" id="contentArea"></div>
+  <div class="content" id="contentArea">
+    <!-- المحتوى سيظهر هنا -->
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-  (function() {
-    // ---------- IndexedDB ----------
-    const DB_NAME = 'WissamStoreDB';
-    const DB_VERSION = 2;
-    let db;
+  // ============ قاعدة البيانات ============
+  const DB_NAME = 'WissamStoreDB';
+  const DB_VERSION = 2;
+  let db;
 
-    function openDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const database = e.target.result;
-          if (!database.objectStoreNames.contains('inventory')) {
-            const invStore = database.createObjectStore('inventory', { keyPath: 'id', autoIncrement: true });
-            invStore.createIndex('name', 'name', { unique: false });
-          }
-          if (!database.objectStoreNames.contains('sales')) {
-            const salesStore = database.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
-            salesStore.createIndex('date', 'date', { unique: false });
-          }
-          if (!database.objectStoreNames.contains('returns')) {
-            const retStore = database.createObjectStore('returns', { keyPath: 'id', autoIncrement: true });
-          }
-          if (!database.objectStoreNames.contains('debts')) {
-            const debtStore = database.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
-          }
-        };
-        request.onsuccess = (e) => { db = e.target.result; resolve(db); };
-        request.onerror = () => reject('فشل فتح قاعدة البيانات');
-      });
-    }
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      
+      request.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains('inventory')) {
+          const invStore = database.createObjectStore('inventory', { keyPath: 'id', autoIncrement: true });
+          invStore.createIndex('name', 'name', { unique: false });
+        }
+        if (!database.objectStoreNames.contains('sales')) {
+          const salesStore = database.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!database.objectStoreNames.contains('returns')) {
+          database.createObjectStore('returns', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!database.objectStoreNames.contains('debts')) {
+          database.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        resolve(db);
+      };
+      
+      request.onerror = () => reject('فشل فتح قاعدة البيانات');
+    });
+  }
 
-    function addRecord(storeName, data) {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const store = tx.objectStore(storeName);
-        const request = store.add(data);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject();
-      });
-    }
-    function updateRecord(storeName, data) {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const store = tx.objectStore(storeName);
-        const request = store.put(data);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject();
-      });
-    }
-    function deleteRecord(storeName, id) {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const store = tx.objectStore(storeName);
-        const request = store.delete(id);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject();
-      });
-    }
-    function getAll(storeName) {
-      return new Promise((resolve) => {
-        const tx = db.transaction(storeName, 'readonly');
-        const store = tx.objectStore(storeName);
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
-      });
-    }
+  function addRecord(storeName, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.add(data);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject();
+    });
+  }
 
-    // ---------- UI Helpers ----------
-    const contentDiv = document.getElementById('contentArea');
+  function updateRecord(storeName, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.put(data);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject();
+    });
+  }
+
+  function deleteRecord(storeName, id) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject();
+    });
+  }
+
+  function getAll(storeName) {
+    return new Promise((resolve) => {
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  // ============ Toast ============
+  function showToast(msg) {
     const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2500);
+  }
 
-    function showToast(msg) {
-      toast.textContent = msg;
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 2500);
+  // ============ التبويبات ============
+  function switchTab(tabName) {
+    // إخفاء كل الأقسام
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    // إظهار القسم المطلوب
+    const section = document.getElementById('section-' + tabName);
+    if (section) {
+      section.classList.add('active');
     }
-
-    function renderSection(sectionName) {
-      switch(sectionName) {
-        case 'inventory': renderInventory(); break;
-        case 'sales': renderSales(); break;
-        case 'returns': renderReturns(); break;
-        case 'debts': renderDebts(); break;
-        case 'reports': renderReports(); break;
-      }
+    // تحديث التبويبات
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const activeTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+    if (activeTab) {
+      activeTab.classList.add('active');
     }
+  }
 
-    // ---------- Inventory ----------
-    async function renderInventory() {
-      const items = await getAll('inventory');
-      const totalValue = items.reduce((sum, it) => sum + (it.purchasePrice * it.quantity), 0);
-      const lowStock = items.filter(it => it.quantity < 5);
-      let html = `
+  // ============ عرض المحتوى ============
+  function renderContent() {
+    const contentArea = document.getElementById('contentArea');
+    contentArea.innerHTML = `
+      <!-- المخزن -->
+      <div id="section-inventory" class="section active">
         <div class="card">
           <div class="flex-row">
-            <div class="search-box"><span>🔍</span><input id="invSearch" placeholder="بحث في المخزن..." oninput="window.searchInventory()"></div>
-            <button onclick="window.showAddInventory()" class="green">➕ إضافة قطعة</button>
+            <div class="search-box">
+              <span>🔍</span>
+              <input id="invSearch" placeholder="بحث في المخزن..." oninput="searchInventory()">
+            </div>
+            <button onclick="showAddInventory()" class="green">➕ إضافة قطعة</button>
           </div>
           <div class="summary-grid">
-            <div class="summary-item"><span>📦 عدد القطع</span> <strong>${items.length}</strong></div>
-            <div class="summary-item"><span>💵 قيمة المخزن</span> <strong>${totalValue.toFixed(2)}</strong></div>
-            <div class="summary-item"><span>⚠️ أقل من 5</span> <strong>${lowStock.length}</strong></div>
+            <div class="summary-item"><span>📦 عدد القطع</span> <strong id="invCount">0</strong></div>
+            <div class="summary-item"><span>💵 قيمة المخزن</span> <strong id="invValue">0</strong></div>
+            <div class="summary-item"><span>⚠️ أقل من 5</span> <strong id="invLow">0</strong></div>
           </div>
-          <div id="invFormContainer" style="display:none; margin-bottom:1rem;"></div>
-          <table id="invTable">
-            <thead><tr><th>القطعة</th><th>سعر الشراء</th><th>سعر البيع</th><th>الكمية</th><th>الحد الأدنى</th><th>إجراء</th></tr></thead>
-            <tbody></tbody>
-          </table>
+          <div id="invFormContainer" style="display:none; margin:1rem 0;"></div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>القطعة</th><th>سعر الشراء</th><th>سعر البيع</th><th>الكمية</th><th>الحد الأدنى</th><th>إجراء</th></tr></thead>
+              <tbody id="invTableBody"></tbody>
+            </table>
+          </div>
         </div>
-      `;
-      contentDiv.innerHTML = html;
-      renderInventoryTable(items);
-    }
+      </div>
 
-    function renderInventoryTable(items) {
-      const tbody = document.querySelector('#invTable tbody');
-      if (!tbody) return;
+      <!-- المبيعات -->
+      <div id="section-sales" class="section">
+        <div class="card">
+          <h3>💰 تسجيل بيع جديد</h3>
+          <div class="flex-row">
+            <select id="saleItem" style="flex:2"></select>
+            <input id="saleQty" type="number" placeholder="الكمية" value="1" min="1">
+            <input id="salePrice" type="number" placeholder="السعر" step="0.01">
+          </div>
+          <div class="flex-row">
+            <input id="buyerName" placeholder="اسم المشتري (اختياري)">
+            <select id="paymentMethod">
+              <option value="نقدي">نقدي</option>
+              <option value="آجل">آجل</option>
+            </select>
+            <input id="saleDate" type="date">
+          </div>
+          <button onclick="addSale()" class="green">💾 تسجيل البيع</button>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-item"><span>💵 نقدي</span> <strong id="cashSales">0</strong></div>
+          <div class="summary-item"><span>📋 آجل</span> <strong id="creditSales">0</strong></div>
+          <div class="summary-item"><span>📊 إجمالي المبيعات</span> <strong id="totalSales">0</strong></div>
+        </div>
+        <div class="card">
+          <h4>سجل المبيعات</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>المشتري</th><th>الدفع</th><th>التاريخ</th></tr></thead>
+              <tbody id="salesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- المرتجعات -->
+      <div id="section-returns" class="section">
+        <div class="card">
+          <h3>↩️ تسجيل مرتجع</h3>
+          <div class="flex-row">
+            <select id="returnItem" style="flex:2"></select>
+            <input id="returnQty" type="number" placeholder="الكمية" value="1">
+            <input id="returnAmount" type="number" placeholder="المبلغ المسترجع" step="0.01">
+          </div>
+          <div class="flex-row">
+            <select id="returnReason">
+              <option>عطل</option>
+              <option>خطأ</option>
+              <option>أخرى</option>
+            </select>
+            <input id="returnDate" type="date">
+          </div>
+          <button onclick="addReturn()" class="orange">تسجيل مرتجع</button>
+        </div>
+        <div class="summary-item" style="margin:1rem 0;">
+          <span>💰 إجمالي المرتجعات</span> <strong id="totalReturns">0</strong>
+        </div>
+        <div class="card">
+          <h4>سجل المرتجعات</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>السبب</th><th>التاريخ</th></tr></thead>
+              <tbody id="returnsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- الديون -->
+      <div id="section-debts" class="section">
+        <div class="summary-grid">
+          <div class="summary-item"><span>💸 الديون القائمة</span> <strong id="pendingDebts">0</strong></div>
+        </div>
+        <div class="card">
+          <h4>قائمة الديون القائمة</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>المشتري</th><th>المبلغ</th><th>المسدد</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr></thead>
+              <tbody id="debtsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h4>الديون المسددة</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>المشتري</th><th>المبلغ</th><th>تاريخ التسديد</th></tr></thead>
+              <tbody id="paidDebtsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- التقارير -->
+      <div id="section-reports" class="section">
+        <div class="card">
+          <h3>📊 ملخص المخزن</h3>
+          <p>عدد القطع: <strong id="reportInvCount">0</strong> | القيمة الإجمالية: <strong id="reportInvValue">0</strong></p>
+        </div>
+        <div class="card">
+          <h3>💰 المبيعات</h3>
+          <p>نقدي: <strong id="reportCash">0</strong> | آجل: <strong id="reportCredit">0</strong> | الإجمالي: <strong id="reportTotalSales">0</strong></p>
+        </div>
+        <div class="card">
+          <h3>↩️ المرتجعات</h3>
+          <p>عددها: <strong id="reportReturnsCount">0</strong> | قيمتها: <strong id="reportReturnsValue">0</strong></p>
+        </div>
+        <div class="card">
+          <h3>📈 الأرباح</h3>
+          <h2 id="reportProfit">0</h2>
+        </div>
+      </div>
+    `;
+
+    // ضبط التاريخ الافتراضي
+    const saleDateInput = document.getElementById('saleDate');
+    const returnDateInput = document.getElementById('returnDate');
+    if (saleDateInput) saleDateInput.valueAsDate = new Date();
+    if (returnDateInput) returnDateInput.valueAsDate = new Date();
+
+    // تحميل البيانات
+    loadInventoryData();
+    loadSalesData();
+    loadReturnsData();
+    loadDebtsData();
+    loadReportsData();
+  }
+
+  // ============ دوال المخزن ============
+  async function loadInventoryData() {
+    const items = await getAll('inventory');
+    const totalValue = items.reduce((sum, it) => sum + (it.purchasePrice * it.quantity), 0);
+    const lowStock = items.filter(it => it.quantity < 5);
+    
+    const countEl = document.getElementById('invCount');
+    const valueEl = document.getElementById('invValue');
+    const lowEl = document.getElementById('invLow');
+    if (countEl) countEl.textContent = items.length;
+    if (valueEl) valueEl.textContent = totalValue.toFixed(2);
+    if (lowEl) lowEl.textContent = lowStock.length;
+
+    const tbody = document.getElementById('invTableBody');
+    if (tbody) {
       tbody.innerHTML = items.map(it => `
         <tr>
           <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
@@ -369,161 +480,700 @@
           <td>${it.quantity}</td>
           <td>${it.minThreshold || '-'}</td>
           <td>
-            <button class="outline" onclick="window.editInventory(${it.id})">✏️</button>
-            <button class="red" onclick="window.deleteInventory(${it.id})">🗑️</button>
+            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
+            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
           </td>
         </tr>
       `).join('');
     }
 
-    window.searchInventory = async function() {
-      const term = document.getElementById('invSearch').value.toLowerCase();
-      const all = await getAll('inventory');
-      const filtered = all.filter(i => i.name.toLowerCase().includes(term));
-      renderInventoryTable(filtered);
-    };
+    // تحديث قوائم الاختيار
+    await updateSelects();
+  }
 
-    window.showAddInventory = function() {
-      const container = document.getElementById('invFormContainer');
+  async function updateSelects() {
+    const items = await getAll('inventory');
+    const saleSelect = document.getElementById('saleItem');
+    const returnSelect = document.getElementById('returnItem');
+    
+    if (saleSelect) {
+      saleSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.quantity} متوفر)</option>`).join('');
+      if (items.length > 0) {
+        saleSelect.dispatchEvent(new Event('change'));
+      }
+    }
+    if (returnSelect) {
+      returnSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+    }
+  }
+
+  window.searchInventory = async function() {
+    const term = document.getElementById('invSearch')?.value?.toLowerCase() || '';
+    const all = await getAll('inventory');
+    const filtered = all.filter(i => i.name.toLowerCase().includes(term));
+    const tbody = document.getElementById('invTableBody');
+    if (tbody) {
+      tbody.innerHTML = filtered.map(it => `
+        <tr>
+          <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
+          <td>${it.purchasePrice}</td>
+          <td>${it.sellingPrice}</td>
+          <td>${it.quantity}</td>
+          <td>${it.minThreshold || '-'}</td>
+          <td>
+            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
+            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  };
+
+  window.showAddInventory = function() {
+    const container = document.getElementById('invFormContainer');
+    if (container) {
       container.style.display = 'block';
       container.innerHTML = `
-        <div class="card" style="background:#f9fcff;">
+        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
           <h4>إضافة قطعة جديدة</h4>
           <input id="invName" placeholder="اسم القطعة" style="width:100%;margin:0.5rem 0;">
           <input id="invPurchase" type="number" placeholder="سعر الشراء" step="0.01" style="width:100%;margin:0.5rem 0;">
           <input id="invSelling" type="number" placeholder="سعر البيع" step="0.01" style="width:100%;margin:0.5rem 0;">
           <input id="invQty" type="number" placeholder="الكمية" value="1" style="width:100%;margin:0.5rem 0;">
           <input id="invMin" type="number" placeholder="الحد الأدنى (اختياري)" style="width:100%;margin:0.5rem 0;">
-          <button onclick="window.addInventory()" class="green">حفظ</button>
+          <button onclick="addInventoryItem()" class="green">حفظ</button>
           <button onclick="document.getElementById('invFormContainer').style.display='none'" class="outline">إلغاء</button>
         </div>
       `;
-    };
+    }
+  };
 
-    window.addInventory = async function() {
-      const name = document.getElementById('invName').value.trim();
-      const purchase = parseFloat(document.getElementById('invPurchase').value);
-      const selling = parseFloat(document.getElementById('invSelling').value);
-      const qty = parseInt(document.getElementById('invQty').value) || 0;
-      const min = parseInt(document.getElementById('invMin').value) || 0;
-      if (!name || isNaN(purchase) || isNaN(selling)) return showToast('يرجى تعبئة الحقول المطلوبة');
-      await addRecord('inventory', { name, purchasePrice: purchase, sellingPrice: selling, quantity: qty, minThreshold: min });
-      showToast('تمت إضافة القطعة');
-      renderInventory();
-    };
+  window.addInventoryItem = async function() {
+    const name = document.getElementById('invName')?.value?.trim();
+    const purchase = parseFloat(document.getElementById('invPurchase')?.value);
+    const selling = parseFloat(document.getElementById('invSelling')?.value);
+    const qty = parseInt(document.getElementById('invQty')?.value) || 0;
+    const min = parseInt(document.getElementById('invMin')?.value) || 0;
+    
+    if (!name || isNaN(purchase) || isNaN(selling)) {
+      showToast('يرجى تعبئة الحقول المطلوبة');
+      return;
+    }
+    
+    await addRecord('inventory', {
+      name,
+      purchasePrice: purchase,
+      sellingPrice: selling,
+      quantity: qty,
+      minThreshold: min
+    });
+    
+    showToast('تمت إضافة القطعة');
+    const container = document.getElementById('invFormContainer');
+    if (container) container.style.display = 'none';
+    await loadInventoryData();
+  };
 
-    window.editInventory = async function(id) {
-      const all = await getAll('inventory');
-      const item = all.find(i => i.id === id);
-      if (!item) return;
-      const container = document.getElementById('invFormContainer');
+  window.editInventory = async function(id) {
+    const all = await getAll('inventory');
+    const item = all.find(i => i.id === id);
+    if (!item) return;
+    
+    const container = document.getElementById('invFormContainer');
+    if (container) {
       container.style.display = 'block';
       container.innerHTML = `
-        <div class="card"><h4>تعديل القطعة</h4>
+        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
+          <h4>تعديل القطعة</h4>
           <input id="editName" value="${item.name}" style="width:100%;margin:0.5rem 0;">
           <input id="editPurchase" type="number" value="${item.purchasePrice}" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="editSelling" type="number" value="${item.sellingPrice}" step="0.01" style="width:100%;margin:0.5rem 0;">
-          <input id="editQty" type="number" value="${item.quantity}" style="width:100%;margin:0.5rem 0;">
-          <input id="editMin" type="number" value="${item.minThreshold || 0}" style="width:100%;margin:0.5rem 0;">
-          <button onclick="window.updateInventory(${id})" class="green">تحديث</button>
+          <input id="editSelling" type="number" value="${item.sell<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مخزن ومبيعات مركز وسام للإلكترونيات</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+    }
+    body {
+      background: #f4f7f9;
+      padding: 1rem;
+      direction: rtl;
+    }
+    .app-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3c5c, #0f2b40);
+      color: white;
+      padding: 1.5rem;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.8rem;
+    }
+    .tabs {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #e9edf4;
+      overflow-x: auto;
+    }
+    .tab {
+      padding: 1rem 1.2rem;
+      font-weight: 600;
+      color: #5e6f8c;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      white-space: nowrap;
+      font-size: 1rem;
+      transition: 0.2s;
+    }
+    .tab.active {
+      color: #0f2b40;
+      border-bottom: 3px solid #2d7fc1;
+      background: #f0f5fe;
+    }
+    .content {
+      padding: 2rem;
+      background: #f4f7f9;
+      min-height: 400px;
+    }
+    .section {
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+    button {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      font-size: 0.9rem;
+      padding: 0.7rem 1.4rem;
+      border-radius: 14px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 0.3rem;
+      background: #2d7fc1;
+      color: white;
+    }
+    button.green { background: #1e7b4a; }
+    button.red { background: #b3313a; }
+    button.orange { background: #c26d1a; }
+    button.outline {
+      background: transparent;
+      border: 1px solid #2d7fc1;
+      color: #1e5a8a;
+    }
+    input, select {
+      padding: 0.7rem 1rem;
+      border-radius: 14px;
+      border: 1px solid #dce3ec;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0.3rem;
+      font-size: 0.9rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th {
+      background: #f0f5fe;
+      padding: 0.8rem;
+      text-align: right;
+      color: #1e3c5c;
+    }
+    td {
+      padding: 0.8rem;
+      border-bottom: 1px solid #eef2f6;
+    }
+    .summary-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .summary-item {
+      background: #f0f5fe;
+      padding: 1rem 1.5rem;
+      border-radius: 16px;
+      font-weight: 600;
+      flex: 1;
+      min-width: 140px;
+    }
+    .badge {
+      background: #fce4e4;
+      color: #b3313a;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      display: inline-block;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: #1e3c5c;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 40px;
+      text-align: center;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: none;
+    }
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 1rem 0;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      border: 1px solid #dce3ec;
+      border-radius: 30px;
+      padding: 0.5rem 1rem;
+      flex: 2;
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      width: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <div class="header">
+    📱 مخزن مركز وسام للإلكترونيات
+  </div>
+  <div class="tabs" id="tabContainer">
+    <button class="tab active" data-tab="inventory">📦 المخزن</button>
+    <button class="tab" data-tab="sales">💰 المبيعات</button>
+    <button class="tab" data-tab="returns">↩️ المرتجعات</button>
+    <button class="tab" data-tab="debts">💸 الديون</button>
+    <button class="tab" data-tab="reports">📊 التقارير</button>
+  </div>
+  <div class="content" id="contentArea">
+    <!-- المحتوى سيظهر هنا -->
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  // ============ قاعدة البيانات ============
+  const DB_NAME = 'WissamStoreDB';
+  const DB_VERSION = 2;
+  let db;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      
+      request.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains('inventory')) {
+          const invStore = database.createObjectStore('inventory', { keyPath: 'id', autoIncrement: true });
+          invStore.createIndex('name', 'name', { unique: false });
+        }
+        if (!database.objectStoreNames.contains('sales')) {
+          const salesStore = database.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!database.objectStoreNames.contains('returns')) {
+          database.createObjectStore('returns', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!database.objectStoreNames.contains('debts')) {
+          database.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        resolve(db);
+      };
+      
+      request.onerror = () => reject('فشل فتح قاعدة البيانات');
+    });
+  }
+
+  function addRecord(storeName, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.add(data);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject();
+    });
+  }
+
+  function updateRecord(storeName, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.put(data);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject();
+    });
+  }
+
+  function deleteRecord(storeName, id) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject();
+    });
+  }
+
+  function getAll(storeName) {
+    return new Promise((resolve) => {
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  // ============ Toast ============
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2500);
+  }
+
+  // ============ التبويبات ============
+  function switchTab(tabName) {
+    // إخفاء كل الأقسام
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    // إظهار القسم المطلوب
+    const section = document.getElementById('section-' + tabName);
+    if (section) {
+      section.classList.add('active');
+    }
+    // تحديث التبويبات
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const activeTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+    if (activeTab) {
+      activeTab.classList.add('active');
+    }
+  }
+
+  // ============ عرض المحتوى ============
+  function renderContent() {
+    const contentArea = document.getElementById('contentArea');
+    contentArea.innerHTML = `
+      <!-- المخزن -->
+      <div id="section-inventory" class="section active">
+        <div class="card">
+          <div class="flex-row">
+            <div class="search-box">
+              <span>🔍</span>
+              <input id="invSearch" placeholder="بحث في المخزن..." oninput="searchInventory()">
+            </div>
+            <button onclick="showAddInventory()" class="green">➕ إضافة قطعة</button>
+          </div>
+          <div class="summary-grid">
+            <div class="summary-item"><span>📦 عدد القطع</span> <strong id="invCount">0</strong></div>
+            <div class="summary-item"><span>💵 قيمة المخزن</span> <strong id="invValue">0</strong></div>
+            <div class="summary-item"><span>⚠️ أقل من 5</span> <strong id="invLow">0</strong></div>
+          </div>
+          <div id="invFormContainer" style="display:none; margin:1rem 0;"></div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>القطعة</th><th>سعر الشراء</th><th>سعر البيع</th><th>الكمية</th><th>الحد الأدنى</th><th>إجراء</th></tr></thead>
+              <tbody id="invTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- المبيعات -->
+      <div id="section-sales" class="section">
+        <div class="card">
+          <h3>💰 تسجيل بيع جديد</h3>
+          <div class="flex-row">
+            <select id="saleItem" style="flex:2"></select>
+            <input id="saleQty" type="number" placeholder="الكمية" value="1" min="1">
+            <input id="salePrice" type="number" placeholder="السعر" step="0.01">
+          </div>
+          <div class="flex-row">
+            <input id="buyerName" placeholder="اسم المشتري (اختياري)">
+            <select id="paymentMethod">
+              <option value="نقدي">نقدي</option>
+              <option value="آجل">آجل</option>
+            </select>
+            <input id="saleDate" type="date">
+          </div>
+          <button onclick="addSale()" class="green">💾 تسجيل البيع</button>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-item"><span>💵 نقدي</span> <strong id="cashSales">0</strong></div>
+          <div class="summary-item"><span>📋 آجل</span> <strong id="creditSales">0</strong></div>
+          <div class="summary-item"><span>📊 إجمالي المبيعات</span> <strong id="totalSales">0</strong></div>
+        </div>
+        <div class="card">
+          <h4>سجل المبيعات</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>المشتري</th><th>الدفع</th><th>التاريخ</th></tr></thead>
+              <tbody id="salesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- المرتجعات -->
+      <div id="section-returns" class="section">
+        <div class="card">
+          <h3>↩️ تسجيل مرتجع</h3>
+          <div class="flex-row">
+            <select id="returnItem" style="flex:2"></select>
+            <input id="returnQty" type="number" placeholder="الكمية" value="1">
+            <input id="returnAmount" type="number" placeholder="المبلغ المسترجع" step="0.01">
+          </div>
+          <div class="flex-row">
+            <select id="returnReason">
+              <option>عطل</option>
+              <option>خطأ</option>
+              <option>أخرى</option>
+            </select>
+            <input id="returnDate" type="date">
+          </div>
+          <button onclick="addReturn()" class="orange">تسجيل مرتجع</button>
+        </div>
+        <div class="summary-item" style="margin:1rem 0;">
+          <span>💰 إجمالي المرتجعات</span> <strong id="totalReturns">0</strong>
+        </div>
+        <div class="card">
+          <h4>سجل المرتجعات</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>السبب</th><th>التاريخ</th></tr></thead>
+              <tbody id="returnsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- الديون -->
+      <div id="section-debts" class="section">
+        <div class="summary-grid">
+          <div class="summary-item"><span>💸 الديون القائمة</span> <strong id="pendingDebts">0</strong></div>
+        </div>
+        <div class="card">
+          <h4>قائمة الديون القائمة</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>المشتري</th><th>المبلغ</th><th>المسدد</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr></thead>
+              <tbody id="debtsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h4>الديون المسددة</h4>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>المشتري</th><th>المبلغ</th><th>تاريخ التسديد</th></tr></thead>
+              <tbody id="paidDebtsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- التقارير -->
+      <div id="section-reports" class="section">
+        <div class="card">
+          <h3>📊 ملخص المخزن</h3>
+          <p>عدد القطع: <strong id="reportInvCount">0</strong> | القيمة الإجمالية: <strong id="reportInvValue">0</strong></p>
+        </div>
+        <div class="card">
+          <h3>💰 المبيعات</h3>
+          <p>نقدي: <strong id="reportCash">0</strong> | آجل: <strong id="reportCredit">0</strong> | الإجمالي: <strong id="reportTotalSales">0</strong></p>
+        </div>
+        <div class="card">
+          <h3>↩️ المرتجعات</h3>
+          <p>عددها: <strong id="reportReturnsCount">0</strong> | قيمتها: <strong id="reportReturnsValue">0</strong></p>
+        </div>
+        <div class="card">
+          <h3>📈 الأرباح</h3>
+          <h2 id="reportProfit">0</h2>
+        </div>
+      </div>
+    `;
+
+    // ضبط التاريخ الافتراضي
+    const saleDateInput = document.getElementById('saleDate');
+    const returnDateInput = document.getElementById('returnDate');
+    if (saleDateInput) saleDateInput.valueAsDate = new Date();
+    if (returnDateInput) returnDateInput.valueAsDate = new Date();
+
+    // تحميل البيانات
+    loadInventoryData();
+    loadSalesData();
+    loadReturnsData();
+    loadDebtsData();
+    loadReportsData();
+  }
+
+  // ============ دوال المخزن ============
+  async function loadInventoryData() {
+    const items = await getAll('inventory');
+    const totalValue = items.reduce((sum, it) => sum + (it.purchasePrice * it.quantity), 0);
+    const lowStock = items.filter(it => it.quantity < 5);
+    
+    const countEl = document.getElementById('invCount');
+    const valueEl = document.getElementById('invValue');
+    const lowEl = document.getElementById('invLow');
+    if (countEl) countEl.textContent = items.length;
+    if (valueEl) valueEl.textContent = totalValue.toFixed(2);
+    if (lowEl) lowEl.textContent = lowStock.length;
+
+    const tbody = document.getElementById('invTableBody');
+    if (tbody) {
+      tbody.innerHTML = items.map(it => `
+        <tr>
+          <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
+          <td>${it.purchasePrice}</td>
+          <td>${it.sellingPrice}</td>
+          <td>${it.quantity}</td>
+          <td>${it.minThreshold || '-'}</td>
+          <td>
+            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
+            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // تحديث قوائم الاختيار
+    await updateSelects();
+  }
+
+  async function updateSelects() {
+    const items = await getAll('inventory');
+    const saleSelect = document.getElementById('saleItem');
+    const returnSelect = document.getElementById('returnItem');
+    
+    if (saleSelect) {
+      saleSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.quantity} متوفر)</option>`).join('');
+      if (items.length > 0) {
+        saleSelect.dispatchEvent(new Event('change'));
+      }
+    }
+    if (returnSelect) {
+      returnSelect.innerHTML = items.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+    }
+  }
+
+  window.searchInventory = async function() {
+    const term = document.getElementById('invSearch')?.value?.toLowerCase() || '';
+    const all = await getAll('inventory');
+    const filtered = all.filter(i => i.name.toLowerCase().includes(term));
+    const tbody = document.getElementById('invTableBody');
+    if (tbody) {
+      tbody.innerHTML = filtered.map(it => `
+        <tr>
+          <td>${it.name} ${it.quantity < 5 ? '<span class="badge">⚠️ منخفض</span>' : ''}</td>
+          <td>${it.purchasePrice}</td>
+          <td>${it.sellingPrice}</td>
+          <td>${it.quantity}</td>
+          <td>${it.minThreshold || '-'}</td>
+          <td>
+            <button onclick="editInventory(${it.id})" class="outline">✏️</button>
+            <button onclick="deleteInventoryItem(${it.id})" class="red">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  };
+
+  window.showAddInventory = function() {
+    const container = document.getElementById('invFormContainer');
+    if (container) {
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
+          <h4>إضافة قطعة جديدة</h4>
+          <input id="invName" placeholder="اسم القطعة" style="width:100%;margin:0.5rem 0;">
+          <input id="invPurchase" type="number" placeholder="سعر الشراء" step="0.01" style="width:100%;margin:0.5rem 0;">
+          <input id="invSelling" type="number" placeholder="سعر البيع" step="0.01" style="width:100%;margin:0.5rem 0;">
+          <input id="invQty" type="number" placeholder="الكمية" value="1" style="width:100%;margin:0.5rem 0;">
+          <input id="invMin" type="number" placeholder="الحد الأدنى (اختياري)" style="width:100%;margin:0.5rem 0;">
+          <button onclick="addInventoryItem()" class="green">حفظ</button>
           <button onclick="document.getElementById('invFormContainer').style.display='none'" class="outline">إلغاء</button>
         </div>
       `;
-    };
-
-    window.updateInventory = async function(id) {
-      const name = document.getElementById('editName').value.trim();
-      const purchase = parseFloat(document.getElementById('editPurchase').value);
-      const selling = parseFloat(document.getElementById('editSelling').value);
-      const qty = parseInt(document.getElementById('editQty').value);
-      const min = parseInt(document.getElementById('editMin').value) || 0;
-      await updateRecord('inventory', { id, name, purchasePrice: purchase, sellingPrice: selling, quantity: qty, minThreshold: min });
-      showToast('تم التحديث');
-      renderInventory();
-    };
-
-    window.deleteInventory = async function(id) {
-      if (confirm('حذف القطعة؟')) {
-        await deleteRecord('inventory', id);
-        showToast('تم الحذف');
-        renderInventory();
-      }
-    };
-
-    // ---------- Sales ----------
-    async function renderSales() {
-      const sales = await getAll('sales');
-      const inventory = await getAll('inventory');
-      const cashSales = sales.filter(s => s.paymentMethod === 'نقدي').reduce((sum,s) => sum + (s.total||0), 0);
-      const creditSales = sales.filter(s => s.paymentMethod === 'آجل').reduce((sum,s) => sum + (s.total||0), 0);
-      let html = `
-        <div class="card">
-          <div class="flex-row"><h3>💰 تسجيل بيع</h3></div>
-          <select id="saleItem" style="flex:2">${inventory.map(i => `<option value="${i.id}">${i.name} (${i.quantity} متوفر)</option>`).join('')}</select>
-          <input id="saleQty" type="number" placeholder="الكمية" value="1" min="1">
-          <input id="salePrice" type="number" placeholder="السعر" step="0.01">
-          <input id="buyerName" placeholder="اسم المشتري (اختياري)">
-          <select id="paymentMethod"><option value="نقدي">نقدي</option><option value="آجل">آجل</option></select>
-          <input id="saleDate" type="date">
-          <button onclick="window.addSale()" class="green">💾 تسجيل البيع</button>
-        </div>
-        <div class="summary-grid">
-          <div class="summary-item"><span>💵 نقدي</span> <strong>${cashSales.toFixed(2)}</strong></div>
-          <div class="summary-item"><span>📋 آجل</span> <strong>${creditSales.toFixed(2)}</strong></div>
-          <div class="summary-item"><span>📊 إجمالي المبيعات</span> <strong>${(cashSales+creditSales).toFixed(2)}</strong></div>
-        </div>
-        <div class="card"><h4>سجل المبيعات</h4>
-          <table><thead><tr><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>المشتري</th><th>الدفع</th><th>التاريخ</th></tr></thead><tbody>
-          ${sales.slice().reverse().map(s => `<tr><td>${s.itemName||''}</td><td>${s.quantity}</td><td>${s.total}</td><td>${s.buyer||'-'}</td><td>${s.paymentMethod}</td><td>${s.date}</td></tr>`).join('')}
-          </tbody></table>
-        </div>
-      `;
-      contentDiv.innerHTML = html;
-      document.getElementById('saleDate').valueAsDate = new Date();
-      document.getElementById('saleItem').addEventListener('change', async function(){
-        const id = parseInt(this.value);
-        const inv = await getAll('inventory');
-        const item = inv.find(i => i.id === id);
-        if(item) document.getElementById('salePrice').value = item.sellingPrice;
-      });
-      // trigger initial price
-      const firstItem = inventory[0];
-      if(firstItem) document.getElementById('salePrice').value = firstItem.sellingPrice;
     }
+  };
 
-    window.addSale = async function() {
-      const itemId = parseInt(document.getElementById('saleItem').value);
-      const qty = parseInt(document.getElementById('saleQty').value);
-      const price = parseFloat(document.getElementById('salePrice').value);
-      const buyer = document.getElementById('buyerName').value.trim();
-      const method = document.getElementById('paymentMethod').value;
-      const date = document.getElementById('saleDate').value;
-      if (!qty || qty<=0 || isNaN(price)) return showToast('تأكد من الكمية والسعر');
-      const inventory = await getAll('inventory');
-      const item = inventory.find(i => i.id === itemId);
-      if (!item) return showToast('القطعة غير موجودة');
-      if (item.quantity < qty) return showToast('المخزون غير كافٍ');
-      item.quantity -= qty;
-      await updateRecord('inventory', item);
-      const total = price * qty;
-      await addRecord('sales', { itemId, itemName: item.name, quantity: qty, price, total, buyer, paymentMethod: method, date });
-      if (method === 'آجل') {
-        await addRecord('debts', { buyer: buyer || 'غير معروف', amount: total, paid: 0, date, saleItem: item.name, status: 'قائم' });
-      }
-      showToast('تم البيع بنجاح');
-      renderSales();
-    };
+  window.addInventoryItem = async function() {
+    const name = document.getElementById('invName')?.value?.trim();
+    const purchase = parseFloat(document.getElementById('invPurchase')?.value);
+    const selling = parseFloat(document.getElementById('invSelling')?.value);
+    const qty = parseInt(document.getElementById('invQty')?.value) || 0;
+    const min = parseInt(document.getElementById('invMin')?.value) || 0;
+    
+    if (!name || isNaN(purchase) || isNaN(selling)) {
+      showToast('يرجى تعبئة الحقول المطلوبة');
+      return;
+    }
+    
+    await addRecord('inventory', {
+      name,
+      purchasePrice: purchase,
+      sellingPrice: selling,
+      quantity: qty,
+      minThreshold: min
+    });
+    
+    showToast('تمت إضافة القطعة');
+    const container = document.getElementById('invFormContainer');
+    if (container) container.style.display = 'none';
+    await loadInventoryData();
+  };
 
-    // ---------- Returns ----------
-    async function renderReturns() {
-      const returns = await getAll('returns');
-      const totalReturned = returns.reduce((sum,r) => sum + (r.amount||0), 0);
-      let html = `
-        <div class="card">
-          <h4>↩️ تسجيل مرتجع</h4>
-          <select id="returnItem">${ (await getAll('inventory')).map(i => `<option value="${i.id}">${i.name}</option>`).join('') }</select>
-          <input id="returnQty" type="number" placeholder="الكمية" value="1">
-          <input id="returnAmount" type="number" placeholder="المبلغ المسترجع" step="0.01">
-          <select id="returnReason"><option>عطل</option><option>خطأ</option><option>أخرى</option></select>
-          <input id="returnDate" type="date">
-          <button onclick="window.addReturn()" class="oran
+  window.editInventory = async function(id) {
+    const all = await getAll('inventory');
+    const item = all.find(i => i.id === id);
+    if (!item) return;
+    
+    const container = document.getElementById('invFormContainer');
+    if (container) {
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div style="background:#f9fcff; padding:1rem; border-radius:16px; border:1px solid #dce3ec;">
+          <h4>تعديل القطعة</h4>
+          <input id="editName" value="${item.name}" style="width:100%;margin:0.5rem 0;">
+          <input id="editPurchase" type="number" value="${item.purchasePrice}" step="0.01" style="width:100%;margin:0.5rem 0;">
+          <input id="editSelling" type="number" value="${item.sell
