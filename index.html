@@ -565,4 +565,82 @@ function deleteMaintenance(id) {
 }
 
 // ==================== الباركود ====================
+    // ==================== الباركود ====================
+let barcodeCounter = parseInt(localStorage.getItem('barcodeCounter') || '1');
+
+function initBarcodes() {
+    document.getElementById('barcodeNext').textContent = barcodeCounter;
+    document.getElementById('barcodeStart').value = barcodeCounter;
+}
+
+function generateBarcodes() {
+    const startNum = parseInt(document.getElementById('barcodeStart').value) || barcodeCounter;
+    const prefix = 'WS-';
+    const count = 20;
+    
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        const num = startNum + i;
+        const code = prefix + String(num).padStart(4, '0');
+        html += '<div class="barcode-item">' +
+            '<svg id="bc' + i + '" style="width:100%;height:40px;"></svg>' +
+            '<div class="code">' + code + '</div>' +
+            '<div class="num">' + num + '</div>' +
+            '</div>';
+    }
+    
+    document.getElementById('barcodeArea').innerHTML = html;
+    
+    // رسم الباركودات
+    for (let i = 0; i < count; i++) {
+        const num = startNum + i;
+        const code = prefix + String(num).padStart(4, '0');
+        drawBarcode('bc' + i, code);
+    }
+    
+    // تحديث العداد
+    barcodeCounter = startNum + count;
+    localStorage.setItem('barcodeCounter', barcodeCounter.toString());
+    document.getElementById('barcodeNext').textContent = barcodeCounter;
+    document.getElementById('barcodeStart').value = barcodeCounter;
+    
+    showMsg('✅ تم إنشاء 20 باركود');
+}
+
+function drawBarcode(svgId, code) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    
+    // توليد نمط بسيط للباركود
+    let bars = '';
+    const chars = code.split('');
+    let x = 0;
+    
+    for (let i = 0; i < chars.length; i++) {
+        const charCode = chars[i].charCodeAt(0);
+        const width = (charCode % 3) + 1;
+        const height = 30 + (charCode % 10);
+        
+        if (i % 2 === 0) {
+            bars += '<rect x="' + x + '" y="5" width="' + width + '" height="' + height + '" fill="black"/>';
+        } else {
+            bars += '<rect x="' + x + '" y="5" width="' + width + '" height="' + height + '" fill="black"/>';
+        }
+        x += width + 1;
+    }
+    
+    svg.innerHTML = bars;
+    svg.setAttribute('viewBox', '0 0 ' + x + ' 40');
+}
+
+function printBarcodes() {
+    window.print();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+});
+</script>
+</body>
+</html>
             
