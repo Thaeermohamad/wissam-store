@@ -1231,6 +1231,308 @@ function payDebt(id) {
 }
 
 console.log('🟢 الجزء الرابع جاهز - المرتجعات والديون');
-        </script>
+        <script>
+// ==================== الصيانة ====================
+let maintenanceFilter = 'all';
+let maintenanceSearchTerm = '';
+
+function addMaintenance() {
+    const serialEl = document.getElementById('mSerial');
+    const customerEl = document.getElementById('mCustomer');
+    const phoneEl = document.getElementById('mPhone');
+    const deviceEl = document.getElementById('mDevice');
+    const issueEl = document.getElementById('mIssue');
+    const dateEl = document.getElementById('mDate');
+    const costEl = document.getElementById('mCost');
+    const statusEl = document.getElementById('mStatus');
+    
+    if (!serialEl || !customerEl || !phoneEl || !deviceEl || !dateEl || !statusEl) return;
+    
+    const serial = serialEl.value.trim();
+    const customer = customerEl.value.trim();
+    const phone = phoneEl.value.trim();
+    const device = deviceEl.value.trim();
+    const issue = issueEl ? issueEl.value.trim() : '';
+    const date = dateEl.value;
+    const cost = costEl ? parseFloat(costEl.value) || 0 : 0;
+    const status = statusEl.value;
+    
+    if (!serial || !customer || !phone || !device) {
+        showMsg('⚠️ الحقول المطلوبة: السيريال، الزبون، الهاتف، نوع الجهاز');
+        return;
+    }
+    
+    const tx = db.transaction('maintenance', 'readwrite');
+    tx.objectStore('maintenance').add({
+        serial: serial,
+        customer: customer,
+        phone: phone,
+        device: device,
+        issue: issue,
+        date: date,
+        cost: cost,
+        status: status,
+        received: 'لا',
+        archived: false
+    });
+    
+    tx.oncomplete = function() {
+        showMsg('✅ تم إضافة الجهاز: ' + device + ' | ' + serial);
+        
+        // تفريغ الحقول
+        serialEl.value = '';
+        customerEl.value = '';
+        phoneEl.value = '';
+        deviceEl.value = '';
+        if (issueEl) issueEl.value = '';
+        if (costEl) costEl.value = '';
+        dateEl.value = new Date().toISOString().split('T')[0];
+        statusEl.value = 'waiting';
+        
+        loadMaintenance();
+    };
+}
+
+function loadMaintenance() {
+    if (!db) return;
+    
+    const tx = db.transaction('maintenance', 'readonly');
+    const request = tx.objectStore('maintenance').getAll();
+    
+    request.onsuccess = function(e) {
+        let items = e.target.result;
+        
+        // ترتيب: الأحدث أولاً
+        items.sort(function(a, b) { return b.id - a.id; });
+        
+        // فلترة
+        if (maintenanceFilter === 'archived') {
+            items = items.filter(function(i) { return i.archived === true; });
+        } else if (maintenanceFilter !== 'all') {
+            items = items.filter(function(i) { return i.status === maintenanceFilter && !i.archived; });
+        } else {
+            items = items.filter(function(i) { return !i.archived; });
+        }
+        
+        // بحث
+        if (maintenanceSearchTerm) {
+            const term = maintenanceSearchTerm.toLowerCase();
+            items = items.filter(function(i) {
+                return (i.serial && i.serial.toLowerCase().includes(term)) ||
+                       (i.customer && i.customer.toLowerCase().includes(term)) ||
+                       (i.phone && i.phone.includes(term)) ||
+                       (i.device && i.device.toLowerCase().includes(term));
+            });
+        }
+        
+        // إحصائيات
+        const allItems = e.target.result;
+        const waiting = allItems.filter(function(i) { return i.status === 'waiting' && !i.archived; }).length;
+        const fixing = allItems.filter(function(i) { return i.status === 'fixing' && !i.archived; }).length;
+        const done = allItems.filter(function(i) { return i.status === 'done' && !i.archived; }).length;
+        
+        const mWaiting = document.getElementById('mWaiting');
+        const mFixing = document.getElementById('mFixing');
+        const mDone = document.getElementById('mDone');
+        
+        if (mWaiting) mWaiting.textContent = waiting;
+        if (mFixing) mFixing.textContent = fixing;
+        if (mDone) mDone.textContent = done;
+        
+        // جدول الصيانة
+        const tbody = document.getElementById('maintenanceTable');
+        if (!tbody) return;
+        
+        tbody.innerHTML = items.length > 0 ? items.map(function(item) {
+            let statusBadge = '';
+            let statusText = '';
+            
+            switch(item.status) {
+                case 'waiting':
+                    statusBadge = 'badge-warning';
+                    statusText = '⏳ انتظار';
+                    break;
+                case 'fixing':
+                    statusBadge = 'badge-info';
+                    statusText = '🔧 صيانة';
+                    break;
+                case 'done':
+                    statusBadge = 'badge-success';
+                    statusText = '✅ جاهز';
+                    break;
+            }
+            
+            if (item.archived) {
+                statusBadge = 'badge-secondary';
+                statusText = '📦 أرشيف';
+            }
+            
+            const receivedBadge = item.received === 'نعم' ? 
+                '<span class="badge badge-success">✅ تم الاستلام</span>' : 
+                '<span class="badge badge-warning">⏳ لم يستلم</span>';
+            
+            return '<tr>' +
+                '<td><strong>' + (item.serial || '-') + '</strong></td>' +
+                '<td>' + (item.customer || '-') + '</td>' +
+                '<td>' + (item.phone || '-') + '</td>' +
+                '<td>' + (item.device || '-') + '</td>' +
+                '<td><span class="badge ' + statusBadge + '">' + statusText + '</span><br><small>' + receivedBadge + '</small></td>' +
+                '<td>' + (item.date || '-') + '</td>' +
+                '<td style="white-space:nowrap;">' +
+                (!item.archived ? 
+                    '<select onchange="changeStatus(' + item.id + ', this.value)" style="width:90px;font-size:11px;padding:5px;">' +
+                    '<option value="">تغيير</option>' +
+                    '<option value="waiting">⏳ انتظار</option>' +
+                    '<option value="fixing">🔧 صيانة</option>' +
+                    '<option value="done">✅ جاهز</option>' +
+                    '</select> ' +
+                    '<button class="green small" onclick="archiveDevice(' + item.id + ')">📤 تسليم</button> ' +
+                    '<button class="blue-btn small" onclick="toggleReceived(' + item.id + ')">📋 استلم</button> ' +
+                    '<button class="orange small" onclick="editMaintenance(' + item.id + ')">✏️</button> '
+                    : '') +
+                '<button class="red small" onclick="deleteMaintenance(' + item.id + ')">🗑️</button>' +
+                '</td>' +
+                '</tr>';
+        }).join('') : '<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد أجهزة</td></tr>';
+    };
+}
+
+function changeStatus(id, newStatus) {
+    if (!newStatus) return;
+    
+    const tx = db.transaction('maintenance', 'readwrite');
+    const request = tx.objectStore('maintenance').get(id);
+    
+    request.onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        
+        item.status = newStatus;
+        tx.objectStore('maintenance').put(item);
+        
+        tx.oncomplete = function() {
+            showMsg('✅ تم تغيير الحالة');
+            loadMaintenance();
+        };
+    };
+}
+
+function archiveDevice(id) {
+    const tx = db.transaction('maintenance', 'readwrite');
+    const request = tx.objectStore('maintenance').get(id);
+    
+    request.onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        
+        if (item.status !== 'done') {
+            showMsg('⚠️ يجب أن يكون الجهاز جاهزاً قبل التسليم');
+            return;
+        }
+        
+        if (!confirm('تأكيد تسليم الجهاز: ' + item.device + ' | ' + item.serial + '؟')) return;
+        
+        item.archived = true;
+        item.received = 'نعم';
+        tx.objectStore('maintenance').put(item);
+        
+        tx.oncomplete = function() {
+            showMsg('📤 تم تسليم الجهاز ونقله للأرشيف');
+            loadMaintenance();
+        };
+    };
+}
+
+function toggleReceived(id) {
+    const tx = db.transaction('maintenance', 'readwrite');
+    const request = tx.objectStore('maintenance').get(id);
+    
+    request.onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        
+        item.received = item.received === 'نعم' ? 'لا' : 'نعم';
+        tx.objectStore('maintenance').put(item);
+        
+        tx.oncomplete = function() {
+            showMsg(item.received === 'نعم' ? '✅ تم تأكيد الاستلام' : '⏳ تم إلغاء الاستلام');
+            loadMaintenance();
+        };
+    };
+}
+
+function editMaintenance(id) {
+    const tx = db.transaction('maintenance', 'readonly');
+    const request = tx.objectStore('maintenance').get(id);
+    
+    request.onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        
+        const serialEl = document.getElementById('mSerial');
+        const customerEl = document.getElementById('mCustomer');
+        const phoneEl = document.getElementById('mPhone');
+        const deviceEl = document.getElementById('mDevice');
+        const issueEl = document.getElementById('mIssue');
+        const dateEl = document.getElementById('mDate');
+        const costEl = document.getElementById('mCost');
+        const statusEl = document.getElementById('mStatus');
+        
+        if (!serialEl || !customerEl || !phoneEl || !deviceEl || !dateEl || !statusEl) return;
+        
+        serialEl.value = item.serial || '';
+        customerEl.value = item.customer || '';
+        phoneEl.value = item.phone || '';
+        deviceEl.value = item.device || '';
+        if (issueEl) issueEl.value = item.issue || '';
+        dateEl.value = item.date || '';
+        if (costEl) costEl.value = item.cost || 0;
+        statusEl.value = item.status || 'waiting';
+        
+        // حذف القديم بعد التعديل
+        const txDel = db.transaction('maintenance', 'readwrite');
+        txDel.objectStore('maintenance').delete(id);
+        
+        txDel.oncomplete = function() {
+            showMsg('✏️ تم تحميل البيانات للتعديل - اضغط إضافة جهاز بعد التعديل');
+        };
+        
+        // التمرير للأعلى
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+}
+
+function deleteMaintenance(id) {
+    if (!confirm('هل أنت متأكد من حذف هذا الجهاز؟')) return;
+    
+    const tx = db.transaction('maintenance', 'readwrite');
+    tx.objectStore('maintenance').delete(id);
+    
+    tx.oncomplete = function() {
+        showMsg('🗑️ تم حذف الجهاز');
+        loadMaintenance();
+    };
+}
+
+function searchMaintenance() {
+    const searchEl = document.getElementById('mSearch');
+    maintenanceSearchTerm = searchEl ? searchEl.value : '';
+    loadMaintenance();
+}
+
+function filterMaintenance(filter) {
+    maintenanceFilter = filter;
+    
+    // تحديث الأزرار
+    document.querySelectorAll('.filter-btns button').forEach(function(btn, index) {
+        const filters = ['all', 'waiting', 'fixing', 'done', 'archived'];
+        btn.style.opacity = (filters[index] === filter) ? '1' : '0.6';
+    });
+    
+    loadMaintenance();
+}
+
+console.log('🟢 الجزء الخامس جاهز - الصيانة كاملة');
+</script>
 </body>
 </html>
