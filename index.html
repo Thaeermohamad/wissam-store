@@ -634,7 +634,35 @@ function drawBarcode(svgId, code) {
 }
 
 function printBarcodes() {
-    window.print();
+    const barcodeArea = document.getElementById('barcodeArea');
+    if (!barcodeArea || barcodeArea.innerHTML.includes('اضغط')) {
+        showMsg('⚠️ أنشئ الباركودات أولاً');
+        return;
+    }
+    
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    printWindow.document.write('<!DOCTYPE html><html dir="rtl"><head><title>باركودات مركز وسام</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write('*{margin:0;padding:0;box-sizing:border-box;}');
+    printWindow.document.write('body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;}');
+    printWindow.document.write('h2{margin-bottom:20px;color:#1e3c5c;}');
+    printWindow.document.write('.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;text-align:center;}');
+    printWindow.document.write('.item{border:1px dashed #ccc;padding:15px 10px;border-radius:8px;page-break-inside:avoid;}');
+    printWindow.document.write('.code{font-size:12px;font-weight:bold;letter-spacing:1px;margin-top:5px;}');
+    printWindow.document.write('.num{font-size:10px;color:#888;}');
+    printWindow.document.write('svg{width:100%;height:40px;}');
+    printWindow.document.write('@media print{body{margin:0;padding:10px;}}');
+    printWindow.document.write('</style></head><body>');
+    printWindow.document.write('<h2>🏷️ باركودات مركز وسام</h2>');
+    printWindow.document.write('<div class="grid">');
+    printWindow.document.write(barcodeArea.innerHTML);
+    printWindow.document.write('</div>');
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    
+    setTimeout(function() {
+        printWindow.print();
+    }, 500);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
