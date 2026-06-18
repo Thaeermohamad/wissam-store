@@ -1509,8 +1509,7 @@ function deleteMaintenance(id) {
     tx.objectStore('maintenance').delete(id);
     
     tx.oncomplete = function() {
-        showMsg('🗑️ تم حذف الجهاز');
-        loadMaintenance();
+        showMsg('🗑️ تم حذف الجهاز');        loadMaintenance();
     };
 }
 
@@ -1533,6 +1532,251 @@ function filterMaintenance(filter) {
 }
 
 console.log('🟢 الجزء الخامس جاهز - الصيانة كاملة');
+    
+<script>
+// ==================== الباركود ====================
+let barcodeCounter = parseInt(localStorage.getItem('barcodeCounter') || '1');
+
+function loadBarcodes() {
+    const pageEl = document.getElementById('page-barcodes');
+    if (!pageEl) return;
+    
+    pageEl.innerHTML = `
+        <div class="summary">
+            <div class="summary-box">
+                <div class="number" id="barcodeStart">${barcodeCounter}</div>
+                <div class="label">الباركود التالي</div>
+            </div>
+            <div class="summary-box">
+                <div class="number" id="barcodeCount">0</div>
+                <div class="label">عدد الباركودات المطبوعة</div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <label>البداية من رقم:</label>
+            <input type="number" id="barcodeStartNum" value="${barcodeCounter}" style="width:100px" min="1">
+            <button class="green" onclick="generateBarcodes()">🖨️ إنشاء باركودات للطباعة</button>
+        </div>
+        
+        <div id="barcodePreview" style="margin-top:20px; background:white; padding:20px; border-radius:12px;">
+            <p style="color:#999; text-align:center;">اضغط على الزر لإنشاء باركودات جديدة</p>
+        </div>
+    `;
+}
+
+function generateBarcodes() {
+    const startNum = parseInt(document.getElementById('barcodeStartNum').value) || barcodeCounter;
+    const count = 20;
+    const prefix = 'WESAM-';
+    
+    let html = '<h3 style="text-align:center; margin-bottom:15px;">🏷️ باركودات مركز وسام (صفحة للطباعة)</h3>';
+    html += '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px; text-align:center;">';
+    
+    for (let i = 0; i < count; i++) {
+        const num = startNum + i;
+        const code = prefix + String(num).padStart(4, '0');
+        const barcodeSvg = generateBarcodeSVG(code);
+        
+        html += `
+            <div style="border:1px dashed #ccc; padding:10px; border-radius:8px; page-break-inside:avoid;">
+                <div style="margin-bottom:5px;">${barcodeSvg}</div>
+                <div style="font-size:11px; font-weight:bold; letter-spacing:1px;">${code}</div>
+                <div style="font-size:9px; color:#888;">${num}</div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    html += '<div style="text-align:center; margin-top:15px; color:#888; font-size:12px;">';
+    html += 'باركودات من ' + prefix + String(startNum).padStart(4, '0') + ' إلى ' + prefix + String(startNum + count - 1).padStart(4, '0');
+    html += '</div>';
+    html += '<div style="text-align:center; margin-top:10px;">';
+    html += '<button class="green" onclick="printBarcodes()">🖨️ طباعة هذه الصفحة</button> ';
+    html += '<button class="blue-btn" onclick="saveAndNext()">💾 حفظ والانتقال للتالي (20)</button>';
+    html += '</div>';
+    
+    const preview = document.getElementById('barcodePreview');
+    if (preview) {
+        preview.innerHTML = html;
+    }
+}
+
+function generateBarcodeSVG(code) {
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%';
+    const patterns = {
+        '0':'101001101101', '1':'110100101011', '2':'101100101011', '3':'110110010101',
+        '4':'101001101011', '5':'110100110101', '6':'101100110101', '7':'101001011011',
+        '8':'110100101101', '9':'101100101101', 'A':'110101001011', 'B':'101101001011',
+        'C':'110110100101', 'D':'101011001011', 'E':'110101100101', 'F':'101101100101',
+        'G':'101010011011', 'H':'110101001101', 'I':'101101001101', 'J':'101011001101',
+        'K':'110101010011', 'L':'101101010011', 'M':'110110101001', 'N':'101011010011',
+        'O':'110101101001', 'P':'101101101001', 'Q':'101010110011', 'R':'110101011001',
+        'S':'101101011001', 'T':'101011011001', 'U':'110010101011', 'V':'100110101011',
+        'W':'110011010101', 'X':'100101101011', 'Y':'110010110101', 'Z':'100110110101',
+        '-':'100101011011', '.':'110010101101', ' ':'100110101101', '$':'100100100101',
+        '/':'100100101001', '+':'100101001001', '%':'101001001001'
+    };
+    
+    code = '*' + code.toUpperCase() + '*';
+    let binary = '';
+    for (let i = 0; i < code.length; i++) {
+        const char = code[i];
+        if (patterns[char]) {
+            binary += patterns[char] + '0';
+        }
+    }
+    
+    const width = binary.length * 2;
+    const height = 50;
+    let svg = '<svg width="' + width + '" height="' + height + '" xmlns="http://www.w3.org/2000/svg">';
+    
+    for (let i = 0; i < binary.length; i++) {
+        if (binary[i] === '1') {
+            svg += '<rect x="' + (i * 2) + '" y="0" width="2" height="' + height + '" fill="black"/>';
+        }
+    }
+    
+    svg += '</svg>';
+    return svg;
+}
+
+function printBarcodes() {
+    const preview = document.getElementById('barcodePreview');
+    if (!preview) return;
+    
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    printWindow.document.write('<html dir="rtl"><head><title>باركودات مركز وسام</title>');
+    printWindow.document.write('<style>body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;}@media print{body{margin:0;}}</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(preview.innerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    
+    setTimeout(function() {
+        printWindow.print();
+    }, 500);
+}
+
+function saveAndNext() {
+    const startNum = parseInt(document.getElementById('barcodeStartNum').value) || barcodeCounter;
+    const newCounter = startNum + 20;
+    
+    barcodeCounter = newCounter;
+    localStorage.setItem('barcodeCounter', newCounter.toString());
+    
+    document.getElementById('barcodeStartNum').value = newCounter;
+    showMsg('✅ تم الحفظ! الباركود التالي: ' + newCounter);
+    generateBarcodes();
+}
+
+// ==================== التقارير ====================
+function loadReports() {
+    const pageEl = document.getElementById('page-reports');
+    if (!pageEl) return;
+    
+    Promise.all([
+        getAll('items'),
+        getAll('sales'),
+        getAll('returns'),
+        getAll('debts'),
+        getAll('maintenance')
+    ]).then(function(results) {
+        const items = results[0];
+        const sales = results[1];
+        const returns = results[2];
+        const debts = results[3];
+        const maintenance = results[4];
+        
+        const totalSales = sales.reduce(function(s, r) { return s + r.total; }, 0);
+        const totalReturns = returns.reduce(function(s, r) { return s + (r.amount || 0); }, 0);
+        const totalCost = items.reduce(function(s, i) { return s + (i.cost * i.quantity); }, 0);
+        const profit = totalSales - totalReturns - totalCost;
+        const pendingDebts = debts.filter(function(d) { return d.status === 'معلق'; })
+            .reduce(function(s, d) { return s + (d.amount - (d.paid || 0)); }, 0);
+        
+        const waitingM = maintenance.filter(function(m) { return m.status === 'waiting' && !m.archived; }).length;
+        const fixingM = maintenance.filter(function(m) { return m.status === 'fixing' && !m.archived; }).length;
+        const doneM = maintenance.filter(function(m) { return m.status === 'done' && !m.archived; }).length;
+        
+        pageEl.innerHTML = `
+            <h3>📊 التقارير الشاملة</h3>
+            
+            <div class="summary">
+                <div class="summary-box">
+                    <div class="number">${items.length}</div>
+                    <div class="label">قطع المخزن</div>
+                </div>
+                <div class="summary-box">
+                    <div class="number">${formatPrice(totalSales)}</div>
+                    <div class="label">إجمالي المبيعات</div>
+                </div>
+                <div class="summary-box">
+                    <div class="number">${formatPrice(totalReturns)}</div>
+                    <div class="label">المرتجعات</div>
+                </div>
+                <div class="summary-box">
+                    <div class="number" style="color:${profit >= 0 ? '#27ae60' : '#e74c3c'}">${formatPrice(profit)}</div>
+                    <div class="label">صافي الأرباح</div>
+                </div>
+                <div class="summary-box">
+                    <div class="number" style="color:#e74c3c">${formatPrice(pendingDebts)}</div>
+                    <div class="label">ديون معلقة</div>
+                </div>
+            </div>
+            
+            <h3>🔧 إحصائيات الصيانة</h3>
+            <div class="summary">
+                <div class="summary-box">
+                    <div class="number" style="color:#e67e22;">${waitingM}</div>
+                    <div class="label">قيد الانتظار</div>
+                </div>
+                <div class="summary-box">
+                    <div class="number" style="color:#3498db;">${fixingM}</div>
+                    <div class="label">في الصيانة</div>
+                </div>
+                <div class="summary-box">
+                    <div class="number" style="color:#27ae60;">${doneM}</div>
+                    <div class="label">جاهز للتسليم</div>
+                </div>
+                <div class="summary-box">
+                    <div class="number">${maintenance.filter(function(m) { return m.archived; }).length}</div>
+                    <div class="label">تم تسليمه</div>
+                </div>
+            </div>
+            
+            <h3>📈 أكثر القطع مبيعاً</h3>
+            <table>
+                <thead><tr><th>القطعة</th><th>عدد مرات البيع</th><th>الكمية المباعة</th></tr></thead>
+                <tbody>
+                    ${getTopSelling(items, sales)}
+                </tbody>
+            </table>
+        `;
+    });
+}
+
+function getTopSelling(items, sales) {
+    const stats = {};
+    
+    sales.forEach(function(s) {
+        if (!stats[s.itemName]) {
+            stats[s.itemName] = { count: 0, qty: 0 };
+        }
+        stats[s.itemName].count++;
+        stats[s.itemName].qty += s.quantity || 0;
+    });
+    
+    const sorted = Object.entries(stats).sort(function(a, b) {
+        return b[1].qty - a[1].qty;
+    }).slice(0, 10);
+    
+    return sorted.length > 0 ? sorted.map(function(entry) {
+        return '<tr><td>' + entry[0] + '</td><td>' + entry[1].count + '</td><td>' + entry[1].qty + '</td></tr>';
+    }).join('') : '<tr><td colspan="3" style="text-align:center;color:#999;">لا توجد مبيعات بعد</td></tr>';
+}
+
+console.log('🟢 الجزء 6-1 جاهز - الباركود والتقارير');
 </script>
-</body>
-</html>
+
+            
