@@ -1777,6 +1777,232 @@ function getTopSelling(items, sales) {
 }
 
 console.log('🟢 الجزء 6-1 جاهز - الباركود والتقارير');
+<script>
+// ==================== الفواتير ====================
+function loadInvoices() {
+    const pageEl = document.getElementById('page-invoices');
+    if (!pageEl) return;
+    
+    Promise.all([
+        getAll('sales'),
+        getAll('maintenance')
+    ]).then(function(results) {
+        const sales = results[0];
+        const maintenance = results[1];
+        
+        pageEl.innerHTML = `
+            <h3>🖨️ سجل الفواتير</h3>
+            
+            <h3 style="margin-top:20px;">💰 فواتير المبيعات</h3>
+            <table>
+                <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th><th>النوع</th><th>طباعة</th></tr></thead>
+                <tbody>
+                    ${sales.length > 0 ? sales.reverse().map(function(s) {
+                        return '<tr>' +
+                            '<td>' + (s.invoiceNumber || '-') + '</td>' +
+                            '<td>' + (s.date || '-') + '</td>' +
+                            '<td>' + (s.itemName || '-') + '</td>' +
+                            '<td>' + formatPrice(s.total) + '</td>' +
+                            '<td>' + (s.type || '-') + '</td>' +
+                            '<td><button class="blue-btn small" onclick="printInvoice(\'' + (s.invoiceNumber || '') + '\', \'' + (s.date || '') + '\', \'' + (s.itemName || '') + '\', ' + s.total + ', \'' + (s.type || '') + '\', \'' + (s.customer || '') + '\')">🖨️ طباعة</button></td>' +
+                            '</tr>';
+                    }).join('') : '<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد فواتير</td></tr>'}
+                </tbody>
+            </table>
+            
+            <h3 style="margin-top:20px;">🔧 فواتير الصيانة</h3>
+            <table>
+                <thead><tr><th>السيريال</th><th>الزبون</th><th>الجهاز</th><th>التكلفة</th><th>الحالة</th><th>طباعة</th></tr></thead>
+                <tbody>
+                    ${maintenance.length > 0 ? maintenance.filter(function(m) { return m.cost > 0; }).reverse().map(function(m) {
+                        return '<tr>' +
+                            '<td>' + (m.serial || '-') + '</td>' +
+                            '<td>' + (m.customer || '-') + '</td>' +
+                            '<td>' + (m.device || '-') + '</td>' +
+                            '<td>' + formatPrice(m.cost) + '</td>' +
+                            '<td>' + (m.archived ? '📦 مسلّم' : m.status) + '</td>' +
+                            '<td><button class="blue-btn small" onclick="printMaintenanceInvoice(\'' + (m.serial || '') + '\', \'' + (m.customer || '') + '\', \'' + (m.device || '') + '\', ' + (m.cost || 0) + ', \'' + (m.date || '') + '\')">🖨️ طباعة</button></td>' +
+                            '</tr>';
+                    }).join('') : '<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد فواتير صيانة</td></tr>'}
+                </tbody>
+            </table>
+        `;
+    });
+}
+
+function printInvoice(invoiceNum, date, items, total, type, customer) {
+    const printWindow = window.open('', '_blank', 'width=400,height=500');
+    printWindow.document.write('<html dir="rtl"><head><title>فاتورة ' + invoiceNum + '</title>');
+    printWindow.document.write('<style>body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;}');
+    printWindow.document.write('h2{margin-bottom:5px;} .line{border-top:1px dashed #ccc;margin:10px 0;}');
+    printWindow.document.write('@media print{body{margin:0;padding:10px;}}</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write('<h2>🧾 مركز وسام للإلكترونيات</h2>');
+    printWindow.document.write('<p>الفاتورة: <strong>' + invoiceNum + '</strong></p>');
+    printWindow.document.write('<p>التاريخ: ' + date + '</p>');
+    printWindow.document.write('<div class="line"></div>');
+    printWindow.document.write('<p><strong>الأصناف:</strong> ' + items + '</p>');
+    printWindow.document.write('<p><strong>النوع:</strong> ' + type + '</p>');
+    if (customer) printWindow.document.write('<p><strong>الزبون:</strong> ' + customer + '</p>');
+    printWindow.document.write('<div class="line"></div>');
+    printWindow.document.write('<h1 style="color:#27ae60;">' + formatPrice(total) + '</h1>');
+    printWindow.document.write('<p style="margin-top:30px;color:#888;">شكراً لتعاملكم معنا</p>');
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    setTimeout(function() { printWindow.print(); }, 500);
+}
+
+function printMaintenanceInvoice(serial, customer, device, cost, date) {
+    const printWindow = window.open('', '_blank', 'width=400,height=500');
+    printWindow.document.write('<html dir="rtl"><head><title>فاتورة صيانة</title>');
+    printWindow.document.write('<style>body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;}');
+    printWindow.document.write('h2{margin-bottom:5px;} .line{border-top:1px dashed #ccc;margin:10px 0;}');
+    printWindow.document.write('@media print{body{margin:0;padding:10px;}}</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write('<h2>🔧 فاتورة صيانة</h2>');
+    printWindow.document.write('<h3>مركز وسام للإلكترونيات</h3>');
+    printWindow.document.write('<div class="line"></div>');
+    printWindow.document.write('<p><strong>السيريال:</strong> ' + serial + '</p>');
+    printWindow.document.write('<p><strong>الزبون:</strong> ' + customer + '</p>');
+    printWindow.document.write('<p><strong>الجهاز:</strong> ' + device + '</p>');
+    printWindow.document.write('<p><strong>التاريخ:</strong> ' + date + '</p>');
+    printWindow.document.write('<div class="line"></div>');
+    printWindow.document.write('<h1 style="color:#27ae60;">' + formatPrice(cost) + '</h1>');
+    printWindow.document.write('<p style="margin-top:30px;color:#888;">شكراً لتعاملكم معنا</p>');
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    setTimeout(function() { printWindow.print(); }, 500);
+}
+
+// ==================== الإعدادات ====================
+function loadSettings() {
+    const pageEl = document.getElementById('page-settings');
+    if (!pageEl) return;
+    
+    pageEl.innerHTML = `
+        <h3>⚙️ الإعدادات</h3>
+        
+        <div class="card" style="background:white; padding:20px; border-radius:12px; margin-bottom:15px;">
+            <h4>💾 تصدير البيانات</h4>
+            <p style="color:#888; font-size:13px; margin:10px 0;">حفظ جميع البيانات كملف JSON</p>
+            <button class="green" onclick="exportData()">📥 تصدير جميع البيانات</button>
+        </div>
+        
+        <div class="card" style="background:white; padding:20px; border-radius:12px; margin-bottom:15px;">
+            <h4>📤 استيراد البيانات</h4>
+            <p style="color:#888; font-size:13px; margin:10px 0;">استعادة البيانات من ملف JSON تم تصديره مسبقاً</p>
+            <input type="file" id="importFile" accept=".json" style="margin-bottom:10px;">
+            <button class="blue-btn" onclick="importData()">📤 استيراد</button>
+        </div>
+        
+        <div class="card" style="background:white; padding:20px; border-radius:12px; margin-bottom:15px;">
+            <h4>🗑️ مسح جميع البيانات</h4>
+            <p style="color:#e74c3c; font-size:13px; margin:10px 0;">⚠️ هذا الإجراء لا يمكن التراجع عنه</p>
+            <button class="red" onclick="clearAllData()">🗑️ مسح كل البيانات</button>
+        </div>
+        
+        <div class="card" style="background:white; padding:20px; border-radius:12px;">
+            <h4>ℹ️ معلومات التطبيق</h4>
+            <p style="font-size:13px; margin:5px 0;">📱 مركز وسام للإلكترونيات</p>
+            <p style="font-size:13px; margin:5px 0;">🔄 الإصدار: 1.0</p>
+            <p style="font-size:13px; margin:5px 0;">💾 قاعدة البيانات: IndexedDB</p>
+            <p style="font-size:13px; margin:5px 0;">🌐 يعمل بدون إنترنت</p>
+        </div>
+    `;
+}
+
+async function exportData() {
+    try {
+        const data = {
+            items: await getAll('items'),
+            sales: await getAll('sales'),
+            returns: await getAll('returns'),
+            debts: await getAll('debts'),
+            maintenance: await getAll('maintenance'),
+            barcodes: await getAll('barcodes'),
+            invoices: await getAll('invoices'),
+            exportDate: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'wesam-backup-' + new Date().toISOString().split('T')[0] + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showMsg('✅ تم تصدير البيانات بنجاح');
+    } catch (err) {
+        showMsg('❌ فشل التصدير');
+        console.error(err);
+    }
+}
+
+function importData() {
+    const fileInput = document.getElementById('importFile');
+    if (!fileInput || !fileInput.files[0]) {
+        showMsg('⚠️ اختر ملف JSON أولاً');
+        return;
+    }
+    
+    if (!confirm('⚠️ سيتم دمج البيانات المستوردة مع الموجودة. هل تريد المتابعة؟')) return;
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'barcodes', 'invoices'];
+            
+            for (const storeName of stores) {
+                if (data[storeName] && Array.isArray(data[storeName])) {
+                    for (const record of data[storeName]) {
+                        const newRecord = { ...record };
+                        delete newRecord.id;
+                        await addRecord(storeName, newRecord);
+                    }
+                }
+            }
+            
+            showMsg('✅ تم استيراد البيانات بنجاح');
+        } catch (err) {
+            showMsg('❌ فشل الاستيراد - تأكد من صحة الملف');
+            console.error(err);
+        }
+    };
+    reader.readAsArrayBuffer(fileInput.files[0]);
+}
+
+async function clearAllData() {
+    if (!confirm('⚠️ هل أنت متأكد من مسح جميع البيانات؟')) return;
+    if (!confirm('‼️ تأكيد نهائي: سيتم مسح كل شيء بشكل دائم!')) return;
+    
+    try {
+        const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'barcodes', 'invoices'];
+        
+        for (const storeName of stores) {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            await new Promise(function(resolve) {
+                store.clear().onsuccess = resolve;
+            });
+        }
+        
+        showMsg('🗑️ تم مسح جميع البيانات');
+        navigateTo('home');
+    } catch (err) {
+        showMsg('❌ فشل مسح البيانات');
+        console.error(err);
+    }
+}
+
+console.log('🟢 الجزء 6-2 جاهز - الفواتير والإعدادات');
+console.log('🚀 تطبيق مركز وسام للإلكترونيات جاهز للاستخدام');
 </script>
+</body>
+</html>
 
             
