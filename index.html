@@ -626,5 +626,444 @@ function toggleCustomer() {
 
 console.log('🟢 الجزء الثاني جاهز - التنقل وقاعدة البيانات');
 </script>
+    <script>
+// ==================== المخزن ====================
+function addItem() {
+    const nameEl = document.getElementById('itemName');
+    const qtyEl = document.getElementById('itemQty');
+    const costEl = document.getElementById('itemCost');
+    const priceEl = document.getElementById('itemPrice');
+    
+    if (!nameEl || !qtyEl || !costEl || !priceEl) return;
+    
+    const name = nameEl.value.trim();
+    const qty = parseInt(qtyEl.value);
+    const cost = parseFloat(costEl.value);
+    const price = parseFloat(priceEl.value);
+    
+    if (!name || !qty || qty <= 0 || isNaN(cost) || cost < 0 || isNaN(price) || price < 0) {
+        showMsg('⚠️ املأ جميع الحقول بشكل صحيح');
+        return;
+    }
+    
+    const tx = db.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    const index = store.index('name');
+    const req = index.get(name);
+    
+    req.onsuccess = function(e) {
+        const existing = e.target.result;
+        
+        if (existing) {
+            // تحديث القطعة الموجودة
+            existing.quantity += qty;
+            existing.cost = cost;
+            existing.price = price;
+            store.put(existing);
+            showMsg('✅ تم تحديث: ' + name + ' (الكمية الجديدة: ' + existing.quantity + ')');
+        } else {
+            // إضافة قطعة جديدة
+            store.add({
+                name: name,
+                quantity: qty,
+                cost: cost,
+                price: price
+            });
+            showMsg('✅ تمت إضافة: ' + name);
+        }
+        
+        tx.oncomplete = function() {
+            nameEl.value = '';
+            qtyEl.value = '';
+            costEl.value = '';
+            priceEl.value = '';
+            loadStore();
+            fillSelects();
+        };
+    };
+}
+
+function loadStore() {
+    if (!db) return;
+    
+    const tx = db.transaction('items', 'readonly');
+    const request = tx.objectStore('items').getAll();
+    
+    request.onsuccess = function(e) {
+        const items = e.target.result;
+        
+        // جدول المخزن
+        const tbody = document.getElementById('storeTable');
+        if (!tbody) return;
+        
+        tbody.innerHTML = items.map(function(item) {
+            const profit = item.price - item.cost;
+            const profitColor = profit >= 0 ? '#27ae60' : '#e74c3c';
+            const lowBadge = item.quantity < 5 ? ' <span class="badge badge-warning">⚠️ منخفض</span>' : '';
+            
+            return '<tr>' +
+                '<td><strong>' + item.name + '</strong>' + lowBadge + '</td>' +
+                '<td>' + item.quantity + '</td>' +
+                '<td>' + formatPrice(item.cost) + '</td>' +
+                '<td>' + formatPrice(item.price) + '</td>' +
+                '<td style="color:' + profitColor + ';font-weight:bold;">' + formatPrice(profit) + '</td>' +
+                '<td>' +
+                '<button class="blue-btn small" onclick="editItem(' + item.id + ')">✏️ تعديل</button> ' +
+                '<button class="red small" onclick="deleteItem(' + item.id + ')">🗑️ حذف</button>' +
+                '</td>' +
+                '</tr>';
+        }).join('');
+        
+        // تنبيه النقص
+        const low = items.filter(function(i) { return i.quantity < 5; });
+        const alertDiv = document.getElementById('lowStockAlert');
+        if (alertDiv) {
+            if (low.length > 0) {
+                alertDiv.style.display = 'block';
+                alertDiv.innerHTML = '⚠️ <strong>تنبيه نقص مخزون:</strong> ' + 
+                    low.map(function(i) { return i.name + ' (الكمية: ' + i.quantity + ')'; }).join(' | ');
+            } else {
+                alertDiv.style.display = 'none';
+            }
+        }
+        
+        // ملخص المخزن
+        const totalItems = document.getElementById('totalItems');
+        const totalCost = document.getElementById('totalCost');
+        const totalValue = document.getElementById('totalValue');
+        
+        if (totalItems) totalItems.textContent = items.length + ' قطعة';
+        if (totalCost) totalCost.textContent = formatPrice(
+            items.reduce(function(s, i) { return s + (i.cost * i.quantity); }, 0)
+        );
+        if (totalValue) totalValue.textContent = formatPrice(
+            items.reduce(function(s, i) { return s + (i.price * i.quantity); }, 0)
+        );
+    };
+}
+
+function editItem(id) {
+    if (!db) return;
+    
+    const tx = db.transaction('items', 'readonly');
+    const request = tx.objectStore('items').get(id);
+    
+    request.onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        
+        const form = document.getElementById('editForm');
+        if (!form) return;
+        
+        form.style.display = 'block';
+        form.innerHTML = 
+            '<h4>✏️ تعديل: ' + item.name + '</h4>' +
+            '<div class="form-row">' +
+            '<input type="text" id="editName" value="' + item.name + '" style="flex:2">' +
+            '<input type="number" id="editQty" value="' + item.quantity + '" style="width:85px" min="1">' +
+            '<input type="number" id="editCost" value="' + item.cost + '" step="1" style="width:110px">' +
+            '<input type="number" id="editPrice" value="' + item.price + '" step="1" style="width:110px">' +
+            '<button class="green" onclick="saveEdit(' + id + ')">💾 حفظ</button>' +
+            '<button class="red small" onclick="document.getElementById(\'editForm\').style.display=\'none\'">❌ إلغاء</button>' +
+            '</div>';
+        
+        form.scrollIntoView({ behavior: 'smooth' });
+    };
+}
+
+function saveEdit(id) {
+    const nameEl = document.getElementById('editName');
+    const qtyEl = document.getElementById('editQty');
+    const costEl = document.getElementById('editCost');
+    const priceEl = document.getElementById('editPrice');
+    
+    if (!nameEl || !qtyEl || !costEl || !priceEl) return;
+    
+    const name = nameEl.value.trim();
+    const qty = parseInt(qtyEl.value);
+    const cost = parseFloat(costEl.value);
+    const price = parseFloat(priceEl.value);
+    
+    if (!name || !qty || qty <= 0 || isNaN(cost) || isNaN(price)) {
+        showMsg('⚠️ بيانات غير صحيحة');
+        return;
+    }
+    
+    const tx = db.transaction('items', 'readwrite');
+    tx.objectStore('items').put({
+        id: id,
+        name: name,
+        quantity: qty,
+        cost: cost,
+        price: price
+    });
+    
+    tx.oncomplete = function() {
+        showMsg('✅ تم حفظ التعديلات');
+        const form = document.getElementById('editForm');
+        if (form) form.style.display = 'none';
+        loadStore();
+        fillSelects();
+    };
+}
+
+function deleteItem(id) {
+    if (!confirm('هل أنت متأكد من حذف هذه القطعة؟')) return;
+    
+    const tx = db.transaction('items', 'readwrite');
+    tx.objectStore('items').delete(id);
+    
+    tx.oncomplete = function() {
+        showMsg('🗑️ تم الحذف');
+        loadStore();
+        fillSelects();
+    };
+}
+
+// ==================== الفاتورة المجمعة ====================
+let cart = [];
+let invoiceCounter = parseInt(localStorage.getItem('invoiceCounter') || '1000');
+
+function addToCart() {
+    const itemSelect = document.getElementById('saleItem');
+    const qtyInput = document.getElementById('saleQty');
+    
+    if (!itemSelect || !qtyInput) return;
+    
+    const itemId = parseInt(itemSelect.value);
+    const qty = parseInt(qtyInput.value);
+    
+    if (!itemId || !qty || qty <= 0) {
+        showMsg('⚠️ تأكد من البيانات');
+        return;
+    }
+    
+    const tx = db.transaction('items', 'readonly');
+    const request = tx.objectStore('items').get(itemId);
+    
+    request.onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) {
+            showMsg('❌ القطعة غير موجودة');
+            return;
+        }
+        
+        // حساب الكمية الموجودة مسبقاً في الفاتورة
+        const existing = cart.find(function(c) { return c.itemId === itemId; });
+        const alreadyInCart = existing ? existing.qty : 0;
+        const totalNeeded = alreadyInCart + qty;
+        
+        if (item.quantity < totalNeeded) {
+            showMsg('❌ المخزون غير كافٍ! المتوفر: ' + item.quantity + ' | في الفاتورة: ' + alreadyInCart);
+            return;
+        }
+        
+        if (existing) {
+            existing.qty += qty;
+            existing.total = existing.qty * item.price;
+        } else {
+            cart.push({
+                itemId: itemId,
+                name: item.name,
+                qty: qty,
+                price: item.price,
+                total: qty * item.price
+            });
+        }
+        
+        qtyInput.value = '1';
+        renderCart();
+        showMsg('🛒 تمت إضافة: ' + item.name);
+    };
+}
+
+function renderCart() {
+    const cartDiv = document.getElementById('cartItems');
+    const totalSpan = document.getElementById('cartTotal');
+    
+    if (!cartDiv || !totalSpan) return;
+    
+    const total = cart.reduce(function(s, c) { return s + c.total; }, 0);
+    
+    cartDiv.innerHTML = cart.length ? cart.map(function(c, i) {
+        return '<div class="cart-item">' +
+            '<span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span>' +
+            '<button class="red small" onclick="removeFromCart(' + i + ')">❌</button>' +
+            '</div>';
+    }).join('') : '<p style="color:#999;">الفارورة فارغة</p>';
+    
+    totalSpan.textContent = formatPrice(total);
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    renderCart();
+}
+
+function clearCart() {
+    cart = [];
+    renderCart();
+}
+
+function checkoutCart() {
+    if (cart.length === 0) {
+        showMsg('⚠️ الفاتورة فارغة');
+        return;
+    }
+    
+    const typeEl = document.getElementById('saleType');
+    const customerEl = document.getElementById('saleCustomer');
+    const invoiceEl = document.getElementById('invoiceNumber');
+    const dateEl = document.getElementById('saleDate');
+    
+    if (!typeEl || !dateEl) return;
+    
+    const type = typeEl.value;
+    const customer = customerEl ? customerEl.value.trim() : '';
+    const saleDate = dateEl.value;
+    
+    if (type === 'آجل' && !customer) {
+        showMsg('⚠️ أدخل اسم الزبون للبيع الآجل');
+        return;
+    }
+    
+    if (!saleDate) {
+        showMsg('⚠️ حدد تاريخ البيع');
+        return;
+    }
+    
+    // رقم الفاتورة
+    let invoiceNum = invoiceEl ? invoiceEl.value.trim() : '';
+    if (!invoiceNum) {
+        invoiceNum = 'INV-' + invoiceCounter;
+        invoiceCounter++;
+        localStorage.setItem('invoiceCounter', invoiceCounter.toString());
+        if (invoiceEl) invoiceEl.value = invoiceNum;
+    }
+    
+    // التحقق من المخزون
+    const txCheck = db.transaction('items', 'readonly');
+    const store = txCheck.objectStore('items');
+    let allValid = true;
+    let processed = 0;
+    
+    cart.forEach(function(c) {
+        store.get(c.itemId).onsuccess = function(e) {
+            const item = e.target.result;
+            if (!item || item.quantity < c.qty) {
+                allValid = false;
+            }
+            processed++;
+            if (processed === cart.length) {
+                finishCheckout();
+            }
+        };
+    });
+    
+    function finishCheckout() {
+        if (!allValid) {
+            showMsg('❌ المخزون غير كافٍ لبعض القطع');
+            return;
+        }
+        
+        // خصم الكميات من المخزن
+        const txUpdate = db.transaction('items', 'readwrite');
+        const itemsStore = txUpdate.objectStore('items');
+        
+        cart.forEach(function(c) {
+            itemsStore.get(c.itemId).onsuccess = function(e) {
+                const item = e.target.result;
+                item.quantity -= c.qty;
+                itemsStore.put(item);
+            };
+        });
+        
+        const totalAmount = cart.reduce(function(s, c) { return s + c.total; }, 0);
+        const itemsList = cart.map(function(c) { return c.name + ' ×' + c.qty; }).join(' + ');
+        
+        // تسجيل البيع
+        const txSale = db.transaction('sales', 'readwrite');
+        txSale.objectStore('sales').add({
+            invoiceNumber: invoiceNum,
+            itemName: itemsList,
+            quantity: cart.reduce(function(s, c) { return s + c.qty; }, 0),
+            total: totalAmount,
+            type: type,
+            customer: type === 'آجل' ? customer : '',
+            date: saleDate
+        });
+        
+        // إذا آجل، سجل دين
+        if (type === 'آجل') {
+            const txDebt = db.transaction('debts', 'readwrite');
+            txDebt.objectStore('debts').add({
+                customer: customer,
+                invoiceNumber: invoiceNum,
+                amount: totalAmount,
+                paid: 0,
+                date: saleDate,
+                status: 'معلق',
+                paidDate: ''
+            });
+        }
+        
+        txUpdate.oncomplete = function() {
+            showMsg('✅ تم البيع! الفاتورة: ' + invoiceNum + ' - ' + formatPrice(totalAmount));
+            clearCart();
+            if (invoiceEl) invoiceEl.value = '';
+            if (customerEl) {
+                customerEl.value = '';
+                customerEl.style.display = 'none';
+            }
+            if (typeEl) typeEl.value = 'نقدي';
+            setToday();
+            loadStore();
+            loadSales();
+            fillSelects();
+        };
+    }
+}
+
+function loadSales() {
+    if (!db) return;
+    
+    const tx = db.transaction('sales', 'readonly');
+    const request = tx.objectStore('sales').getAll();
+    
+    request.onsuccess = function(e) {
+        const sales = e.target.result;
+        
+        // جدول المبيعات
+        const tbody = document.getElementById('salesTable');
+        if (tbody) {
+            tbody.innerHTML = sales.reverse().map(function(s) {
+                const badgeClass = s.type === 'نقدي' ? 'badge-success' : 'badge-warning';
+                return '<tr>' +
+                    '<td><strong>' + (s.invoiceNumber || '-') + '</strong></td>' +
+                    '<td>' + (s.date || '-') + '</td>' +
+                    '<td>' + (s.itemName || '-') + '</td>' +
+                    '<td>' + formatPrice(s.total) + '</td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + s.type + '</span></td>' +
+                    '<td>' + (s.customer || '-') + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+        
+        // ملخص المبيعات
+        const cash = sales.filter(function(s) { return s.type === 'نقدي'; }).reduce(function(sum, s) { return sum + s.total; }, 0);
+        const credit = sales.filter(function(s) { return s.type === 'آجل'; }).reduce(function(sum, s) { return sum + s.total; }, 0);
+        
+        const cashEl = document.getElementById('cashTotal');
+        const creditEl = document.getElementById('creditTotal');
+        const allEl = document.getElementById('allSalesTotal');
+        
+        if (cashEl) cashEl.textContent = formatPrice(cash);
+        if (creditEl) creditEl.textContent = formatPrice(credit);
+        if (allEl) allEl.textContent = formatPrice(cash + credit);
+    };
+}
+
+console.log('🟢 الجزء الثالث جاهز - المخزن والمبيعات');
+    </script>
 </body>
 </html>
