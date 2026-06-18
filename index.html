@@ -436,4 +436,128 @@ function payDebt(id) {
 }
 
 // ==================== الصيانة ====================  
+ // ==================== الصيانة ====================
+let mFilter = 'all', mParts = [];
+function setFilter(f) { mFilter = f; loadMaintenance(); }
+
+function openPartsModal() {
+    document.getElementById('partsModal').style.display = 'flex';
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        document.getElementById('partsItem').innerHTML = e.target.result.filter(i => i.quantity > 0).map(i => '<option value="' + i.id + '">' + i.name + ' (متوفر: ' + i.quantity + ')</option>').join('');
+    };
+}
+function closePartsModal() { document.getElementById('partsModal').style.display = 'none'; }
+
+function addPartToMaintenance() {
+    const id = parseInt(document.getElementById('partsItem').value);
+    const qty = parseInt(document.getElementById('partsQty').value);
+    const price = parseFloat(document.getElementById('partsPrice').value);
+    if (!id || !qty || qty <= 0 || isNaN(price)) { showMsg('⚠️ تأكد من البيانات'); return; }
+    db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item || item.quantity < qty) { showMsg('❌ المخزون غير كافٍ'); return; }
+        mParts.push({ itemId: id, name: item.name, qty, price, total: qty * price });
+        renderParts();
+        closePartsModal();
+        showMsg('✅ تمت إضافة: ' + item.name);
+    };
+}
+
+function renderParts() {
+    const list = document.getElementById('mPartsList');
+    const total = mParts.reduce((s, p) => s + p.total, 0);
+    list.innerHTML = mParts.length ? mParts.map((p, i) => '<div class="cart-item"><span>' + p.name + ' × ' + p.qty + ' = ' + formatPrice(p.total) + '</span><button class="red small" onclick="removePart(' + i + ')">❌</button></div>').join('') : 'لا توجد قطع مضافة';
+    document.getElementById('mPartsTotal').textContent = mParts.length ? 'مجموع القطع: ' + formatPrice(total) : '';
+}
+
+function removePart(i) { mParts.splice(i, 1); renderParts(); }
+
+function addMaintenance() {
+    const serial = document.getElementById('mSerial').value.trim();
+    const customer = document.getElementById('mCustomer').value.trim();
+    const phone = document.getElementById('mPhone').value.trim();
+    const device = document.getElementById('mDevice').value.trim();
+    if (!serial || !customer || !phone || !device) { showMsg('⚠️ املأ الحقول المطلوبة'); return; }
     
+    const tx = db.transaction(['items', 'maintenance'], 'readwrite');
+    const itemsStore = tx.objectStore('items');
+    
+    // خصم القطع من المخزن
+    mParts.forEach(p => {
+        itemsStore.get(p.itemId).onsuccess = function(e) {
+            const item = e.target.result;
+            if (item) { item.quantity -= p.qty; itemsStore.put(item); }
+        };
+    });
+    
+    const labor = parseFloat(document.getElementById('mLabor').value) || 0;
+    const partsTotal = mParts.reduce((s, p) => s + p.total, 0);
+    const totalCost = partsTotal + labor;
+    
+    tx.objectStore('maintenance').add({
+        serial, customer, phone, device,
+        issue: document.getElementById('mIssue').value.trim(),
+        date: document.getElementById('mDate').value,
+        labor, parts: JSON.parse(JSON.stringify(mParts)),
+        partsTotal, totalCost,
+        barcode: document.getElementById('mBarcode').value.trim(),
+        status: document.getElementById('mStatus').value,
+        archived: false, received: 'لا'
+    });
+    
+    tx.oncomplete = function() {
+        showMsg('✅ تم الإضافة | التكلفة: ' + formatPrice(totalCost));
+        document.getElementById('mSerial').value = '';
+        document.getElementById('mCustomer').value = '';
+        document.getElementById('mPhone').value = '';
+        document.getElementById('mDevice').value = '';
+        document.getElementById('mIssue').value = '';
+        document.getElementById('mLabor').value = '';
+        document.getElementById('mBarcode').value = '';
+        mParts = []; renderParts();
+        loadStore(); loadMaintenance(); fillSaleSelect(); fillReturnSelect();
+    };
+}
+
+function loadMaintenance() {
+    db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = function(e) {
+        let items = e.target.result;
+        if (mFilter === 'archived') items = items.filter(i => i.archived);
+        else if (mFilter !== 'all') items = items.filter(i => i.status === mFilter && !i.archived);
+        else items = items.filter(i => !i.archived);
+        
+        const search = document.getElementById('mSearch').value.toLowerCase();
+        if (search) items = items.filter(i => (i.serial || '').toLowerCase().includes(search) || (i.customer || '').toLowerCase().includes(search) || (i.phone || '').includes(search) || (i.device || '').toLowerCase().includes(search));
+        
+        const all = e.target.result;
+        document.getElementById('mWaiting').textContent = all.filter(i => i.status === 'waiting' && !i.archived).length;
+        document.getElementById('mFixing').textContent = all.filter(i => i.status === 'fixing' && !i.archived).length;
+        document.getElementById('mDone').textContent = all.filter(i => i.status === 'done' && !i.archived).length;
+        
+        document.getElementById('maintenanceTable').innerHTML = items.reverse().map(i => {
+            let sb = '', st = '', partsInfo = '';
+            if (i.archived) { sb = 'badge-secondary'; st = '📦 أرشيف'; }
+            else if (i.status === 'waiting') { sb = 'badge-warning'; st = '⏳ انتظار'; }
+            else if (i.status === 'fixing') { sb = 'badge-info'; st = '🔧 صيانة'; }
+            else { sb = 'badge-success'; st = '✅ جاهز'; }
+            
+            if (i.parts && i.parts.length) {
+                partsInfo = '<br><small style="color:#888;">' + i.parts.map(p => p.name + ' ×' + p.qty).join(', ') + '</small>';
+                if (i.labor > 0) partsInfo += '<br><small>أجرة: ' + formatPrice(i.labor) + '</small>';
+            } else if (i.labor > 0) {
+                partsInfo = '<br><small>أجرة: ' + formatPrice(i.labor) + '</small>';
+            }
+            
+            const cost = i.totalCost || i.labor || i.cost || 0;
+            
+            return '<tr><td>' + i.serial + '</td><td>' + i.customer + '</td><td>' + i.device + partsInfo + '</td><td><span class="badge ' + sb + '">' + st + '</span></td><td>' + (cost > 0 ? formatPrice(cost) : '-') + '</td><td>' + (i.archived ? '' : '<select onchange="changeStatus(' + i.id + ',this.value)" style="width:70px;font-size:11px;padding:3px;"><option value="">تغيير</option><option value="waiting">⏳</option><option value="fixing">🔧</option><option value="done">✅</option></select> ' + (i.status === 'done' ? '<button class="green small" onclick="archiveDevice(' + i.id + ')">📤</button> ' : '') + '<button class="blue-btn small" onclick="toggleReceived(' + i.id + ')">📋</button> ') + '<button class="red small" onclick="deleteMaintenance(' + i.id + ')">🗑️</button></td></tr>';
+        }).join('') || '<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد أجهزة</td></tr>';
+    };
+}
+
+function changeStatus(id, ns) { if (!ns) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.status = ns; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
+function archiveDevice(id) { if (!confirm('تأكيد التسليم؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.archived = true; i.received = 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } showMsg('📤 تم'); loadMaintenance(); }; }
+function toggleReceived(id) { db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.received = i.received === 'نعم' ? 'لا' : 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
+function deleteMaintenance(id) { if (!confirm('متأكد؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadMaintenance(); }; }
+
+// ==================== الباركود ====================   
