@@ -3,33 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مخزن ومبيعات مركز وسام</title>
+    <title>مركز وسام للإلكترونيات</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background: #f4f7f9; padding: 20px; transition: 0.3s; }
         body.dark { background: #1a1a2e; color: #eee; }
-        .container { max-width: 800px; margin: 0 auto; }
+        .container { max-width: 900px; margin: 0 auto; }
         
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .header-row h1 { color: #1e3c5c; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .header-row h1 { color: #1e3c5c; font-size: 1.3rem; }
         body.dark .header-row h1 { color: #64b5f6; }
         
         .mode-toggle { padding: 10px 20px; border-radius: 30px; border: none; cursor: pointer; font-size: 18px; background: #2d7fc1; color: white; }
         body.dark .mode-toggle { background: #ffb74d; color: #1a1a2e; }
         
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        body.dark .card { background: #16213e; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tabs button { flex: 1; padding: 12px 8px; border: none; min-width: 70px; background: #ddd; cursor: pointer; font-size: 14px; font-weight: bold; border-radius: 8px 8px 0 0; }
+        .tabs button.active { background: #2d7fc1; color: white; }
+        body.dark .tabs button { background: #333; color: #ccc; }
+        body.dark .tabs button.active { background: #2d7fc1; color: white; }
+        
+        .tab-content { display: none; background: white; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .tab-content.active { display: block; }
+        body.dark .tab-content { background: #16213e; }
         
         .form-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
-        input, select, button { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
-        body.dark input, body.dark select { background: #0f3460; color: #eee; border-color: #333; }
+        input, select, button, textarea { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
+        body.dark input, body.dark select, body.dark textarea { background: #0f3460; color: #eee; border-color: #333; }
         button { background: #2d7fc1; color: white; border: none; cursor: pointer; font-weight: bold; white-space: nowrap; }
         button.green { background: #27ae60; }
         button.red { background: #e74c3c; }
+        button.orange { background: #e67e22; }
+        button.blue-btn { background: #2980b9; }
         button.small { padding: 5px 10px; font-size: 12px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th { background: #f0f5fe; padding: 10px; text-align: right; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th { background: #f0f5fe; padding: 10px; text-align: right; font-size: 12px; }
         body.dark th { background: #0f3460; color: #90caf9; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
         body.dark td { border-color: #333; }
@@ -37,35 +46,54 @@
         .alert { background: #fff3cd; border-right: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
         body.dark .alert { background: #3e2723; color: #ffcc80; }
         
+        .summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .summary-box { flex: 1; min-width: 100px; background: #f0f5fe; padding: 12px; border-radius: 12px; text-align: center; }
+        body.dark .summary-box { background: #0f3460; }
+        .summary-box .number { font-size: 1.2rem; font-weight: bold; color: #1e3c5c; }
+        body.dark .summary-box .number { color: #90caf9; }
+        .summary-box .label { font-size: 11px; color: #666; }
+        body.dark .summary-box .label { color: #aaa; }
+        
         .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
         .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-secondary { background: #e2e3e5; color: #383d41; }
         
         .cart-item { background: #f9f9f9; padding: 10px; border-radius: 8px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
         body.dark .cart-item { background: #1a2744; }
         
+        .filter-btns { display: flex; gap: 5px; flex-wrap: wrap; margin: 10px 0; }
+        .filter-btns button { font-size: 12px; padding: 6px 12px; }
+        
         .msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e3c5c; color: white; padding: 12px 24px; border-radius: 30px; display: none; z-index: 999; }
         body.dark .msg { background: #ffb74d; color: #1a1a2e; }
         
-        @media (max-width: 600px) { .form-row { flex-direction: column; } input, select { width: 100%; } }
+        @media (max-width: 600px) { .form-row { flex-direction: column; } input, select, textarea { width: 100%; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header-row">
-        <h1>📦 مخزن ومبيعات مركز وسام</h1>
+        <h1>📦 مركز وسام للإلكترونيات</h1>
         <button class="mode-toggle" onclick="toggleMode()">🌙</button>
     </div>
     <p style="text-align:center; color:#666; margin-bottom:15px;">جميع الأسعار بالليرة السورية (ل.س)</p>
     
+    <div class="tabs">
+        <button class="active" onclick="showTab('store')">🏭 المخزن</button>
+        <button onclick="showTab('sales')">💰 المبيعات</button>
+        <button onclick="showTab('maintenance')">🔧 الصيانة</button>
+    </div>
+    
     <!-- المخزن -->
-    <div class="card">
-        <h3>🏭 المخزن</h3>
+    <div id="tab-store" class="tab-content active">
         <div class="form-row">
             <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
-            <input type="number" id="itemQty" placeholder="الكمية" style="width:85px" min="1">
-            <input type="number" id="itemCost" placeholder="سعر الشراء" step="1" style="width:110px" min="0">
-            <input type="number" id="itemPrice" placeholder="سعر البيع" step="1" style="width:110px" min="0">
+            <input type="number" id="itemQty" placeholder="الكمية" style="width:80px" min="1">
+            <input type="number" id="itemCost" placeholder="سعر الشراء" step="1" style="width:105px" min="0">
+            <input type="number" id="itemPrice" placeholder="سعر البيع" step="1" style="width:105px" min="0">
             <button class="green" onclick="addItem()">➕ إضافة</button>
         </div>
         <div id="lowStockAlert" class="alert"></div>
@@ -76,22 +104,67 @@
     </div>
     
     <!-- المبيعات -->
-    <div class="card">
-        <h3>💰 المبيعات</h3>
+    <div id="tab-sales" class="tab-content">
         <div class="form-row">
             <select id="saleItem" style="flex:2"></select>
-            <input type="number" id="saleQty" placeholder="الكمية" value="1" style="width:85px" min="1">
+            <input type="number" id="saleQty" placeholder="الكمية" value="1" style="width:80px" min="1">
             <button class="green" onclick="addToCart()">🛒 إضافة</button>
         </div>
         <div id="cartItems"></div>
         <div style="text-align:left;font-weight:bold;margin:10px 0;">الإجمالي: <span id="cartTotal">0</span> ل.س</div>
         <button class="green" onclick="checkoutCart()" style="width:100%;">💾 إتمام البيع</button>
-        <button class="red small" onclick="clearCart()" style="margin-top:5px;">🗑️ تفريغ الفاتورة</button>
+        <button class="red small" onclick="clearCart()" style="margin-top:5px;">🗑️ تفريغ</button>
         
         <h4 style="margin-top:20px;">📜 سجل المبيعات</h4>
         <table>
             <thead><tr><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th></tr></thead>
             <tbody id="salesTable"></tbody>
+        </table>
+    </div>
+    
+    <!-- الصيانة -->
+    <div id="tab-maintenance" class="tab-content">
+        <div class="form-row">
+            <input type="text" id="mSerial" placeholder="الرقم التسلسلي" style="flex:1" required>
+            <input type="text" id="mCustomer" placeholder="اسم الزبون" style="flex:2" required>
+            <input type="tel" id="mPhone" placeholder="رقم الهاتف" style="flex:1" required>
+        </div>
+        <div class="form-row">
+            <input type="text" id="mDevice" placeholder="نوع الجهاز" style="flex:1" required>
+            <input type="date" id="mDate" style="width:130px">
+            <input type="number" id="mCost" placeholder="التكلفة" step="1" style="width:100px" min="0">
+        </div>
+        <div class="form-row">
+            <textarea id="mIssue" placeholder="وصف العطل (اختياري)" style="flex:2;height:50px;" rows="2"></textarea>
+        </div>
+        <div class="form-row">
+            <select id="mStatus" style="width:120px">
+                <option value="waiting">⏳ انتظار</option>
+                <option value="fixing">🔧 صيانة</option>
+                <option value="done">✅ جاهز</option>
+            </select>
+            <button class="green" onclick="addMaintenance()">➕ إضافة جهاز</button>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-box"><div class="number" id="mWaiting" style="color:#e67e22;">0</div><div class="label">قيد الانتظار</div></div>
+            <div class="summary-box"><div class="number" id="mFixing" style="color:#3498db;">0</div><div class="label">في الصيانة</div></div>
+            <div class="summary-box"><div class="number" id="mDone" style="color:#27ae60;">0</div><div class="label">جاهز للتسليم</div></div>
+        </div>
+        
+        <input type="text" id="mSearch" placeholder="🔍 بحث..." style="width:100%;margin-bottom:10px;" oninput="loadMaintenance()">
+        
+        <div class="filter-btns">
+            <button onclick="setFilter('all')" style="font-weight:bold;">📋 الكل</button>
+            <button onclick="setFilter('waiting')" style="background:#e67e22;">⏳ انتظار</button>
+            <button onclick="setFilter('fixing')" style="background:#3498db;">🔧 صيانة</button>
+            <button onclick="setFilter('done')" style="background:#27ae60;">✅ جاهز</button>
+            <button onclick="setFilter('archived')" style="background:#7f8c8d;">📦 أرشيف</button>
+        </div>
+        
+        <table>
+            <thead><tr><th>السيريال</th><th>الزبون</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="maintenanceTable"></tbody>
         </table>
     </div>
 </div>
@@ -101,7 +174,7 @@
 <script>
 // ==================== قاعدة البيانات ====================
 let db;
-const request = indexedDB.open('WissamSimpleV1', 1);
+const request = indexedDB.open('WissamV3', 1);
 
 request.onupgradeneeded = function(e) {
     const database = e.target.result;
@@ -112,6 +185,9 @@ request.onupgradeneeded = function(e) {
     if (!database.objectStoreNames.contains('sales')) {
         database.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
     }
+    if (!database.objectStoreNames.contains('maintenance')) {
+        database.createObjectStore('maintenance', { keyPath: 'id', autoIncrement: true });
+    }
 };
 
 request.onsuccess = function(e) {
@@ -120,6 +196,7 @@ request.onsuccess = function(e) {
     loadStore();
     fillSaleSelect();
     loadSales();
+    loadMaintenance();
 };
 
 request.onerror = function() {
@@ -137,6 +214,19 @@ function toggleMode() {
 if (localStorage.getItem('darkMode') === '1') {
     document.body.classList.add('dark');
     document.querySelector('.mode-toggle').textContent = '☀️';
+}
+
+// ==================== تبويبات ====================
+function showTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tabs button').forEach(function(b) { b.classList.remove('active'); });
+    
+    document.getElementById('tab-' + tab).classList.add('active');
+    event.target.classList.add('active');
+    
+    if (tab === 'store') loadStore();
+    if (tab === 'sales') { fillSaleSelect(); loadSales(); }
+    if (tab === 'maintenance') loadMaintenance();
 }
 
 // ==================== دوال مساعدة ====================
@@ -164,8 +254,7 @@ function addItem() {
     
     const tx = db.transaction('items', 'readwrite');
     const store = tx.objectStore('items');
-    const index = store.index('name');
-    const req = index.get(name);
+    const req = store.index('name').get(name);
     
     req.onsuccess = function(e) {
         const existing = e.target.result;
@@ -174,7 +263,7 @@ function addItem() {
             existing.cost = cost;
             existing.price = price;
             store.put(existing);
-            showMsg('✅ تم تحديث: ' + name + ' (الكمية: ' + existing.quantity + ')');
+            showMsg('✅ تم تحديث: ' + name);
         } else {
             store.add({ name: name, quantity: qty, cost: cost, price: price });
             showMsg('✅ تمت إضافة: ' + name);
@@ -192,8 +281,7 @@ function addItem() {
 }
 
 function loadStore() {
-    const tx = db.transaction('items', 'readonly');
-    tx.objectStore('items').getAll().onsuccess = function(e) {
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
         const items = e.target.result;
         
         document.getElementById('storeTable').innerHTML = items.map(function(item) {
@@ -203,7 +291,7 @@ function loadStore() {
                 '<td>' + item.quantity + '</td>' +
                 '<td>' + formatPrice(item.cost) + '</td>' +
                 '<td>' + formatPrice(item.price) + '</td>' +
-                '<td style="color:' + (profit >= 0 ? '#27ae60' : '#e74c3c') + ';font-weight:bold;">' + formatPrice(profit) + '</td>' +
+                '<td style="color:' + (profit >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(profit) + '</td>' +
                 '<td><button class="red small" onclick="deleteItem(' + item.id + ')">🗑️</button></td>' +
                 '</tr>';
         }).join('');
@@ -243,14 +331,9 @@ function fillSaleSelect() {
 function addToCart() {
     const itemId = parseInt(document.getElementById('saleItem').value);
     const qty = parseInt(document.getElementById('saleQty').value);
+    if (!itemId || !qty || qty <= 0) { showMsg('⚠️ تأكد من البيانات'); return; }
     
-    if (!itemId || !qty || qty <= 0) {
-        showMsg('⚠️ تأكد من البيانات');
-        return;
-    }
-    
-    const tx = db.transaction('items', 'readonly');
-    tx.objectStore('items').get(itemId).onsuccess = function(e) {
+    db.transaction('items', 'readonly').objectStore('items').get(itemId).onsuccess = function(e) {
         const item = e.target.result;
         if (!item) { showMsg('❌ القطعة غير موجودة'); return; }
         
@@ -258,16 +341,12 @@ function addToCart() {
         const alreadyInCart = existing ? existing.qty : 0;
         
         if (item.quantity < alreadyInCart + qty) {
-            showMsg('❌ المخزون غير كافٍ! المتوفر: ' + item.quantity);
+            showMsg('❌ المخزون غير كافٍ!');
             return;
         }
         
-        if (existing) {
-            existing.qty += qty;
-            existing.total = existing.qty * item.price;
-        } else {
-            cart.push({ itemId: itemId, name: item.name, qty: qty, price: item.price, total: qty * item.price });
-        }
+        if (existing) { existing.qty += qty; existing.total = existing.qty * item.price; }
+        else { cart.push({ itemId: itemId, name: item.name, qty: qty, price: item.price, total: qty * item.price }); }
         
         document.getElementById('saleQty').value = '1';
         renderCart();
@@ -318,9 +397,7 @@ function checkoutCart() {
         const itemsList = cart.map(function(c) { return c.name + ' ×' + c.qty; }).join(' + ');
         
         db.transaction('sales', 'readwrite').objectStore('sales').add({
-            itemName: itemsList,
-            total: total,
-            date: new Date().toLocaleDateString('ar-SY')
+            itemName: itemsList, total: total, date: new Date().toLocaleDateString('ar-SY')
         });
         
         tx.oncomplete = function() {
@@ -341,6 +418,5 @@ function loadSales() {
         }).join('');
     };
 }
-</script>
-</body>
-</html>
+
+// ==================== الصيانة ====================
