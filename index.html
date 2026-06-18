@@ -335,4 +335,63 @@ function loadStore() {
 function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); }; }
 
 // ==================== المبيعات ====================
+    // ==================== المبيعات ====================
+let cart = [];
+function fillSaleSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('saleItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + ' (' + i.quantity + ')</option>').join(''); }; }
+
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'saleType') document.getElementById('saleCustomer').style.display = e.target.value === 'آجل' ? 'inline' : 'none';
+});
+
+function addToCart() {
+    const id = parseInt(document.getElementById('saleItem').value);
+    const qty = parseInt(document.getElementById('saleQty').value);
+    if (!id || !qty || qty <= 0) { showMsg('⚠️ تأكد من البيانات'); return; }
+    db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) { showMsg('❌ غير موجودة'); return; }
+        const ex = cart.find(c => c.itemId === id);
+        if (item.quantity < (ex ? ex.qty : 0) + qty) { showMsg('❌ المخزون غير كافٍ'); return; }
+        if (ex) { ex.qty += qty; ex.total = ex.qty * item.price; }
+        else { cart.push({ itemId: id, name: item.name, qty, price: item.price, total: qty * item.price }); }
+        document.getElementById('saleQty').value = '1'; renderCart(); showMsg('🛒 ' + item.name);
+    };
+}
+
+function renderCart() {
+    const t = cart.reduce((s, c) => s + c.total, 0);
+    document.getElementById('cartItems').innerHTML = cart.length ? cart.map((c, i) => '<div class="cart-item"><span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span><button class="red small" onclick="removeFromCart(' + i + ')">❌</button></div>').join('') : '<p style="color:#999;">فارغة</p>';
+    document.getElementById('cartTotal').textContent = formatPrice(t);
+}
+function removeFromCart(i) { cart.splice(i, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); }
+
+function checkoutCart() {
+    if (!cart.length) { showMsg('⚠️ فارغة'); return; }
+    const type = document.getElementById('saleType').value;
+    const customer = document.getElementById('saleCustomer').value.trim();
+    if (type === 'آجل' && !customer) { showMsg('⚠️ أدخل اسم الزبون'); return; }
+    const tx = db.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    let ok = true, done = 0;
+    cart.forEach(c => { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; if (!item || item.quantity < c.qty) ok = false; done++; if (done === cart.length) fin(); }; });
+    function fin() {
+        if (!ok) { showMsg('❌ المخزون غير كافٍ'); return; }
+        cart.forEach(c => { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; item.quantity -= c.qty; store.put(item); }; });
+        const total = cart.reduce((s, c) => s + c.total, 0);
+        const items = cart.map(c => c.name + ' ×' + c.qty).join(' + ');
+        const date = new Date().toLocaleDateString('ar-SY');
+        db.transaction('sales', 'readwrite').objectStore('sales').add({ itemName: items, total, type, customer: type === 'آجل' ? customer : '', date });
+        if (type === 'آجل') { db.transaction('debts', 'readwrite').objectStore('debts').add({ customer, amount: total, paid: 0, date, status: 'معلق', paidDate: '' }); }
+        tx.oncomplete = () => { showMsg('✅ تم البيع! ' + formatPrice(total)); clearCart(); loadStore(); fillSaleSelect(); loadSales(); if (type === 'آجل') loadDebts(); };
+    }
+}
+
+function loadSales() {
+    db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
+        document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(s => '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td></tr>').join('');
+    };
+}
+
+// ==================== المرتجعات ====================
     
