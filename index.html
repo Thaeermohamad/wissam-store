@@ -300,3 +300,39 @@ function showMsg(t) { const m = document.getElementById('msg'); m.textContent = 
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
 
 // ==================== المخزن ====================
+    // ==================== المخزن ====================
+function addItem() {
+    const name = document.getElementById('itemName').value.trim();
+    const qty = parseInt(document.getElementById('itemQty').value);
+    const cost = parseFloat(document.getElementById('itemCost').value);
+    const price = parseFloat(document.getElementById('itemPrice').value);
+    const barcode = document.getElementById('itemBarcode').value.trim();
+    if (!name || !qty || qty <= 0 || isNaN(cost) || isNaN(price)) { showMsg('⚠️ املأ الحقول'); return; }
+    const tx = db.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    store.index('name').get(name).onsuccess = function(e) {
+        const ex = e.target.result;
+        if (ex) { ex.quantity += qty; ex.cost = cost; ex.price = price; if (barcode) ex.barcode = barcode; store.put(ex); showMsg('✅ تحديث: ' + name); }
+        else { store.add({ name, quantity: qty, cost, price, barcode }); showMsg('✅ إضافة: ' + name); }
+        tx.oncomplete = () => { ['itemName','itemQty','itemCost','itemPrice','itemBarcode'].forEach(id => document.getElementById(id).value = ''); loadStore(); fillSaleSelect(); fillReturnSelect(); };
+    };
+}
+
+function loadStore() {
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        const items = e.target.result;
+        document.getElementById('storeTable').innerHTML = items.map(i => {
+            const p = i.price - i.cost;
+            return '<tr><td><strong>' + i.name + '</strong> ' + (i.quantity < 5 ? '<span class="badge badge-warning">⚠️</span>' : '') + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.cost) + '</td><td>' + formatPrice(i.price) + '</td><td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(p) + '</td><td>' + (i.barcode || '-') + '</td><td><button class="red small" onclick="deleteItem(' + i.id + ')">🗑️</button></td></tr>';
+        }).join('');
+        const low = items.filter(i => i.quantity < 5);
+        const a = document.getElementById('lowStockAlert');
+        a.style.display = low.length ? 'block' : 'none';
+        if (low.length) a.innerHTML = '⚠️ نقص: ' + low.map(i => i.name + ' (' + i.quantity + ')').join(' | ');
+    };
+}
+
+function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); }; }
+
+// ==================== المبيعات ====================
+    
