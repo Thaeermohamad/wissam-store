@@ -368,3 +368,31 @@ function loadReturns() {
 }
 
 // ==================== الديون ====================
+    // ==================== الديون ====================
+function loadDebts() {
+    db.transaction('debts', 'readonly').objectStore('debts').getAll().onsuccess = function(e) {
+        const debts = e.target.result;
+        const pending = debts.filter(function(d) { return d.status === 'معلق'; });
+        const paid = debts.filter(function(d) { return d.status === 'مسدد'; });
+        document.getElementById('debtsTable').innerHTML = pending.length ? pending.map(function(d) { return '<tr><td><strong>' + d.customer + '</strong></td><td>' + formatPrice(d.amount) + '</td><td>' + d.date + '</td><td>' + formatPrice(d.paid || 0) + '</td><td>' + formatPrice(d.amount - (d.paid || 0)) + '</td><td><input type="number" id="pay_' + d.id + '" placeholder="المبلغ" style="width:70px;" step="1"> <button class="green small" onclick="payDebt(' + d.id + ')">✅</button></td></tr>'; }).join('') : '<tr><td colspan="6" style="text-align:center;color:#999;">🎉 لا توجد ديون</td></tr>';
+        document.getElementById('paidDebtsTable').innerHTML = paid.length ? paid.reverse().map(function(d) { return '<tr><td>' + d.customer + '</td><td>' + formatPrice(d.amount) + '</td><td>' + (d.paidDate || '-') + '</td></tr>'; }).join('') : '<tr><td colspan="3" style="text-align:center;color:#999;">لا يوجد</td></tr>';
+        document.getElementById('pendingDebts').textContent = formatPrice(pending.reduce(function(s, d) { return s + (d.amount - (d.paid || 0)); }, 0));
+        document.getElementById('paidDebtsTotal').textContent = formatPrice(paid.reduce(function(s, d) { return s + (d.paid || d.amount); }, 0));
+    };
+}
+
+function payDebt(id) {
+    const amt = parseFloat(document.getElementById('pay_' + id).value);
+    db.transaction('debts', 'readonly').objectStore('debts').get(id).onsuccess = function(e) {
+        const d = e.target.result;
+        if (!d) return;
+        const remaining = d.amount - (d.paid || 0);
+        const pay = (isNaN(amt) || amt <= 0) ? remaining : Math.min(amt, remaining);
+        if (!confirm('تسديد ' + formatPrice(pay) + '؟')) return;
+        d.paid = (d.paid || 0) + pay;
+        if (d.paid >= d.amount) { d.status = 'مسدد'; d.paidDate = new Date().toLocaleDateString('ar-SY'); }
+        db.transaction('debts', 'readwrite').objectStore('debts').put(d).transaction.oncomplete = function() { showMsg('✅ تم التسديد'); loadDebts(); };
+    };
+}
+
+// ==================== الصيانة ====================
