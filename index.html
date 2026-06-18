@@ -348,3 +348,104 @@ function deleteItem(id) {
 }
 
 // ==================== المبيعات ====================
+    
+// ==================== المبيعات ====================
+let cart = [];
+
+function fillSaleSelect() {
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        const items = e.target.result;
+        document.getElementById('saleItem').innerHTML = items.map(function(i) {
+            return '<option value="' + i.id + '">' + i.name + ' (متوفر: ' + i.quantity + ')</option>';
+        }).join('');
+    };
+}
+
+function addToCart() {
+    const itemId = parseInt(document.getElementById('saleItem').value);
+    const qty = parseInt(document.getElementById('saleQty').value);
+    if (!itemId || !qty || qty <= 0) { showMsg('⚠️ تأكد من البيانات'); return; }
+    
+    db.transaction('items', 'readonly').objectStore('items').get(itemId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) { showMsg('❌ القطعة غير موجودة'); return; }
+        
+        const existing = cart.find(function(c) { return c.itemId === itemId; });
+        const alreadyInCart = existing ? existing.qty : 0;
+        
+        if (item.quantity < alreadyInCart + qty) { showMsg('❌ المخزون غير كافٍ!'); return; }
+        
+        if (existing) { existing.qty += qty; existing.total = existing.qty * item.price; }
+        else { cart.push({ itemId: itemId, name: item.name, qty: qty, price: item.price, total: qty * item.price }); }
+        
+        document.getElementById('saleQty').value = '1';
+        renderCart();
+        showMsg('🛒 تمت إضافة: ' + item.name);
+    };
+}
+
+function renderCart() {
+    const total = cart.reduce(function(s, c) { return s + c.total; }, 0);
+    document.getElementById('cartItems').innerHTML = cart.length ? cart.map(function(c, i) {
+        return '<div class="cart-item"><span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span><button class="red small" onclick="removeFromCart(' + i + ')">❌</button></div>';
+    }).join('') : '<p style="color:#999;">الفارورة فارغة</p>';
+    document.getElementById('cartTotal').textContent = formatPrice(total);
+}
+
+function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); }
+
+function checkoutCart() {
+    if (cart.length === 0) { showMsg('⚠️ الفاتورة فارغة'); return; }
+    
+    const tx = db.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    let allValid = true;
+    let processed = 0;
+    
+    cart.forEach(function(c) {
+        store.get(c.itemId).onsuccess = function(e) {
+            const item = e.target.result;
+            if (!item || item.quantity < c.qty) allValid = false;
+            processed++;
+            if (processed === cart.length) finish();
+        };
+    });
+    
+    function finish() {
+        if (!allValid) { showMsg('❌ المخزون غير كافٍ'); return; }
+        
+        cart.forEach(function(c) {
+            store.get(c.itemId).onsuccess = function(e) {
+                const item = e.target.result;
+                item.quantity -= c.qty;
+                store.put(item);
+            };
+        });
+        
+        const total = cart.reduce(function(s, c) { return s + c.total; }, 0);
+        const itemsList = cart.map(function(c) { return c.name + ' ×' + c.qty; }).join(' + ');
+        
+        db.transaction('sales', 'readwrite').objectStore('sales').add({
+            itemName: itemsList, total: total, date: new Date().toLocaleDateString('ar-SY')
+        });
+        
+        tx.oncomplete = function() {
+            showMsg('✅ تم البيع! ' + formatPrice(total));
+            clearCart();
+            loadStore();
+            fillSaleSelect();
+            loadSales();
+        };
+    }
+}
+
+function loadSales() {
+    db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
+        const sales = e.target.result;
+        document.getElementById('salesTable').innerHTML = sales.reverse().map(function(s) {
+            return '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td></tr>';
+        }).join('');
+    };
+                    }
+            
