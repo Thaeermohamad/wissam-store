@@ -297,3 +297,49 @@ function loadStore() {
 function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = function() { showMsg('🗑️ تم الحذف'); loadStore(); fillSaleSelect(); fillReturnSelect(); }; }
 
 // ==================== المبيعات ====================
+    // ==================== المبيعات ====================
+let cart = [];
+function fillSaleSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('saleItem').innerHTML = e.target.result.map(function(i) { return '<option value="' + i.id + '">' + i.name + ' (' + i.quantity + ')</option>'; }).join(''); }; }
+
+function addToCart() {
+    const id = parseInt(document.getElementById('saleItem').value);
+    const qty = parseInt(document.getElementById('saleQty').value);
+    if (!id || !qty || qty <= 0) { showMsg('⚠️ تأكد من البيانات'); return; }
+    db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) { showMsg('❌ غير موجودة'); return; }
+        const ex = cart.find(function(c) { return c.itemId === id; });
+        if (item.quantity < (ex ? ex.qty : 0) + qty) { showMsg('❌ المخزون غير كافٍ'); return; }
+        if (ex) { ex.qty += qty; ex.total = ex.qty * item.price; }
+        else { cart.push({ itemId: id, name: item.name, qty, price: item.price, total: qty * item.price }); }
+        document.getElementById('saleQty').value = '1'; renderCart(); showMsg('🛒 ' + item.name);
+    };
+}
+
+function renderCart() {
+    const t = cart.reduce(function(s, c) { return s + c.total; }, 0);
+    document.getElementById('cartItems').innerHTML = cart.length ? cart.map(function(c, i) { return '<div class="cart-item"><span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span><button class="red small" onclick="removeFromCart(' + i + ')">❌</button></div>'; }).join('') : '<p style="color:#999;">فارغة</p>';
+    document.getElementById('cartTotal').textContent = formatPrice(t);
+}
+function removeFromCart(i) { cart.splice(i, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); }
+
+function checkoutCart() {
+    if (!cart.length) { showMsg('⚠️ فارغة'); return; }
+    const tx = db.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    let ok = true, done = 0;
+    cart.forEach(function(c) { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; if (!item || item.quantity < c.qty) ok = false; done++; if (done === cart.length) fin(); }; });
+    function fin() {
+        if (!ok) { showMsg('❌ المخزون غير كافٍ'); return; }
+        cart.forEach(function(c) { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; item.quantity -= c.qty; store.put(item); }; });
+        const total = cart.reduce(function(s, c) { return s + c.total; }, 0);
+        const items = cart.map(function(c) { return c.name + ' ×' + c.qty; }).join(' + ');
+        db.transaction('sales', 'readwrite').objectStore('sales').add({ itemName: items, total, date: new Date().toLocaleDateString('ar-SY') });
+        tx.oncomplete = function() { showMsg('✅ تم البيع! ' + formatPrice(total)); clearCart(); loadStore(); fillSaleSelect(); loadSales(); };
+    }
+}
+
+function loadSales() { db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) { document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(function(s) { return '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td></tr>'; }).join(''); }; }
+
+// ==================== المرتجعات ====================
