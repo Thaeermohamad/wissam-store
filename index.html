@@ -3,51 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز وسام للإلكترونيات</title>
+    <title>مخزن ومبيعات مركز وسام</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background: #f4f7f9; padding: 20px; transition: 0.3s; }
         body.dark { background: #1a1a2e; color: #eee; }
         .container { max-width: 800px; margin: 0 auto; }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .header-row h1 { color: #1e3c5c; font-size: 1.5rem; }
+        
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .header-row h1 { color: #1e3c5c; }
         body.dark .header-row h1 { color: #64b5f6; }
+        
         .mode-toggle { padding: 10px 20px; border-radius: 30px; border: none; cursor: pointer; font-size: 18px; background: #2d7fc1; color: white; }
         body.dark .mode-toggle { background: #ffb74d; color: #1a1a2e; }
+        
         .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
         body.dark .card { background: #16213e; }
+        
         .form-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
-        input, button { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
-        body.dark input { background: #0f3460; color: #eee; border-color: #333; }
-        input:focus { outline: 2px solid #2d7fc1; border-color: transparent; }
-        button { background: #2d7fc1; color: white; border: none; cursor: pointer; font-weight: bold; }
+        input, select, button { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
+        body.dark input, body.dark select { background: #0f3460; color: #eee; border-color: #333; }
+        button { background: #2d7fc1; color: white; border: none; cursor: pointer; font-weight: bold; white-space: nowrap; }
         button.green { background: #27ae60; }
         button.red { background: #e74c3c; }
         button.small { padding: 5px 10px; font-size: 12px; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th { background: #f0f5fe; padding: 10px; text-align: right; font-size: 13px; color: #1e3c5c; }
+        th { background: #f0f5fe; padding: 10px; text-align: right; font-size: 13px; }
         body.dark th { background: #0f3460; color: #90caf9; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
         body.dark td { border-color: #333; }
-        .msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e3c5c; color: white; padding: 12px 24px; border-radius: 30px; display: none; z-index: 999; }
-        body.dark .msg { background: #ffb74d; color: #1a1a2e; }
-        .alert { background: #fff3cd; border-right: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; display: none; }
+        
+        .alert { background: #fff3cd; border-right: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
         body.dark .alert { background: #3e2723; color: #ffcc80; }
+        
         .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
         .badge-warning { background: #fff3cd; color: #856404; }
-        @media (max-width: 600px) { .form-row { flex-direction: column; } input { width: 100%; } }
+        
+        .cart-item { background: #f9f9f9; padding: 10px; border-radius: 8px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
+        body.dark .cart-item { background: #1a2744; }
+        
+        .msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e3c5c; color: white; padding: 12px 24px; border-radius: 30px; display: none; z-index: 999; }
+        body.dark .msg { background: #ffb74d; color: #1a1a2e; }
+        
+        @media (max-width: 600px) { .form-row { flex-direction: column; } input, select { width: 100%; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header-row">
-        <h1>📦 مخزن مركز وسام</h1>
+        <h1>📦 مخزن ومبيعات مركز وسام</h1>
         <button class="mode-toggle" onclick="toggleMode()">🌙</button>
     </div>
     <p style="text-align:center; color:#666; margin-bottom:15px;">جميع الأسعار بالليرة السورية (ل.س)</p>
     
+    <!-- المخزن -->
     <div class="card">
+        <h3>🏭 المخزن</h3>
         <div class="form-row">
             <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
             <input type="number" id="itemQty" placeholder="الكمية" style="width:85px" min="1">
@@ -61,6 +74,26 @@
             <tbody id="storeTable"></tbody>
         </table>
     </div>
+    
+    <!-- المبيعات -->
+    <div class="card">
+        <h3>💰 المبيعات</h3>
+        <div class="form-row">
+            <select id="saleItem" style="flex:2"></select>
+            <input type="number" id="saleQty" placeholder="الكمية" value="1" style="width:85px" min="1">
+            <button class="green" onclick="addToCart()">🛒 إضافة</button>
+        </div>
+        <div id="cartItems"></div>
+        <div style="text-align:left;font-weight:bold;margin:10px 0;">الإجمالي: <span id="cartTotal">0</span> ل.س</div>
+        <button class="green" onclick="checkoutCart()" style="width:100%;">💾 إتمام البيع</button>
+        <button class="red small" onclick="clearCart()" style="margin-top:5px;">🗑️ تفريغ الفاتورة</button>
+        
+        <h4 style="margin-top:20px;">📜 سجل المبيعات</h4>
+        <table>
+            <thead><tr><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th></tr></thead>
+            <tbody id="salesTable"></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="msg" class="msg"></div>
@@ -68,7 +101,7 @@
 <script>
 // ==================== قاعدة البيانات ====================
 let db;
-const request = indexedDB.open('WissamStoreV1', 1);
+const request = indexedDB.open('WissamSimpleV1', 1);
 
 request.onupgradeneeded = function(e) {
     const database = e.target.result;
@@ -76,12 +109,17 @@ request.onupgradeneeded = function(e) {
         const store = database.createObjectStore('items', { keyPath: 'id', autoIncrement: true });
         store.createIndex('name', 'name', { unique: false });
     }
+    if (!database.objectStoreNames.contains('sales')) {
+        database.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+    }
 };
 
 request.onsuccess = function(e) {
     db = e.target.result;
     console.log('✅ جاهز');
     loadStore();
+    fillSaleSelect();
+    loadSales();
 };
 
 request.onerror = function() {
@@ -148,6 +186,7 @@ function addItem() {
             document.getElementById('itemCost').value = '';
             document.getElementById('itemPrice').value = '';
             loadStore();
+            fillSaleSelect();
         };
     };
 }
@@ -185,8 +224,123 @@ function deleteItem(id) {
     db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = function() {
         showMsg('🗑️ تم الحذف');
         loadStore();
+        fillSaleSelect();
+    };
+}
+
+// ==================== المبيعات ====================
+let cart = [];
+
+function fillSaleSelect() {
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        const items = e.target.result;
+        document.getElementById('saleItem').innerHTML = items.map(function(i) {
+            return '<option value="' + i.id + '">' + i.name + ' (متوفر: ' + i.quantity + ')</option>';
+        }).join('');
+    };
+}
+
+function addToCart() {
+    const itemId = parseInt(document.getElementById('saleItem').value);
+    const qty = parseInt(document.getElementById('saleQty').value);
+    
+    if (!itemId || !qty || qty <= 0) {
+        showMsg('⚠️ تأكد من البيانات');
+        return;
+    }
+    
+    const tx = db.transaction('items', 'readonly');
+    tx.objectStore('items').get(itemId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) { showMsg('❌ القطعة غير موجودة'); return; }
+        
+        const existing = cart.find(function(c) { return c.itemId === itemId; });
+        const alreadyInCart = existing ? existing.qty : 0;
+        
+        if (item.quantity < alreadyInCart + qty) {
+            showMsg('❌ المخزون غير كافٍ! المتوفر: ' + item.quantity);
+            return;
+        }
+        
+        if (existing) {
+            existing.qty += qty;
+            existing.total = existing.qty * item.price;
+        } else {
+            cart.push({ itemId: itemId, name: item.name, qty: qty, price: item.price, total: qty * item.price });
+        }
+        
+        document.getElementById('saleQty').value = '1';
+        renderCart();
+        showMsg('🛒 تمت إضافة: ' + item.name);
+    };
+}
+
+function renderCart() {
+    const total = cart.reduce(function(s, c) { return s + c.total; }, 0);
+    document.getElementById('cartItems').innerHTML = cart.length ? cart.map(function(c, i) {
+        return '<div class="cart-item"><span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span><button class="red small" onclick="removeFromCart(' + i + ')">❌</button></div>';
+    }).join('') : '<p style="color:#999;">الفارورة فارغة</p>';
+    document.getElementById('cartTotal').textContent = formatPrice(total);
+}
+
+function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); }
+
+function checkoutCart() {
+    if (cart.length === 0) { showMsg('⚠️ الفاتورة فارغة'); return; }
+    
+    const tx = db.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    let allValid = true;
+    let processed = 0;
+    
+    cart.forEach(function(c) {
+        store.get(c.itemId).onsuccess = function(e) {
+            const item = e.target.result;
+            if (!item || item.quantity < c.qty) allValid = false;
+            processed++;
+            if (processed === cart.length) finish();
+        };
+    });
+    
+    function finish() {
+        if (!allValid) { showMsg('❌ المخزون غير كافٍ'); return; }
+        
+        cart.forEach(function(c) {
+            store.get(c.itemId).onsuccess = function(e) {
+                const item = e.target.result;
+                item.quantity -= c.qty;
+                store.put(item);
+            };
+        });
+        
+        const total = cart.reduce(function(s, c) { return s + c.total; }, 0);
+        const itemsList = cart.map(function(c) { return c.name + ' ×' + c.qty; }).join(' + ');
+        
+        db.transaction('sales', 'readwrite').objectStore('sales').add({
+            itemName: itemsList,
+            total: total,
+            date: new Date().toLocaleDateString('ar-SY')
+        });
+        
+        tx.oncomplete = function() {
+            showMsg('✅ تم البيع! ' + formatPrice(total));
+            clearCart();
+            loadStore();
+            fillSaleSelect();
+            loadSales();
+        };
+    }
+}
+
+function loadSales() {
+    db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
+        const sales = e.target.result;
+        document.getElementById('salesTable').innerHTML = sales.reverse().map(function(s) {
+            return '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td></tr>';
+        }).join('');
     };
 }
 </script>
 </body>
-  </html>
+</html>
