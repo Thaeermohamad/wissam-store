@@ -1064,6 +1064,173 @@ function loadSales() {
 }
 
 console.log('🟢 الجزء الثالث جاهز - المخزن والمبيعات');
-    </script>
+    <script>
+// ==================== المرتجعات ====================
+function makeReturn() {
+    const itemSelect = document.getElementById('returnItem');
+    const qtyInput = document.getElementById('returnQty');
+    const reasonSelect = document.getElementById('returnReason');
+    const amountInput = document.getElementById('returnAmount');
+    
+    if (!itemSelect || !qtyInput || !reasonSelect || !amountInput) return;
+    
+    const itemId = parseInt(itemSelect.value);
+    const qty = parseInt(qtyInput.value);
+    const reason = reasonSelect.value;
+    const amount = parseFloat(amountInput.value);
+    
+    if (!itemId || !qty || qty <= 0 || isNaN(amount) || amount < 0) {
+        showMsg('⚠️ تأكد من البيانات');
+        return;
+    }
+    
+    const tx = db.transaction('items', 'readonly');
+    const request = tx.objectStore('items').get(itemId);
+    
+    request.onsuccess = function(e) {
+        const item = e.target.result;
+        
+        if (item) {
+            item.quantity += qty;
+            const txUpdate = db.transaction('items', 'readwrite');
+            txUpdate.objectStore('items').put(item);
+        }
+        
+        const txReturn = db.transaction('returns', 'readwrite');
+        txReturn.objectStore('returns').add({
+            itemName: item ? item.name : 'غير معروف',
+            quantity: qty,
+            amount: amount,
+            reason: reason,
+            date: new Date().toLocaleDateString('ar-SY')
+        });
+        
+        txReturn.oncomplete = function() {
+            showMsg('✅ تم الإرجاع! ' + formatPrice(amount));
+            qtyInput.value = '1';
+            amountInput.value = '';
+            loadStore();
+            loadReturns();
+            fillSelects();
+        };
+    };
+}
+
+function loadReturns() {
+    if (!db) return;
+    
+    const tx = db.transaction('returns', 'readonly');
+    const request = tx.objectStore('returns').getAll();
+    
+    request.onsuccess = function(e) {
+        const returns = e.target.result;
+        
+        const tbody = document.getElementById('returnsTable');
+        if (tbody) {
+            tbody.innerHTML = returns.reverse().map(function(r) {
+                return '<tr>' +
+                    '<td>' + (r.date || '-') + '</td>' +
+                    '<td>' + (r.itemName || '-') + '</td>' +
+                    '<td>' + (r.quantity || 0) + '</td>' +
+                    '<td>' + formatPrice(r.amount) + '</td>' +
+                    '<td>' + (r.reason || '-') + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+        
+        const total = returns.reduce(function(s, r) { return s + (r.amount || 0); }, 0);
+        const totalEl = document.getElementById('totalReturns');
+        if (totalEl) totalEl.textContent = formatPrice(total);
+    };
+}
+
+// ==================== الديون ====================
+function loadDebts() {
+    if (!db) return;
+    
+    const tx = db.transaction('debts', 'readonly');
+    const request = tx.objectStore('debts').getAll();
+    
+    request.onsuccess = function(e) {
+        const debts = e.target.result;
+        const pending = debts.filter(function(d) { return d.status === 'معلق'; });
+        const paid = debts.filter(function(d) { return d.status === 'مسدد'; });
+        
+        const tbody = document.getElementById('debtsTable');
+        if (tbody) {
+            tbody.innerHTML = pending.length > 0 ? pending.map(function(d) {
+                const remaining = d.amount - (d.paid || 0);
+                return '<tr>' +
+                    '<td><strong>' + (d.customer || '-') + '</strong></td>' +
+                    '<td>' + formatPrice(d.amount) + '</td>' +
+                    '<td>' + (d.date || '-') + '</td>' +
+                    '<td>' + formatPrice(d.paid || 0) + '</td>' +
+                    '<td>' + formatPrice(remaining) + '</td>' +
+                    '<td>' +
+                    '<input type="number" id="payAmount_' + d.id + '" placeholder="المبلغ" style="width:80px;" step="1"> ' +
+                    '<button class="green small" onclick="payDebt(' + d.id + ')">✅ تسديد</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('') : '<tr><td colspan="6" style="text-align:center;color:#999;">🎉 لا توجد ديون معلقة</td></tr>';
+        }
+        
+        const paidTbody = document.getElementById('paidDebtsTable');
+        if (paidTbody) {
+            paidTbody.innerHTML = paid.length > 0 ? paid.reverse().map(function(d) {
+                return '<tr>' +
+                    '<td>' + (d.customer || '-') + '</td>' +
+                    '<td>' + formatPrice(d.amount) + '</td>' +
+                    '<td>' + formatPrice(d.paid || d.amount) + '</td>' +
+                    '<td>' + (d.paidDate || '-') + '</td>' +
+                    '</tr>';
+            }).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد ديون مسددة بعد</td></tr>';
+        }
+        
+        const pendingTotal = pending.reduce(function(s, d) { return s + (d.amount - (d.paid || 0)); }, 0);
+        const paidTotal = paid.reduce(function(s, d) { return s + (d.paid || d.amount); }, 0);
+        
+        const pendingEl = document.getElementById('pendingDebts');
+        const paidEl = document.getElementById('paidDebtsTotal');
+        
+        if (pendingEl) pendingEl.textContent = formatPrice(pendingTotal);
+        if (paidEl) paidEl.textContent = formatPrice(paidTotal);
+    };
+}
+
+function payDebt(id) {
+    const payInput = document.getElementById('payAmount_' + id);
+    const payAmount = parseFloat(payInput ? payInput.value : 0);
+    
+    const tx = db.transaction('debts', 'readonly');
+    const request = tx.objectStore('debts').get(id);
+    
+    request.onsuccess = function(e) {
+        const debt = e.target.result;
+        if (!debt) return;
+        
+        const remaining = debt.amount - (debt.paid || 0);
+        const finalPay = (isNaN(payAmount) || payAmount <= 0) ? remaining : Math.min(payAmount, remaining);
+        
+        if (!confirm('تأكيد تسديد ' + formatPrice(finalPay) + ' من ' + debt.customer + '؟')) return;
+        
+        debt.paid = (debt.paid || 0) + finalPay;
+        
+        if (debt.paid >= debt.amount) {
+            debt.status = 'مسدد';
+            debt.paidDate = new Date().toLocaleDateString('ar-SY');
+        }
+        
+        const txUpdate = db.transaction('debts', 'readwrite');
+        txUpdate.objectStore('debts').put(debt);
+        
+        txUpdate.oncomplete = function() {
+            showMsg('✅ تم تسديد ' + formatPrice(finalPay) + ' من ' + debt.customer);
+            loadDebts();
+        };
+    };
+}
+
+console.log('🟢 الجزء الرابع جاهز - المرتجعات والديون');
+        </script>
 </body>
 </html>
