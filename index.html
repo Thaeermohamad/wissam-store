@@ -560,4 +560,43 @@ function archiveDevice(id) { if (!confirm('تأكيد التسليم؟')) return
 function toggleReceived(id) { db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.received = i.received === 'نعم' ? 'لا' : 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
 function deleteMaintenance(id) { if (!confirm('متأكد؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadMaintenance(); }; }
 
-// ==================== الباركود ====================   
+// ==================== الباركود ==================== 
+    // ==================== الباركود ====================
+let barcodeCounter = parseInt(localStorage.getItem('barcodeCounter') || '1');
+function initBarcodes() { document.getElementById('barcodeNext').textContent = barcodeCounter; document.getElementById('barcodeStart').value = barcodeCounter; }
+
+function generateBarcodes() {
+    const start = parseInt(document.getElementById('barcodeStart').value) || barcodeCounter;
+    const type = document.getElementById('barcodeType').value;
+    const prefixes = { general: 'WS-', store: 'ST-', maintenance: 'MT-' };
+    const prefix = prefixes[type] || 'WS-';
+    let html = '';
+    for (let i = 0; i < 20; i++) {
+        const num = start + i, code = prefix + String(num).padStart(4, '0');
+        html += '<div class="barcode-item"><svg id="bc' + i + '" style="width:100%;height:40px;"></svg><div class="code">' + code + '</div><div class="num">' + num + '</div></div>';
+    }
+    document.getElementById('barcodeArea').innerHTML = html;
+    for (let i = 0; i < 20; i++) {
+        const code = prefix + String(start + i).padStart(4, '0');
+        const svg = document.getElementById('bc' + i);
+        if (svg) { let bars = '', x = 0; for (let j = 0; j < code.length; j++) { const w = (code.charCodeAt(j) % 3) + 1; if (j % 2 === 0) bars += '<rect x="' + x + '" y="5" width="' + w + '" height="30" fill="black"/>'; x += w + 1; } svg.innerHTML = bars; svg.setAttribute('viewBox', '0 0 ' + x + ' 40'); }
+    }
+    barcodeCounter = start + 20;
+    localStorage.setItem('barcodeCounter', barcodeCounter.toString());
+    document.getElementById('barcodeNext').textContent = barcodeCounter;
+    document.getElementById('barcodeStart').value = barcodeCounter;
+    showMsg('✅ تم إنشاء 20 باركود');
+}
+
+function printBarcodes() {
+    const area = document.getElementById('barcodeArea');
+    if (!area || area.innerHTML.includes('اضغط')) { showMsg('⚠️ أنشئ الباركودات أولاً'); return; }
+    const w = window.open('', '_blank', 'width=800,height=600');
+    w.document.write('<!DOCTYPE html><html dir="rtl"><head><title>باركودات</title><style>*{margin:0;padding:0;}body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;}h2{margin-bottom:20px;}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;}.item{border:1px dashed #ccc;padding:15px;border-radius:8px;page-break-inside:avoid;}.code{font-size:12px;font-weight:bold;margin-top:5px;}.num{font-size:10px;color:#888;}svg{width:100%;height:40px;}@media print{body{margin:0;padding:10px;}}</style></head><body><h2>🏷️ باركودات مركز وسام</h2><div class="grid">' + area.innerHTML + '</div></body></html>');
+    w.document.close(); setTimeout(() => w.print(), 500);
+}
+
+document.addEventListener('DOMContentLoaded', () => { document.getElementById('mDate').value = new Date().toISOString().split('T')[0]; });
+</script>
+</body>
+</html>
