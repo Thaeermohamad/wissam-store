@@ -343,3 +343,28 @@ function checkoutCart() {
 function loadSales() { db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) { document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(function(s) { return '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td></tr>'; }).join(''); }; }
 
 // ==================== المرتجعات ====================
+    // ==================== المرتجعات ====================
+function fillReturnSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('returnItem').innerHTML = e.target.result.map(function(i) { return '<option value="' + i.id + '">' + i.name + '</option>'; }).join(''); }; }
+
+function makeReturn() {
+    const id = parseInt(document.getElementById('returnItem').value);
+    const qty = parseInt(document.getElementById('returnQty').value);
+    const reason = document.getElementById('returnReason').value;
+    const amount = parseFloat(document.getElementById('returnAmount').value);
+    if (!id || !qty || qty <= 0 || isNaN(amount) || amount < 0) { showMsg('⚠️ تأكد من البيانات'); return; }
+    db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (item) { item.quantity += qty; db.transaction('items', 'readwrite').objectStore('items').put(item); }
+        db.transaction('returns', 'readwrite').objectStore('returns').add({ itemName: item ? item.name : 'غير معروف', quantity: qty, amount, reason, date: new Date().toLocaleDateString('ar-SY') }).transaction.oncomplete = function() { showMsg('✅ تم الإرجاع'); document.getElementById('returnQty').value = '1'; document.getElementById('returnAmount').value = ''; loadStore(); loadReturns(); fillReturnSelect(); fillSaleSelect(); };
+    };
+}
+
+function loadReturns() {
+    db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = function(e) {
+        const rets = e.target.result;
+        document.getElementById('returnsTable').innerHTML = rets.reverse().map(function(r) { return '<tr><td>' + r.date + '</td><td>' + r.itemName + '</td><td>' + r.quantity + '</td><td>' + formatPrice(r.amount) + '</td><td>' + r.reason + '</td></tr>'; }).join('');
+        document.getElementById('totalReturns').textContent = formatPrice(rets.reduce(function(s, r) { return s + (r.amount || 0); }, 0));
+    };
+}
+
+// ==================== الديون ====================
