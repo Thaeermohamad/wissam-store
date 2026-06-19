@@ -202,8 +202,8 @@
         
         <div class="form-row">
             <select id="mStatus" style="width:120px"><option value="waiting">⏳ انتظار</option><option value="fixing">🔧 صيانة</option><option value="done">✅ جاهز</option></select>
-            <button class="green" id="btnAddMaintenance">➕ إضافة جهاز</button>
-            <button class="green" id="btnUpdateMaintenance" style="display:none;">💾 حفظ التعديل</button>
+            <button class="green" id="btnAddMaintenance" onclick="addMaintenance()">➕ إضافة جهاز</button>
+            <button class="green" id="btnUpdateMaintenance" style="display:none;" onclick="addMaintenance()">💾 حفظ التعديل</button>
             <button class="red small" id="btnCancelEdit" style="display:none;" onclick="cancelMaintenanceEdit()">❌ إلغاء</button>
         </div>
         
