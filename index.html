@@ -710,56 +710,19 @@ function printBarcodes() {
 }
 
 // ==================== مسح الباركود ====================
-let scannerStream = null;
-
-async function startScanner() {
-    const video = document.getElementById('scannerVideo');
-    const resultDiv = document.getElementById('scanResult');
-    resultDiv.innerHTML = '<p style="color:#888;">⏳ جاري تشغيل الكاميرا...</p>';
-    
-    try {
-        scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        video.srcObject = scannerStream;
-        resultDiv.innerHTML = '<p style="color:#27ae60;">✅ الكاميرا جاهزة - وجه الباركود</p>';
-        
-        // محاولة قراءة الباركود كل ثانية
-        scanInterval = setInterval(scanBarcodeFromVideo, 1000);
-    } catch (err) {
-        resultDiv.innerHTML = '<p style="color:#e74c3c;">❌ تعذر الوصول للكاميرا</p><p style="color:#888;">تأكد من فتح التطبيق عبر HTTPS أو localhost</p>';
-    }
+function startScanner() {
+    document.getElementById('scanResult').innerHTML = '<p style="color:#888;">ألصق رقم الباركود في الحقل أعلاه ثم اضغط بحث</p>';
 }
 
 function stopScanner() {
-    if (scannerStream) {
-        scannerStream.getTracks().forEach(track => track.stop());
-        scannerStream = null;
-    }
-    if (scanInterval) clearInterval(scanInterval);
-    document.getElementById('scanResult').innerHTML = '<p style="color:#888;">⏹️ تم إيقاف المسح</p>';
+    // لا شيء
 }
 
-let scanInterval = null;
-
-function scanBarcodeFromVideo() {
-    // محاولة قراءة الباركود من الفيديو (مبسط - للباركودات الخطية)
-    const video = document.getElementById('scannerVideo');
-    if (!video || video.readyState < 2) return;
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    
-    // في النسخة الكاملة نستخدم مكتبة ZXing أو quagga
-    // هنا نكتفي بالإدخال اليدوي المؤقت
-}
-
-// مسح يدوي كحل بديل
-function manualScan() {
-    const code = prompt('أدخل رقم الباركود:');
-    if (!code) return;
-    processScannedBarcode(code.trim());
+function manualScanFromInput() {
+    const code = document.getElementById('scanBarcodeInput').value.trim();
+    if (!code) { showMsg('⚠️ ألصق رقم الباركود أولاً'); return; }
+    processScannedBarcode(code);
+    document.getElementById('scanBarcodeInput').value = '';
 }
 
 function processScannedBarcode(code) {
@@ -769,11 +732,7 @@ function processScannedBarcode(code) {
     db.transaction('maintenance', 'readonly').objectStore('maintenance').index('barcode').get(code).onsuccess = function(e) {
         const device = e.target.result;
         if (device) {
-            // وجدنا الجهاز
             document.getElementById('scanResult').innerHTML = '<div class="alert" style="display:block;background:#d4edda;color:#155724;">✅ جهاز: <strong>' + device.device + '</strong> | ' + device.customer + ' | <button class="green small" onclick="fillMaintenanceFromScan(\'' + code + '\')">📝 تحميل البيانات</button></div>';
-            if (confirm('جهاز موجود: ' + device.device + ' - ' + device.customer + '\nهل تريد تحميل بياناته؟')) {
-                fillMaintenanceFromScan(code);
-            }
             return;
         }
         
