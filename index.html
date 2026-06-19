@@ -1,3 +1,4 @@
+<!-- جزء 1 -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -79,8 +80,11 @@
         .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 500px; width: 90%; }
         body.dark .modal-content { background: #16213e; }
         
+        #scannerArea { text-align: center; padding: 15px; background: #000; border-radius: 12px; margin-top: 15px; }
+        #scannerArea video { max-width: 100%; border-radius: 8px; }
+        
         @media (max-width: 600px) { .form-row { flex-direction: column; } input, select, textarea { width: 100%; } .barcode-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media print { body { background: white; padding: 0; } .container { max-width: 100%; } .tabs, .header-row, .msg, button { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
+        @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
     </style>
 </head>
 <body>
@@ -99,10 +103,12 @@
         <button onclick="showTab('debts')">⏳ الديون</button>
         <button onclick="showTab('maintenance')">🔧 الصيانة</button>
         <button onclick="showTab('barcodes')">🏷️ الباركود</button>
+        <button onclick="showTab('scanner')">📷 مسح</button>
     </div>
     
     <!-- المخزن -->
     <div id="tab-store" class="tab-content active">
+        <div id="storeEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid #dce3ec;"></div>
         <div class="form-row">
             <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
             <input type="number" id="itemQty" placeholder="الكمية" style="width:80px" min="1">
@@ -113,7 +119,7 @@
         </div>
         <div id="lowStockAlert" class="alert"></div>
         <table>
-            <thead><tr><th>القطعة</th><th>الكمية</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th>باركود</th><th>حذف</th></tr></thead>
+            <thead><tr><th>القطعة</th><th>الكمية</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th>باركود</th><th>إجراءات</th></tr></thead>
             <tbody id="storeTable"></tbody>
         </table>
     </div>
@@ -176,6 +182,7 @@
     
     <!-- الصيانة -->
     <div id="tab-maintenance" class="tab-content">
+        <div id="maintenanceEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid #dce3ec;"></div>
         <div class="form-row">
             <input type="text" id="mSerial" placeholder="الرقم التسلسلي" style="flex:1" required>
             <input type="text" id="mCustomer" placeholder="اسم الزبون" style="flex:2" required>
@@ -189,17 +196,18 @@
         </div>
         <div class="form-row"><textarea id="mIssue" placeholder="وصف العطل" style="flex:2;height:50px;"></textarea></div>
         
-        <!-- قطع الغيار -->
         <div style="background:#f9f9f9;padding:12px;border-radius:8px;margin-bottom:10px;">
-            <strong>🔩 قطع الغيار المستخدمة:</strong>
-            <div id="mPartsList" style="margin:8px 0;font-size:13px;color:#888;">لا توجد قطع مضافة</div>
+            <strong>🔩 قطع الغيار:</strong>
+            <div id="mPartsList" style="margin:8px 0;font-size:13px;color:#888;">لا توجد قطع</div>
             <button class="blue-btn small" onclick="openPartsModal()">➕ إضافة قطعة</button>
             <span id="mPartsTotal" style="margin-right:10px;font-weight:bold;color:#27ae60;"></span>
         </div>
         
         <div class="form-row">
             <select id="mStatus" style="width:120px"><option value="waiting">⏳ انتظار</option><option value="fixing">🔧 صيانة</option><option value="done">✅ جاهز</option></select>
-            <button class="green" onclick="addMaintenance()">➕ إضافة جهاز</button>
+            <button class="green" id="btnAddMaintenance">➕ إضافة جهاز</button>
+            <button class="green" id="btnUpdateMaintenance" style="display:none;">💾 حفظ التعديل</button>
+            <button class="red small" id="btnCancelEdit" style="display:none;" onclick="cancelMaintenanceEdit()">❌ إلغاء</button>
         </div>
         
         <div class="summary">
@@ -236,9 +244,17 @@
         </div>
         <div id="barcodeArea" class="barcode-grid"><p style="color:#999;grid-column:1/-1;text-align:center;">اضغط "20 باركود" للبدء</p></div>
     </div>
+    
+    <!-- مسح الباركود -->
+    <div id="tab-scanner" class="tab-content">
+        <h3>📷 مسح باركود</h3>
+        <div id="scannerArea"><video id="scannerVideo" autoplay playsinline></video></div>
+        <div id="scanResult" style="margin-top:15px;text-align:center;"></div>
+        <button class="red" onclick="stopScanner()" style="margin-top:10px;width:100%;">⏹️ إيقاف المسح</button>
+    </div>
 </div>
 
-<!-- نافذة منبثقة لاختيار قطع الغيار -->
+<!-- نافذة قطع الغيار -->
 <div id="partsModal" class="modal">
     <div class="modal-content">
         <h3>➕ إضافة قطعة غيار</h3>
@@ -253,350 +269,4 @@
 </div>
 
 <div id="msg" class="msg"></div>
-
-<script>
-// ==================== قاعدة البيانات ====================
-let db;
-const request = indexedDB.open('WissamFinalV3', 2);
-
-request.onupgradeneeded = function(e) {
-    const d = e.target.result;
-    if (!d.objectStoreNames.contains('items')) { const s = d.createObjectStore('items', { keyPath: 'id', autoIncrement: true }); s.createIndex('name', 'name', { unique: false }); s.createIndex('barcode', 'barcode', { unique: false }); }
-    if (!d.objectStoreNames.contains('sales')) { d.createObjectStore('sales', { keyPath: 'id', autoIncrement: true }); }
-    if (!d.objectStoreNames.contains('returns')) { d.createObjectStore('returns', { keyPath: 'id', autoIncrement: true }); }
-    if (!d.objectStoreNames.contains('debts')) { d.createObjectStore('debts', { keyPath: 'id', autoIncrement: true }); }
-    if (!d.objectStoreNames.contains('maintenance')) { const s = d.createObjectStore('maintenance', { keyPath: 'id', autoIncrement: true }); s.createIndex('barcode', 'barcode', { unique: false }); }
-};
-
-request.onsuccess = function(e) { db = e.target.result; console.log('✅'); loadAll(); };
-request.onerror = function() { alert('❌ فشل قاعدة البيانات'); };
-
-// ==================== وضع ليلي ====================
-function toggleMode() {
-    document.body.classList.toggle('dark');
-    document.querySelector('.mode-toggle').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-    localStorage.setItem('darkMode', document.body.classList.contains('dark') ? '1' : '0');
-}
-if (localStorage.getItem('darkMode') === '1') { document.body.classList.add('dark'); document.querySelector('.mode-toggle').textContent = '☀️'; }
-
-// ==================== تبويبات ====================
-function showTab(tab) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    event.target.classList.add('active');
-    if (tab === 'store') loadStore();
-    if (tab === 'sales') { fillSaleSelect(); loadSales(); }
-    if (tab === 'returns') { fillReturnSelect(); loadReturns(); }
-    if (tab === 'debts') loadDebts();
-    if (tab === 'maintenance') loadMaintenance();
-    if (tab === 'barcodes') initBarcodes();
-}
-
-function loadAll() { loadStore(); fillSaleSelect(); fillReturnSelect(); loadSales(); loadReturns(); loadDebts(); loadMaintenance(); initBarcodes(); }
-
-// ==================== مساعدة ====================
-function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
-function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
-
-// ==================== المخزن ====================
-    // ==================== المخزن ====================
-function addItem() {
-    const name = document.getElementById('itemName').value.trim();
-    const qty = parseInt(document.getElementById('itemQty').value);
-    const cost = parseFloat(document.getElementById('itemCost').value);
-    const price = parseFloat(document.getElementById('itemPrice').value);
-    const barcode = document.getElementById('itemBarcode').value.trim();
-    if (!name || !qty || qty <= 0 || isNaN(cost) || isNaN(price)) { showMsg('⚠️ املأ الحقول'); return; }
-    const tx = db.transaction('items', 'readwrite');
-    const store = tx.objectStore('items');
-    store.index('name').get(name).onsuccess = function(e) {
-        const ex = e.target.result;
-        if (ex) { ex.quantity += qty; ex.cost = cost; ex.price = price; if (barcode) ex.barcode = barcode; store.put(ex); showMsg('✅ تحديث: ' + name); }
-        else { store.add({ name, quantity: qty, cost, price, barcode }); showMsg('✅ إضافة: ' + name); }
-        tx.oncomplete = () => { ['itemName','itemQty','itemCost','itemPrice','itemBarcode'].forEach(id => document.getElementById(id).value = ''); loadStore(); fillSaleSelect(); fillReturnSelect(); };
-    };
-}
-
-function loadStore() {
-    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
-        const items = e.target.result;
-        document.getElementById('storeTable').innerHTML = items.map(i => {
-            const p = i.price - i.cost;
-            return '<tr><td><strong>' + i.name + '</strong> ' + (i.quantity < 5 ? '<span class="badge badge-warning">⚠️</span>' : '') + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.cost) + '</td><td>' + formatPrice(i.price) + '</td><td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(p) + '</td><td>' + (i.barcode || '-') + '</td><td><button class="red small" onclick="deleteItem(' + i.id + ')">🗑️</button></td></tr>';
-        }).join('');
-        const low = items.filter(i => i.quantity < 5);
-        const a = document.getElementById('lowStockAlert');
-        a.style.display = low.length ? 'block' : 'none';
-        if (low.length) a.innerHTML = '⚠️ نقص: ' + low.map(i => i.name + ' (' + i.quantity + ')').join(' | ');
-    };
-}
-
-function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); }; }
-
-// ==================== المبيعات ====================
-    // ==================== المبيعات ====================
-let cart = [];
-function fillSaleSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('saleItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + ' (' + i.quantity + ')</option>').join(''); }; }
-
-document.addEventListener('change', function(e) {
-    if (e.target.id === 'saleType') document.getElementById('saleCustomer').style.display = e.target.value === 'آجل' ? 'inline' : 'none';
-});
-
-function addToCart() {
-    const id = parseInt(document.getElementById('saleItem').value);
-    const qty = parseInt(document.getElementById('saleQty').value);
-    if (!id || !qty || qty <= 0) { showMsg('⚠️ تأكد من البيانات'); return; }
-    db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
-        const item = e.target.result;
-        if (!item) { showMsg('❌ غير موجودة'); return; }
-        const ex = cart.find(c => c.itemId === id);
-        if (item.quantity < (ex ? ex.qty : 0) + qty) { showMsg('❌ المخزون غير كافٍ'); return; }
-        if (ex) { ex.qty += qty; ex.total = ex.qty * item.price; }
-        else { cart.push({ itemId: id, name: item.name, qty, price: item.price, total: qty * item.price }); }
-        document.getElementById('saleQty').value = '1'; renderCart(); showMsg('🛒 ' + item.name);
-    };
-}
-
-function renderCart() {
-    const t = cart.reduce((s, c) => s + c.total, 0);
-    document.getElementById('cartItems').innerHTML = cart.length ? cart.map((c, i) => '<div class="cart-item"><span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span><button class="red small" onclick="removeFromCart(' + i + ')">❌</button></div>').join('') : '<p style="color:#999;">فارغة</p>';
-    document.getElementById('cartTotal').textContent = formatPrice(t);
-}
-function removeFromCart(i) { cart.splice(i, 1); renderCart(); }
-function clearCart() { cart = []; renderCart(); }
-
-function checkoutCart() {
-    if (!cart.length) { showMsg('⚠️ فارغة'); return; }
-    const type = document.getElementById('saleType').value;
-    const customer = document.getElementById('saleCustomer').value.trim();
-    if (type === 'آجل' && !customer) { showMsg('⚠️ أدخل اسم الزبون'); return; }
-    const tx = db.transaction('items', 'readwrite');
-    const store = tx.objectStore('items');
-    let ok = true, done = 0;
-    cart.forEach(c => { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; if (!item || item.quantity < c.qty) ok = false; done++; if (done === cart.length) fin(); }; });
-    function fin() {
-        if (!ok) { showMsg('❌ المخزون غير كافٍ'); return; }
-        cart.forEach(c => { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; item.quantity -= c.qty; store.put(item); }; });
-        const total = cart.reduce((s, c) => s + c.total, 0);
-        const items = cart.map(c => c.name + ' ×' + c.qty).join(' + ');
-        const date = new Date().toLocaleDateString('ar-SY');
-        db.transaction('sales', 'readwrite').objectStore('sales').add({ itemName: items, total, type, customer: type === 'آجل' ? customer : '', date });
-        if (type === 'آجل') { db.transaction('debts', 'readwrite').objectStore('debts').add({ customer, amount: total, paid: 0, date, status: 'معلق', paidDate: '' }); }
-        tx.oncomplete = () => { showMsg('✅ تم البيع! ' + formatPrice(total)); clearCart(); loadStore(); fillSaleSelect(); loadSales(); if (type === 'آجل') loadDebts(); };
-    }
-}
-
-function loadSales() {
-    db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
-        document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(s => '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td></tr>').join('');
-    };
-}
-
-// ==================== المرتجعات ====================
-  // ==================== المرتجعات ====================
-function fillReturnSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('returnItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + '</option>').join(''); }; }
-function makeReturn() {
-    const id = parseInt(document.getElementById('returnItem').value), qty = parseInt(document.getElementById('returnQty').value), reason = document.getElementById('returnReason').value, amount = parseFloat(document.getElementById('returnAmount').value);
-    if (!id || !qty || qty <= 0 || isNaN(amount)) { showMsg('⚠️ تأكد من البيانات'); return; }
-    db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
-        const item = e.target.result;
-        if (item) { item.quantity += qty; db.transaction('items', 'readwrite').objectStore('items').put(item); }
-        db.transaction('returns', 'readwrite').objectStore('returns').add({ itemName: item ? item.name : 'غير معروف', quantity: qty, amount, reason, date: new Date().toLocaleDateString('ar-SY') }).transaction.oncomplete = () => { showMsg('✅ تم الإرجاع'); document.getElementById('returnQty').value = '1'; document.getElementById('returnAmount').value = ''; loadStore(); loadReturns(); fillReturnSelect(); fillSaleSelect(); };
-    };
-}
-function loadReturns() {
-    db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = function(e) {
-        const rets = e.target.result;
-        document.getElementById('returnsTable').innerHTML = rets.reverse().map(r => '<tr><td>' + r.date + '</td><td>' + r.itemName + '</td><td>' + r.quantity + '</td><td>' + formatPrice(r.amount) + '</td><td>' + r.reason + '</td></tr>').join('');
-        document.getElementById('totalReturns').textContent = formatPrice(rets.reduce((s, r) => s + (r.amount || 0), 0));
-    };
-}
-
-// ==================== الديون ====================
-function loadDebts() {
-    db.transaction('debts', 'readonly').objectStore('debts').getAll().onsuccess = function(e) {
-        const debts = e.target.result, pending = debts.filter(d => d.status === 'معلق'), paid = debts.filter(d => d.status === 'مسدد');
-        document.getElementById('debtsTable').innerHTML = pending.length ? pending.map(d => '<tr><td><strong>' + d.customer + '</strong></td><td>' + formatPrice(d.amount) + '</td><td>' + d.date + '</td><td>' + formatPrice(d.paid || 0) + '</td><td>' + formatPrice(d.amount - (d.paid || 0)) + '</td><td><input type="number" id="pay_' + d.id + '" placeholder="المبلغ" style="width:70px;" step="1"> <button class="green small" onclick="payDebt(' + d.id + ')">✅</button></td></tr>').join('') : '<tr><td colspan="6" style="text-align:center;color:#999;">🎉 لا توجد ديون</td></tr>';
-        document.getElementById('paidDebtsTable').innerHTML = paid.length ? paid.reverse().map(d => '<tr><td>' + d.customer + '</td><td>' + formatPrice(d.amount) + '</td><td>' + (d.paidDate || '-') + '</td></tr>').join('') : '<tr><td colspan="3" style="text-align:center;color:#999;">لا يوجد</td></tr>';
-        document.getElementById('pendingDebts').textContent = formatPrice(pending.reduce((s, d) => s + (d.amount - (d.paid || 0)), 0));
-        document.getElementById('paidDebtsTotal').textContent = formatPrice(paid.reduce((s, d) => s + (d.paid || d.amount), 0));
-    };
-}
-function payDebt(id) {
-    const amt = parseFloat(document.getElementById('pay_' + id).value);
-    db.transaction('debts', 'readonly').objectStore('debts').get(id).onsuccess = function(e) {
-        const d = e.target.result; if (!d) return;
-        const remaining = d.amount - (d.paid || 0), pay = (isNaN(amt) || amt <= 0) ? remaining : Math.min(amt, remaining);
-        if (!confirm('تسديد ' + formatPrice(pay) + '؟')) return;
-        d.paid = (d.paid || 0) + pay;
-        if (d.paid >= d.amount) { d.status = 'مسدد'; d.paidDate = new Date().toLocaleDateString('ar-SY'); }
-        db.transaction('debts', 'readwrite').objectStore('debts').put(d).transaction.oncomplete = () => { showMsg('✅ تم التسديد'); loadDebts(); };
-    };
-}
-
-// ==================== الصيانة ====================  
- // ==================== الصيانة ====================
-let mFilter = 'all', mParts = [];
-function setFilter(f) { mFilter = f; loadMaintenance(); }
-
-function openPartsModal() {
-    document.getElementById('partsModal').style.display = 'flex';
-    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
-        document.getElementById('partsItem').innerHTML = e.target.result.filter(i => i.quantity > 0).map(i => '<option value="' + i.id + '">' + i.name + ' (متوفر: ' + i.quantity + ')</option>').join('');
-    };
-}
-function closePartsModal() { document.getElementById('partsModal').style.display = 'none'; }
-
-function addPartToMaintenance() {
-    const id = parseInt(document.getElementById('partsItem').value);
-    const qty = parseInt(document.getElementById('partsQty').value);
-    const price = parseFloat(document.getElementById('partsPrice').value);
-    if (!id || !qty || qty <= 0 || isNaN(price)) { showMsg('⚠️ تأكد من البيانات'); return; }
-    db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
-        const item = e.target.result;
-        if (!item || item.quantity < qty) { showMsg('❌ المخزون غير كافٍ'); return; }
-        mParts.push({ itemId: id, name: item.name, qty, price, total: qty * price });
-        renderParts();
-        closePartsModal();
-        showMsg('✅ تمت إضافة: ' + item.name);
-    };
-}
-
-function renderParts() {
-    const list = document.getElementById('mPartsList');
-    const total = mParts.reduce((s, p) => s + p.total, 0);
-    list.innerHTML = mParts.length ? mParts.map((p, i) => '<div class="cart-item"><span>' + p.name + ' × ' + p.qty + ' = ' + formatPrice(p.total) + '</span><button class="red small" onclick="removePart(' + i + ')">❌</button></div>').join('') : 'لا توجد قطع مضافة';
-    document.getElementById('mPartsTotal').textContent = mParts.length ? 'مجموع القطع: ' + formatPrice(total) : '';
-}
-
-function removePart(i) { mParts.splice(i, 1); renderParts(); }
-
-function addMaintenance() {
-    const serial = document.getElementById('mSerial').value.trim();
-    const customer = document.getElementById('mCustomer').value.trim();
-    const phone = document.getElementById('mPhone').value.trim();
-    const device = document.getElementById('mDevice').value.trim();
-    if (!serial || !customer || !phone || !device) { showMsg('⚠️ املأ الحقول المطلوبة'); return; }
-    
-    const tx = db.transaction(['items', 'maintenance'], 'readwrite');
-    const itemsStore = tx.objectStore('items');
-    
-    // خصم القطع من المخزن
-    mParts.forEach(p => {
-        itemsStore.get(p.itemId).onsuccess = function(e) {
-            const item = e.target.result;
-            if (item) { item.quantity -= p.qty; itemsStore.put(item); }
-        };
-    });
-    
-    const labor = parseFloat(document.getElementById('mLabor').value) || 0;
-    const partsTotal = mParts.reduce((s, p) => s + p.total, 0);
-    const totalCost = partsTotal + labor;
-    
-    tx.objectStore('maintenance').add({
-        serial, customer, phone, device,
-        issue: document.getElementById('mIssue').value.trim(),
-        date: document.getElementById('mDate').value,
-        labor, parts: JSON.parse(JSON.stringify(mParts)),
-        partsTotal, totalCost,
-        barcode: document.getElementById('mBarcode').value.trim(),
-        status: document.getElementById('mStatus').value,
-        archived: false, received: 'لا'
-    });
-    
-    tx.oncomplete = function() {
-        showMsg('✅ تم الإضافة | التكلفة: ' + formatPrice(totalCost));
-        document.getElementById('mSerial').value = '';
-        document.getElementById('mCustomer').value = '';
-        document.getElementById('mPhone').value = '';
-        document.getElementById('mDevice').value = '';
-        document.getElementById('mIssue').value = '';
-        document.getElementById('mLabor').value = '';
-        document.getElementById('mBarcode').value = '';
-        mParts = []; renderParts();
-        loadStore(); loadMaintenance(); fillSaleSelect(); fillReturnSelect();
-    };
-}
-
-function loadMaintenance() {
-    db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = function(e) {
-        let items = e.target.result;
-        if (mFilter === 'archived') items = items.filter(i => i.archived);
-        else if (mFilter !== 'all') items = items.filter(i => i.status === mFilter && !i.archived);
-        else items = items.filter(i => !i.archived);
-        
-        const search = document.getElementById('mSearch').value.toLowerCase();
-        if (search) items = items.filter(i => (i.serial || '').toLowerCase().includes(search) || (i.customer || '').toLowerCase().includes(search) || (i.phone || '').includes(search) || (i.device || '').toLowerCase().includes(search));
-        
-        const all = e.target.result;
-        document.getElementById('mWaiting').textContent = all.filter(i => i.status === 'waiting' && !i.archived).length;
-        document.getElementById('mFixing').textContent = all.filter(i => i.status === 'fixing' && !i.archived).length;
-        document.getElementById('mDone').textContent = all.filter(i => i.status === 'done' && !i.archived).length;
-        
-        document.getElementById('maintenanceTable').innerHTML = items.reverse().map(i => {
-            let sb = '', st = '', partsInfo = '';
-            if (i.archived) { sb = 'badge-secondary'; st = '📦 أرشيف'; }
-            else if (i.status === 'waiting') { sb = 'badge-warning'; st = '⏳ انتظار'; }
-            else if (i.status === 'fixing') { sb = 'badge-info'; st = '🔧 صيانة'; }
-            else { sb = 'badge-success'; st = '✅ جاهز'; }
-            
-            if (i.parts && i.parts.length) {
-                partsInfo = '<br><small style="color:#888;">' + i.parts.map(p => p.name + ' ×' + p.qty).join(', ') + '</small>';
-                if (i.labor > 0) partsInfo += '<br><small>أجرة: ' + formatPrice(i.labor) + '</small>';
-            } else if (i.labor > 0) {
-                partsInfo = '<br><small>أجرة: ' + formatPrice(i.labor) + '</small>';
-            }
-            
-            const cost = i.totalCost || i.labor || i.cost || 0;
-            
-            return '<tr><td>' + i.serial + '</td><td>' + i.customer + '</td><td>' + i.device + partsInfo + '</td><td><span class="badge ' + sb + '">' + st + '</span></td><td>' + (cost > 0 ? formatPrice(cost) : '-') + '</td><td>' + (i.archived ? '' : '<select onchange="changeStatus(' + i.id + ',this.value)" style="width:70px;font-size:11px;padding:3px;"><option value="">تغيير</option><option value="waiting">⏳</option><option value="fixing">🔧</option><option value="done">✅</option></select> ' + (i.status === 'done' ? '<button class="green small" onclick="archiveDevice(' + i.id + ')">📤</button> ' : '') + '<button class="blue-btn small" onclick="toggleReceived(' + i.id + ')">📋</button> ') + '<button class="red small" onclick="deleteMaintenance(' + i.id + ')">🗑️</button></td></tr>';
-        }).join('') || '<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد أجهزة</td></tr>';
-    };
-}
-
-function changeStatus(id, ns) { if (!ns) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.status = ns; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
-function archiveDevice(id) { if (!confirm('تأكيد التسليم؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.archived = true; i.received = 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } showMsg('📤 تم'); loadMaintenance(); }; }
-function toggleReceived(id) { db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.received = i.received === 'نعم' ? 'لا' : 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
-function deleteMaintenance(id) { if (!confirm('متأكد؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadMaintenance(); }; }
-
-// ==================== الباركود ==================== 
-    // ==================== الباركود ====================
-let barcodeCounter = parseInt(localStorage.getItem('barcodeCounter') || '1');
-function initBarcodes() { document.getElementById('barcodeNext').textContent = barcodeCounter; document.getElementById('barcodeStart').value = barcodeCounter; }
-
-function generateBarcodes() {
-    const start = parseInt(document.getElementById('barcodeStart').value) || barcodeCounter;
-    const type = document.getElementById('barcodeType').value;
-    const prefixes = { general: 'WS-', store: 'ST-', maintenance: 'MT-' };
-    const prefix = prefixes[type] || 'WS-';
-    let html = '';
-    for (let i = 0; i < 20; i++) {
-        const num = start + i, code = prefix + String(num).padStart(4, '0');
-        html += '<div class="barcode-item"><svg id="bc' + i + '" style="width:100%;height:40px;"></svg><div class="code">' + code + '</div><div class="num">' + num + '</div></div>';
-    }
-    document.getElementById('barcodeArea').innerHTML = html;
-    for (let i = 0; i < 20; i++) {
-        const code = prefix + String(start + i).padStart(4, '0');
-        const svg = document.getElementById('bc' + i);
-        if (svg) { let bars = '', x = 0; for (let j = 0; j < code.length; j++) { const w = (code.charCodeAt(j) % 3) + 1; if (j % 2 === 0) bars += '<rect x="' + x + '" y="5" width="' + w + '" height="30" fill="black"/>'; x += w + 1; } svg.innerHTML = bars; svg.setAttribute('viewBox', '0 0 ' + x + ' 40'); }
-    }
-    barcodeCounter = start + 20;
-    localStorage.setItem('barcodeCounter', barcodeCounter.toString());
-    document.getElementById('barcodeNext').textContent = barcodeCounter;
-    document.getElementById('barcodeStart').value = barcodeCounter;
-    showMsg('✅ تم إنشاء 20 باركود');
-}
-
-function printBarcodes() {
-    const area = document.getElementById('barcodeArea');
-    if (!area || area.innerHTML.includes('اضغط')) { showMsg('⚠️ أنشئ الباركودات أولاً'); return; }
-    const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write('<!DOCTYPE html><html dir="rtl"><head><title>باركودات</title><style>*{margin:0;padding:0;}body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;}h2{margin-bottom:20px;}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;}.item{border:1px dashed #ccc;padding:15px;border-radius:8px;page-break-inside:avoid;}.code{font-size:12px;font-weight:bold;margin-top:5px;}.num{font-size:10px;color:#888;}svg{width:100%;height:40px;}@media print{body{margin:0;padding:10px;}}</style></head><body><h2>🏷️ باركودات مركز وسام</h2><div class="grid">' + area.innerHTML + '</div></body></html>');
-    w.document.close(); setTimeout(() => w.print(), 500);
-}
-
-document.addEventListener('DOMContentLoaded', () => { document.getElementById('mDate').value = new Date().toISOString().split('T')[0]; });
-</script>
-</body>
-</html>
+<!-- نهاية جزء 1 -->
