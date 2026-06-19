@@ -19,7 +19,7 @@
         body.dark .mode-toggle { background: #ffb74d; color: #000; }
         
         .tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tabs button { flex: 1; padding: 12px 6px; border: none; min-width: 55px; background: #ddd; cursor: pointer; font-size: 12px; font-weight: bold; border-radius: 8px 8px 0 0; }
+        .tabs button { flex: 1; padding: 12px 4px; border: none; min-width: 50px; background: #ddd; cursor: pointer; font-size: 11px; font-weight: bold; border-radius: 8px 8px 0 0; }
         .tabs button.active { background: #2d7fc1; color: white; }
         body.dark .tabs button { background: #333; color: #ccc; }
         body.dark .tabs button.active { background: #2d7fc1; color: white; }
@@ -80,7 +80,7 @@
         .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 500px; width: 90%; }
         body.dark .modal-content { background: #16213e; }
         
-        @media (max-width: 600px) { .form-row { flex-direction: column; } input, select, textarea { width: 100%; } .barcode-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .form-row { flex-direction: column; } input, select, textarea { width: 100%; } .barcode-grid { grid-template-columns: repeat(2, 1fr); } .tabs button { font-size: 10px; padding: 10px 2px; } }
         @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
     </style>
 </head>
@@ -94,13 +94,14 @@
     <p style="text-align:center; color:#666; margin-bottom:15px;">جميع الأسعار بالليرة السورية (ل.س)</p>
     
     <div class="tabs">
-        <button class="active" onclick="showTab('store')">🏭 المخزن</button>
-        <button onclick="showTab('sales')">💰 المبيعات</button>
-        <button onclick="showTab('returns')">🔄 المرتجعات</button>
-        <button onclick="showTab('debts')">⏳ الديون</button>
-        <button onclick="showTab('maintenance')">🔧 الصيانة</button>
-        <button onclick="showTab('barcodes')">🏷️ الباركود</button>
-        <button onclick="showTab('scanner')">📷 مسح</button>
+        <button class="active" onclick="showTab('store')">🏭</button>
+        <button onclick="showTab('sales')">💰</button>
+        <button onclick="showTab('returns')">🔄</button>
+        <button onclick="showTab('debts')">⏳</button>
+        <button onclick="showTab('maintenance')">🔧</button>
+        <button onclick="showTab('expenses')">💸</button>
+        <button onclick="showTab('barcodes')">🏷️</button>
+        <button onclick="showTab('scanner')">📷</button>
     </div>
     
     <!-- المخزن -->
@@ -227,6 +228,59 @@
         </table>
     </div>
     
+    <!-- المصاريف -->
+    <div id="tab-expenses" class="tab-content">
+        <div class="summary">
+            <div class="summary-box"><div class="number" id="totalDaily">0</div><div class="label">مصاريف اليوم (ل.س)</div></div>
+            <div class="summary-box"><div class="number" id="totalMonthly">0</div><div class="label">مصاريف الشهر (ل.س)</div></div>
+        </div>
+        
+        <div class="form-row">
+            <input type="number" id="expAmount" placeholder="المبلغ" step="1" style="width:110px" min="1" required>
+            <select id="expType" style="width:130px">
+                <option value="إيجار">إيجار</option>
+                <option value="كهرباء">كهرباء</option>
+                <option value="ماء">ماء</option>
+                <option value="إنترنت">إنترنت</option>
+                <option value="أجور">أجور عمال</option>
+                <option value="نقل">نقل وشحن</option>
+                <option value="أدوات">أدوات صيانة</option>
+                <option value="تغليف">تغليف</option>
+                <option value="أخرى">أخرى</option>
+            </select>
+            <select id="expCategory" style="width:110px">
+                <option value="يومي">يومي</option>
+                <option value="شهري">شهري</option>
+            </select>
+            <input type="date" id="expDate" style="width:130px">
+            <input type="text" id="expNote" placeholder="ملاحظة (اختياري)" style="flex:1">
+            <button class="red" onclick="addExpense()">💾 حفظ</button>
+        </div>
+        
+        <div class="form-row">
+            <select id="expFilterType" style="width:130px" onchange="loadExpenses()">
+                <option value="">كل الأنواع</option>
+                <option value="إيجار">إيجار</option>
+                <option value="كهرباء">كهرباء</option>
+                <option value="ماء">ماء</option>
+                <option value="إنترنت">إنترنت</option>
+                <option value="أجور">أجور عمال</option>
+                <option value="نقل">نقل وشحن</option>
+                <option value="أدوات">أدوات صيانة</option>
+                <option value="تغليف">تغليف</option>
+                <option value="أخرى">أخرى</option>
+            </select>
+            <select id="expFilterMonth" style="width:130px" onchange="loadExpenses()">
+                <option value="">كل الشهور</option>
+            </select>
+        </div>
+        
+        <table>
+            <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>تصنيف</th><th>ملاحظة</th><th>حذف</th></tr></thead>
+            <tbody id="expensesTable"></tbody>
+        </table>
+    </div>
+    
     <!-- الباركود -->
     <div id="tab-barcodes" class="tab-content">
         <div class="form-row">
@@ -273,7 +327,7 @@
     <!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV6', 2);
+const request = indexedDB.open('WissamFinalV7', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -282,6 +336,7 @@ request.onupgradeneeded = function(e) {
     if (!d.objectStoreNames.contains('returns')) { d.createObjectStore('returns', { keyPath: 'id', autoIncrement: true }); }
     if (!d.objectStoreNames.contains('debts')) { d.createObjectStore('debts', { keyPath: 'id', autoIncrement: true }); }
     if (!d.objectStoreNames.contains('maintenance')) { const s = d.createObjectStore('maintenance', { keyPath: 'id', autoIncrement: true }); s.createIndex('barcode', 'barcode', { unique: false }); }
+    if (!d.objectStoreNames.contains('expenses')) { d.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true }); }
 };
 
 request.onsuccess = function(e) { db = e.target.result; console.log('✅'); loadAll(); };
@@ -304,11 +359,12 @@ function showTab(tab) {
     if (tab === 'returns') { fillReturnSelect(); loadReturns(); }
     if (tab === 'debts') loadDebts();
     if (tab === 'maintenance') loadMaintenance();
+    if (tab === 'expenses') loadExpenses();
     if (tab === 'barcodes') initBarcodes();
     if (tab === 'scanner') startScanner();
 }
 
-function loadAll() { loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); loadDebts(); loadMaintenance(); initBarcodes(); }
+function loadAll() { loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); loadDebts(); loadMaintenance(); loadExpenses(); initBarcodes(); }
 
 function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
@@ -633,8 +689,7 @@ function generateBarcodes() {
         if (svg) { let bars = '', x = 0; for (let j = 0; j < code.length; j++) { const w = (code.charCodeAt(j) % 3) + 1; if (j % 2 === 0) bars += '<rect x="' + x + '" y="5" width="' + w + '" height="30" fill="black"/>'; x += w + 1; } svg.innerHTML = bars; svg.setAttribute('viewBox', '0 0 ' + x + ' 40'); }
     }
     barcodeCounter = start + 20; localStorage.setItem('barcodeCounter', barcodeCounter.toString());
-    document.getElementById('barcodeNext').textContent = barcodeCounter;
-    document.getElementById('barcodeStart').value = barcodeCounter;
+    document.getElementById('barcodeNext').textContent = barcodeCounter; document.getElementById('barcodeStart').value = barcodeCounter;
     showMsg('✅ تم إنشاء 20 باركود');
 }
 
@@ -697,9 +752,72 @@ function registerNewFromScan(code) {
     showTab('maintenance');
     showMsg('📝 املأ بيانات الجهاز الجديد');
 }
+
+// ==================== المصاريف ====================
+function addExpense() {
+    const amount = parseFloat(document.getElementById('expAmount').value);
+    const type = document.getElementById('expType').value;
+    const category = document.getElementById('expCategory').value;
+    const date = document.getElementById('expDate').value;
+    const note = document.getElementById('expNote').value.trim();
+    
+    if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
+    
+    db.transaction('expenses', 'readwrite').objectStore('expenses').add({
+        amount, type, category, date, note
+    }).transaction.oncomplete = function() {
+        showMsg('✅ تم حفظ المصروف');
+        document.getElementById('expAmount').value = '';
+        document.getElementById('expNote').value = '';
+        loadExpenses();
+    };
+}
+
+function loadExpenses() {
+    if (!db) return;
+    db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = function(e) {
+        let expenses = e.target.result;
+        
+        const filterType = document.getElementById('expFilterType')?.value || '';
+        if (filterType) { expenses = expenses.filter(ex => ex.type === filterType); }
+        
+        const filterMonth = document.getElementById('expFilterMonth')?.value || '';
+        if (filterMonth) { expenses = expenses.filter(ex => ex.date && ex.date.startsWith(filterMonth)); }
+        
+        expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        
+        const months = [...new Set(e.target.result.map(ex => ex.date ? ex.date.substring(0, 7) : '').filter(Boolean))].sort().reverse();
+        const monthSelect = document.getElementById('expFilterMonth');
+        if (monthSelect) { monthSelect.innerHTML = '<option value="">كل الشهور</option>' + months.map(m => '<option value="' + m + '">' + m + '</option>').join(''); }
+        
+        const tbody = document.getElementById('expensesTable');
+        if (tbody) {
+            tbody.innerHTML = expenses.length ? expenses.map(ex => 
+                '<tr><td>' + (ex.date || '-') + '</td><td>' + ex.type + '</td><td>' + formatPrice(ex.amount) + '</td><td><span class="badge ' + (ex.category === 'شهري' ? 'badge-info' : 'badge-warning') + '">' + ex.category + '</span></td><td>' + (ex.note || '-') + '</td><td><button class="red small" onclick="deleteExpense(' + ex.id + ')">🗑️</button></td></tr>'
+            ).join('') : '<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد مصاريف</td></tr>';
+        }
+        
+        const today = new Date().toISOString().split('T')[0];
+        const thisMonth = today.substring(0, 7);
+        
+        const dailyTotal = expenses.filter(ex => ex.date === today).reduce((s, ex) => s + ex.amount, 0);
+        const monthlyTotal = expenses.filter(ex => ex.date && ex.date.startsWith(thisMonth)).reduce((s, ex) => s + ex.amount, 0);
+        
+        document.getElementById('totalDaily').textContent = formatPrice(dailyTotal);
+        document.getElementById('totalMonthly').textContent = formatPrice(monthlyTotal);
+    };
+}
+
+function deleteExpense(id) {
+    if (!confirm('حذف هذا المصروف؟')) return;
+    db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); };
+}
 <!-- نهاية جزء 6 -->
-    <!-- جزء 7 -->
-document.addEventListener('DOMContentLoaded', () => { document.getElementById('mDate').value = new Date().toISOString().split('T')[0]; });
+   <!-- جزء 7 -->
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+});
 </script>
 </body>
 </html>
