@@ -9,7 +9,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background: #f4f7f9; padding: 20px; transition: 0.3s; }
         body.dark { background: #1a1a2e; color: #eee; }
-        .container { max-width: 950px; margin: 0 auto; }
+        .container { max-width: 1000px; margin: 0 auto; }
         
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .header-row h1 { color: #1e3c5c; font-size: 1.3rem; }
@@ -38,10 +38,10 @@
         button.blue-btn { background: #2980b9; }
         button.small { padding: 5px 10px; font-size: 12px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th { background: #f0f5fe; padding: 10px; text-align: right; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th { background: #f0f5fe; padding: 8px; text-align: right; font-size: 11px; }
         body.dark th { background: #0f3460; color: #90caf9; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
+        td { padding: 8px; border-bottom: 1px solid #eee; }
         body.dark td { border-color: #333; }
         
         .alert { background: #fff3cd; border-right: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
@@ -108,15 +108,16 @@
         <div id="storeEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid #dce3ec;"></div>
         <div class="form-row">
             <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
-            <input type="number" id="itemQty" placeholder="الكمية" style="width:80px" min="1">
-            <input type="number" id="itemCost" placeholder="سعر الشراء" step="1" style="width:105px" min="0">
-            <input type="number" id="itemPrice" placeholder="سعر البيع" step="1" style="width:105px" min="0">
-            <input type="text" id="itemBarcode" placeholder="باركود" style="width:110px">
-            <button class="green" onclick="addItem()">➕</button>
+            <input type="number" id="itemQty" placeholder="الكمية" style="width:75px" min="1">
+            <input type="number" id="itemCost" placeholder="سعر الشراء" step="1" style="width:100px" min="0">
+            <input type="number" id="itemPrice" placeholder="سعر البيع" step="1" style="width:100px" min="0">
+            <input type="text" id="itemBarcode" placeholder="باركود" style="width:100px">
+            <input type="text" id="itemCategory" placeholder="المجموعة" style="width:100px">
+            <button class="green" id="btnStoreSubmit" onclick="addItem()">➕</button>
         </div>
         <div id="lowStockAlert" class="alert"></div>
         <table>
-            <thead><tr><th>القطعة</th><th>الكمية</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th>باركود</th><th>إجراءات</th></tr></thead>
+            <thead><tr><th>القطعة</th><th>الكمية</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th>باركود</th><th>المجموعة</th><th>إجراءات</th></tr></thead>
             <tbody id="storeTable"></tbody>
         </table>
     </div>
@@ -246,12 +247,10 @@
     <div id="tab-scanner" class="tab-content">
         <h3>📷 مسح باركود</h3>
         <p style="color:#888;margin-bottom:15px;">امسح الباركود بتطبيق خارجي وألصق الرقم هنا</p>
-        
         <div class="form-row">
             <input type="text" id="scanBarcodeInput" placeholder="ألصق رقم الباركود هنا..." style="flex:2;font-size:16px;text-align:center;">
             <button class="green" onclick="manualScanFromInput()" style="font-size:16px;">🔍 بحث</button>
         </div>
-        
         <div id="scanResult" style="margin-top:15px;text-align:center;"></div>
     </div>
 </div>
