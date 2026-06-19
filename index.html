@@ -275,6 +275,25 @@
             </select>
         </div>
         
+        <div class="summary" style="margin-top:15px;">
+            <div class="summary-box" style="border:2px solid #2980b9;">
+                <div class="number" id="totalSales_2" style="color:#2980b9;">0</div>
+                <div class="label">المبيعات (ل.س)</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #e67e22;">
+                <div class="number" id="totalReturns_2" style="color:#e67e22;">0</div>
+                <div class="label">المرتجعات (ل.س)</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #e74c3c;">
+                <div class="number" id="totalExpenses_2" style="color:#e74c3c;">0</div>
+                <div class="label">المصاريف (ل.س)</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #27ae60; background:#e8f5e9;">
+                <div class="number" id="netProfit" style="color:#27ae60; font-size:1.5rem;">0</div>
+                <div class="label">💵 صافي الربح (ل.س)</div>
+            </div>
+        </div>
+        
         <table>
             <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>تصنيف</th><th>ملاحظة</th><th>حذف</th></tr></thead>
             <tbody id="expensesTable"></tbody>
@@ -327,7 +346,7 @@
     <!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV7', 2);
+const request = indexedDB.open('WissamFinalV8', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -805,6 +824,24 @@ function loadExpenses() {
         
         document.getElementById('totalDaily').textContent = formatPrice(dailyTotal);
         document.getElementById('totalMonthly').textContent = formatPrice(monthlyTotal);
+        
+        // حساب صافي الربح
+        db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
+            const salesTotal = e.target.result.reduce((s, sale) => s + sale.total, 0);
+            
+            db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = function(e) {
+                const returnsTotal = e.target.result.reduce((s, ret) => s + (ret.amount || 0), 0);
+                
+                const expensesTotal = expenses.reduce((s, ex) => s + ex.amount, 0);
+                const profit = salesTotal - returnsTotal - expensesTotal;
+                
+                document.getElementById('totalSales_2').textContent = formatPrice(salesTotal);
+                document.getElementById('totalReturns_2').textContent = formatPrice(returnsTotal);
+                document.getElementById('totalExpenses_2').textContent = formatPrice(expensesTotal);
+                document.getElementById('netProfit').textContent = formatPrice(profit);
+                document.getElementById('netProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+            };
+        };
     };
 }
 
@@ -813,7 +850,7 @@ function deleteExpense(id) {
     db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); };
 }
 <!-- نهاية جزء 6 -->
-   <!-- جزء 7 -->
+  <!-- جزء 7 -->
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
