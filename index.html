@@ -291,8 +291,7 @@ request.onerror = function() { alert('❌ فشل قاعدة البيانات'); 
 // وضع ليلي
 function toggleMode() {
     document.body.classList.toggle('dark');
-    document.querySelector('.mode-toggle').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-    localStorage.setItem('darkMode', document.body.classList.contains('dark') ? '1' : '0');
+    document.querySelector('.mode-toggle').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';    localStorage.setItem('darkMode', document.body.classList.contains('dark') ? '1' : '0');
 }
 if (localStorage.getItem('darkMode') === '1') { document.body.classList.add('dark'); document.querySelector('.mode-toggle').textContent = '☀️'; }
 
@@ -317,7 +316,7 @@ function loadAll() { loadStore(); fillSaleSelect(); fillReturnSelect(); loadSale
 function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
 <!-- نهاية جزء 2 -->
-<!-- جزء 3 -->
+        <!-- جزء 3 -->
 // ==================== المخزن ====================
 let editingItemId = null;
 
@@ -327,28 +326,102 @@ function addItem() {
     const cost = parseFloat(document.getElementById('itemCost').value);
     const price = parseFloat(document.getElementById('itemPrice').value);
     const barcode = document.getElementById('itemBarcode').value.trim();
-    if (!name || !qty || qty <= 0 || isNaN(cost) || isNaN(price)) { showMsg('⚠️ املأ الحقول'); return; }
+    const category = document.getElementById('itemCategory').value.trim();
+    
+    if (!name || !qty || qty <= 0 || isNaN(cost) || isNaN(price)) {
+        showMsg('⚠️ املأ الحقول المطلوبة');
+        return;
+    }
+    
+    if (editingItemId) {
+        // وضع التعديل
+        db.transaction('items', 'readwrite').objectStore('items').put({
+            id: editingItemId,
+            name: name,
+            quantity: qty,
+            cost: cost,
+            price: price,
+            barcode: barcode,
+            category: category
+        }).transaction.oncomplete = function() {
+            showMsg('✅ تم تحديث القطعة');
+            cancelEditItem();
+            loadStore();
+            fillSaleSelect();
+            fillReturnSelect();
+        };
+        return;
+    }
+    
+    // وضع الإضافة
     const tx = db.transaction('items', 'readwrite');
     const store = tx.objectStore('items');
+    
     store.index('name').get(name).onsuccess = function(e) {
         const ex = e.target.result;
-        if (ex) { ex.quantity += qty; ex.cost = cost; ex.price = price; if (barcode) ex.barcode = barcode; store.put(ex); showMsg('✅ تحديث: ' + name); }
-        else { store.add({ name, quantity: qty, cost, price, barcode }); showMsg('✅ إضافة: ' + name); }
-        tx.oncomplete = () => { ['itemName','itemQty','itemCost','itemPrice','itemBarcode'].forEach(id => document.getElementById(id).value = ''); loadStore(); fillSaleSelect(); fillReturnSelect(); };
+        if (ex) {
+            ex.quantity += qty;
+            ex.cost = cost;
+            ex.price = price;
+            if (barcode) ex.barcode = barcode;
+            if (category) ex.category = category;
+            store.put(ex);
+            showMsg('✅ تم تحديث: ' + name + ' (الكمية: ' + ex.quantity + ')');
+        } else {
+            store.add({
+                name: name,
+                quantity: qty,
+                cost: cost,
+                price: price,
+                barcode: barcode,
+                category: category
+            });
+            showMsg('✅ تمت إضافة: ' + name);
+        }
+        
+        tx.oncomplete = function() {
+            ['itemName','itemQty','itemCost','itemPrice','itemBarcode','itemCategory'].forEach(function(id) {
+                document.getElementById(id).value = '';
+            });
+            loadStore();
+            fillSaleSelect();
+            fillReturnSelect();
+        };
     };
 }
 
 function loadStore() {
     db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
         const items = e.target.result;
-        document.getElementById('storeTable').innerHTML = items.map(i => {
+        
+        document.getElementById('storeTable').innerHTML = items.map(function(i) {
             const p = i.price - i.cost;
-            return '<tr><td><strong>' + i.name + '</strong> ' + (i.quantity < 5 ? '<span class="badge badge-warning">⚠️</span>' : '') + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.cost) + '</td><td>' + formatPrice(i.price) + '</td><td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(p) + '</td><td>' + (i.barcode || '-') + '</td><td><button class="blue-btn small" onclick="editItem(' + i.id + ')">✏️</button> <button class="red small" onclick="deleteItem(' + i.id + ')">🗑️</button></td></tr>';
+            const lowBadge = i.quantity < 5 ? ' <span class="badge badge-warning">⚠️</span>' : '';
+            
+            return '<tr>' +
+                '<td><strong>' + i.name + '</strong>' + lowBadge + '</td>' +
+                '<td>' + i.quantity + '</td>' +
+                '<td>' + formatPrice(i.cost) + '</td>' +
+                '<td>' + formatPrice(i.price) + '</td>' +
+                '<td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';font-weight:bold;">' + formatPrice(p) + '</td>' +
+                '<td>' + (i.barcode || '-') + '</td>' +
+                '<td>' + (i.category || '-') + '</td>' +
+                '<td>' +
+                '<button class="blue-btn small" onclick="editItem(' + i.id + ')">✏️</button> ' +
+                '<button class="red small" onclick="deleteItem(' + i.id + ')">🗑️</button>' +
+                '</td>' +
+                '</tr>';
         }).join('');
-        const low = items.filter(i => i.quantity < 5);
+        
+        // تنبيه النقص
+        const low = items.filter(function(i) { return i.quantity < 5; });
         const a = document.getElementById('lowStockAlert');
-        a.style.display = low.length ? 'block' : 'none';
-        if (low.length) a.innerHTML = '⚠️ نقص: ' + low.map(i => i.name + ' (' + i.quantity + ')').join(' | ');
+        if (low.length) {
+            a.style.display = 'block';
+            a.innerHTML = '⚠️ نقص: ' + low.map(function(i) { return i.name + ' (' + i.quantity + ')'; }).join(' | ');
+        } else {
+            a.style.display = 'none';
+        }
     };
 }
 
@@ -356,105 +429,212 @@ function editItem(id) {
     db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
         const item = e.target.result;
         if (!item) return;
+        
         editingItemId = id;
         document.getElementById('itemName').value = item.name;
         document.getElementById('itemQty').value = item.quantity;
         document.getElementById('itemCost').value = item.cost;
         document.getElementById('itemPrice').value = item.price;
         document.getElementById('itemBarcode').value = item.barcode || '';
-        document.querySelector('#tab-store .form-row button.green').textContent = '💾 تحديث';
+        document.getElementById('itemCategory').value = item.category || '';
+        
+        document.getElementById('btnStoreSubmit').textContent = '💾 تحديث';
         document.getElementById('storeEditForm').style.display = 'block';
         document.getElementById('storeEditForm').innerHTML = '<p>✏️ تعديل: <strong>' + item.name + '</strong> | <button class="red small" onclick="cancelEditItem()">❌ إلغاء</button></p>';
+        
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 }
 
 function cancelEditItem() {
     editingItemId = null;
-    ['itemName','itemQty','itemCost','itemPrice','itemBarcode'].forEach(id => document.getElementById(id).value = '');
-    document.querySelector('#tab-store .form-row button.green').textContent = '➕';
+    ['itemName','itemQty','itemCost','itemPrice','itemBarcode','itemCategory'].forEach(function(id) {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('btnStoreSubmit').textContent = '➕';
     document.getElementById('storeEditForm').style.display = 'none';
 }
 
-// تعديل دالة addItem للتعامل مع وضع التعديل
-const originalAddItem = addItem;
-addItem = function() {
-    if (editingItemId) {
-        const name = document.getElementById('itemName').value.trim();
-        const qty = parseInt(document.getElementById('itemQty').value);
-        const cost = parseFloat(document.getElementById('itemCost').value);
-        const price = parseFloat(document.getElementById('itemPrice').value);
-        const barcode = document.getElementById('itemBarcode').value.trim();
-        if (!name || !qty || qty <= 0 || isNaN(cost) || isNaN(price)) { showMsg('⚠️ املأ الحقول'); return; }
-        db.transaction('items', 'readwrite').objectStore('items').put({ id: editingItemId, name, quantity: qty, cost, price, barcode }).transaction.oncomplete = function() {
-            showMsg('✅ تم التحديث');
-            cancelEditItem();
-            loadStore();
-            fillSaleSelect();
-            fillReturnSelect();
-        };
-    } else {
-        originalAddItem();
-    }
-};
-
-function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); }; }
+function deleteItem(id) {
+    if (!confirm('متأكد من الحذف؟')) return;
+    db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = function() {
+        showMsg('🗑️ تم الحذف');
+        loadStore();
+        fillSaleSelect();
+        fillReturnSelect();
+    };
+}
 
 // ==================== المبيعات ====================
 let cart = [];
-function fillSaleSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('saleItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + ' (' + i.quantity + ')</option>').join(''); }; }
+
+function fillSaleSelect() {
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        const items = e.target.result;
+        document.getElementById('saleItem').innerHTML = items.map(function(i) {
+            return '<option value="' + i.id + '">' + i.name + ' (' + i.quantity + ') ' + (i.category ? '[' + i.category + ']' : '') + '</option>';
+        }).join('');
+    };
+}
 
 document.addEventListener('change', function(e) {
-    if (e.target.id === 'saleType') document.getElementById('saleCustomer').style.display = e.target.value === 'آجل' ? 'inline' : 'none';
+    if (e.target.id === 'saleType') {
+        document.getElementById('saleCustomer').style.display = e.target.value === 'آجل' ? 'inline' : 'none';
+    }
 });
 
 function addToCart() {
     const id = parseInt(document.getElementById('saleItem').value);
     const qty = parseInt(document.getElementById('saleQty').value);
-    if (!id || !qty || qty <= 0) { showMsg('⚠️ تأكد'); return; }
+    
+    if (!id || !qty || qty <= 0) {
+        showMsg('⚠️ تأكد من البيانات');
+        return;
+    }
+    
     db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
         const item = e.target.result;
-        if (!item) { showMsg('❌ غير موجودة'); return; }
-        const ex = cart.find(c => c.itemId === id);
-        if (item.quantity < (ex ? ex.qty : 0) + qty) { showMsg('❌ مخزون غير كافٍ'); return; }
-        if (ex) { ex.qty += qty; ex.total = ex.qty * item.price; }
-        else { cart.push({ itemId: id, name: item.name, qty, price: item.price, total: qty * item.price }); }
-        document.getElementById('saleQty').value = '1'; renderCart(); showMsg('🛒 ' + item.name);
+        if (!item) {
+            showMsg('❌ القطعة غير موجودة');
+            return;
+        }
+        
+        const ex = cart.find(function(c) { return c.itemId === id; });
+        const alreadyInCart = ex ? ex.qty : 0;
+        
+        if (item.quantity < alreadyInCart + qty) {
+            showMsg('❌ المخزون غير كافٍ! المتوفر: ' + item.quantity);
+            return;
+        }
+        
+        if (ex) {
+            ex.qty += qty;
+            ex.total = ex.qty * item.price;
+        } else {
+            cart.push({
+                itemId: id,
+                name: item.name,
+                qty: qty,
+                price: item.price,
+                total: qty * item.price
+            });
+        }
+        
+        document.getElementById('saleQty').value = '1';
+        renderCart();
+        showMsg('🛒 تمت إضافة: ' + item.name);
     };
 }
 
 function renderCart() {
-    const t = cart.reduce((s, c) => s + c.total, 0);
-    document.getElementById('cartItems').innerHTML = cart.length ? cart.map((c, i) => '<div class="cart-item"><span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span><button class="red small" onclick="removeFromCart(' + i + ')">❌</button></div>').join('') : '<p style="color:#999;">فارغة</p>';
+    const t = cart.reduce(function(s, c) { return s + c.total; }, 0);
+    
+    document.getElementById('cartItems').innerHTML = cart.length ? cart.map(function(c, i) {
+        return '<div class="cart-item"><span><strong>' + c.name + '</strong> × ' + c.qty + ' = ' + formatPrice(c.total) + '</span><button class="red small" onclick="removeFromCart(' + i + ')">❌</button></div>';
+    }).join('') : '<p style="color:#999;">فارغة</p>';
+    
     document.getElementById('cartTotal').textContent = formatPrice(t);
 }
-function removeFromCart(i) { cart.splice(i, 1); renderCart(); }
-function clearCart() { cart = []; renderCart(); }
+
+function removeFromCart(i) {
+    cart.splice(i, 1);
+    renderCart();
+}
+
+function clearCart() {
+    cart = [];
+    renderCart();
+}
 
 function checkoutCart() {
-    if (!cart.length) { showMsg('⚠️ فارغة'); return; }
+    if (!cart.length) {
+        showMsg('⚠️ الفاتورة فارغة');
+        return;
+    }
+    
     const type = document.getElementById('saleType').value;
     const customer = document.getElementById('saleCustomer').value.trim();
-    if (type === 'آجل' && !customer) { showMsg('⚠️ أدخل اسم الزبون'); return; }
+    
+    if (type === 'آجل' && !customer) {
+        showMsg('⚠️ أدخل اسم الزبون للبيع الآجل');
+        return;
+    }
+    
     const tx = db.transaction('items', 'readwrite');
     const store = tx.objectStore('items');
-    let ok = true, done = 0;
-    cart.forEach(c => { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; if (!item || item.quantity < c.qty) ok = false; done++; if (done === cart.length) fin(); }; });
-    function fin() {
-        if (!ok) { showMsg('❌ مخزون غير كافٍ'); return; }
-        cart.forEach(c => { store.get(c.itemId).onsuccess = function(e) { const item = e.target.result; item.quantity -= c.qty; store.put(item); }; });
-        const total = cart.reduce((s, c) => s + c.total, 0);
-        const items = cart.map(c => c.name + ' ×' + c.qty).join(' + ');
+    let ok = true;
+    let done = 0;
+    
+    cart.forEach(function(c) {
+        store.get(c.itemId).onsuccess = function(e) {
+            const item = e.target.result;
+            if (!item || item.quantity < c.qty) ok = false;
+            done++;
+            if (done === cart.length) finish();
+        };
+    });
+    
+    function finish() {
+        if (!ok) {
+            showMsg('❌ المخزون غير كافٍ لبعض القطع');
+            return;
+        }
+        
+        cart.forEach(function(c) {
+            store.get(c.itemId).onsuccess = function(e) {
+                const item = e.target.result;
+                item.quantity -= c.qty;
+                store.put(item);
+            };
+        });
+        
+        const total = cart.reduce(function(s, c) { return s + c.total; }, 0);
+        const items = cart.map(function(c) { return c.name + ' ×' + c.qty; }).join(' + ');
         const date = new Date().toLocaleDateString('ar-SY');
-        db.transaction('sales', 'readwrite').objectStore('sales').add({ itemName: items, total, type, customer: type === 'آجل' ? customer : '', date });
-        if (type === 'آجل') { db.transaction('debts', 'readwrite').objectStore('debts').add({ customer, amount: total, paid: 0, date, status: 'معلق', paidDate: '' }); }
-        tx.oncomplete = () => { showMsg('✅ تم البيع! ' + formatPrice(total)); clearCart(); loadStore(); fillSaleSelect(); loadSales(); if (type === 'آجل') loadDebts(); };
+        
+        db.transaction('sales', 'readwrite').objectStore('sales').add({
+            itemName: items,
+            total: total,
+            type: type,
+            customer: type === 'آجل' ? customer : '',
+            date: date
+        });
+        
+        if (type === 'آجل') {
+            db.transaction('debts', 'readwrite').objectStore('debts').add({
+                customer: customer,
+                amount: total,
+                paid: 0,
+                date: date,
+                status: 'معلق',
+                paidDate: ''
+            });
+        }
+        
+        tx.oncomplete = function() {
+            showMsg('✅ تم البيع! ' + formatPrice(total));
+            clearCart();
+            loadStore();
+            fillSaleSelect();
+            loadSales();
+            if (type === 'آجل') loadDebts();
+        };
     }
 }
 
 function loadSales() {
     db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
-        document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(s => '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td></tr>').join('');
+        const sales = e.target.result;
+        document.getElementById('salesTable').innerHTML = sales.reverse().map(function(s) {
+            const badgeClass = s.type === 'نقدي' ? 'badge-success' : 'badge-warning';
+            return '<tr>' +
+                '<td>' + s.date + '</td>' +
+                '<td>' + s.itemName + '</td>' +
+                '<td>' + formatPrice(s.total) + '</td>' +
+                '<td><span class="badge ' + badgeClass + '">' + (s.type || 'نقدي') + '</span></td>' +
+                '<td>' + (s.customer || '-') + '</td>' +
+                '</tr>';
+        }).join('');
     };
 }
 <!-- نهاية جزء 3 -->
