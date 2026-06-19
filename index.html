@@ -325,7 +325,7 @@ function loadAll() { loadCategories(); loadStore(); filterItemsByCategory(); loa
 function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
 <!-- نهاية جزء 2 -->
-      <!-- جزء 3 -->
+<!-- جزء 3 -->
 // ==================== المجموعات ====================
 function loadCategories() {
     if (!db) return;
@@ -335,15 +335,17 @@ function loadCategories() {
         // قائمة المخزن
         const catSelect = document.getElementById('itemCategory');
         if (catSelect) {
-            catSelect.innerHTML = '<option value="">بدون مجموعة</option>' + 
-                cats.map(function(c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
+            catSelect.innerHTML = '<option value="">➕ إضافة مجموعة جديدة...</option>' + 
+                '<option value="">------------------</option>' +
+                '<option value="">بدون مجموعة</option>' +
+                cats.map(function(c) { return '<option value="' + c.name + '">📁 ' + c.name + '</option>'; }).join('');
         }
         
         // قائمة المبيعات
         const saleCat = document.getElementById('saleCategory');
         if (saleCat) {
             saleCat.innerHTML = '<option value="">كل المجموعات</option>' + 
-                cats.map(function(c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
+                cats.map(function(c) { return '<option value="' + c.name + '">📁 ' + c.name + '</option>'; }).join('');
         }
     };
 }
@@ -361,6 +363,24 @@ function saveCategory(name) {
         }
     };
 }
+
+// إضافة مجموعة جديدة
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'itemCategory') {
+        if (e.target.value === '➕ إضافة مجموعة جديدة...') {
+            const newCat = prompt('✏️ اكتب اسم المجموعة الجديدة:');
+            if (newCat && newCat.trim() !== '') {
+                saveCategory(newCat.trim());
+                setTimeout(function() {
+                    loadCategories();
+                    document.getElementById('itemCategory').value = newCat.trim();
+                }, 300);
+            } else {
+                document.getElementById('itemCategory').value = '';
+            }
+        }
+    }
+});
 
 function filterItemsByCategory() {
     const cat = document.getElementById('saleCategory')?.value || '';
@@ -393,11 +413,15 @@ function addItem() {
     }
     
     // حفظ المجموعة إذا كانت جديدة
-    saveCategory(category);
+    if (category && category !== '' && category !== '➕ إضافة مجموعة جديدة...' && category !== '------------------' && category !== 'بدون مجموعة') {
+        saveCategory(category);
+    }
+    
+    const finalCategory = (category === 'بدون مجموعة' || category === '➕ إضافة مجموعة جديدة...' || category === '------------------') ? '' : category;
     
     if (editingItemId) {
         db.transaction('items', 'readwrite').objectStore('items').put({
-            id: editingItemId, name, quantity: qty, cost, price, barcode, category
+            id: editingItemId, name, quantity: qty, cost, price, barcode, category: finalCategory
         }).transaction.oncomplete = function() {
             showMsg('✅ تم تحديث القطعة');
             cancelEditItem();
@@ -417,11 +441,11 @@ function addItem() {
             ex.cost = cost;
             ex.price = price;
             if (barcode) ex.barcode = barcode;
-            if (category) ex.category = category;
+            if (finalCategory) ex.category = finalCategory;
             store.put(ex);
             showMsg('✅ تم تحديث: ' + name);
         } else {
-            store.add({ name, quantity: qty, cost, price, barcode, category });
+            store.add({ name, quantity: qty, cost, price, barcode, category: finalCategory });
             showMsg('✅ تمت إضافة: ' + name);
         }
         
@@ -504,10 +528,6 @@ function deleteItem(id) {
 
 // ==================== المبيعات ====================
 let cart = [];
-
-function fillSaleSelect() {
-    filterItemsByCategory();
-}
 
 document.addEventListener('change', function(e) {
     if (e.target.id === 'saleType') {
@@ -600,7 +620,7 @@ function loadSales() {
         }).join('');
     };
 }
-<!-- نهاية جزء 3 -->  
+<!-- نهاية جزء 3 -->      
     <!-- جزء 4 -->
 // ==================== المرتجعات ====================
 function fillReturnSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('returnItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + '</option>').join(''); }; }
