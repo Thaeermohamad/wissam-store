@@ -80,9 +80,6 @@
         .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 500px; width: 90%; }
         body.dark .modal-content { background: #16213e; }
         
-        #scannerArea { text-align: center; padding: 15px; background: #000; border-radius: 12px; margin-top: 15px; }
-        #scannerArea video { max-width: 100%; border-radius: 8px; }
-        
         @media (max-width: 600px) { .form-row { flex-direction: column; } input, select, textarea { width: 100%; } .barcode-grid { grid-template-columns: repeat(2, 1fr); } }
         @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
     </style>
@@ -248,9 +245,14 @@
     <!-- مسح الباركود -->
     <div id="tab-scanner" class="tab-content">
         <h3>📷 مسح باركود</h3>
-        <div id="scannerArea"><video id="scannerVideo" autoplay playsinline></video></div>
+        <p style="color:#888;margin-bottom:15px;">امسح الباركود بتطبيق خارجي وألصق الرقم هنا</p>
+        
+        <div class="form-row">
+            <input type="text" id="scanBarcodeInput" placeholder="ألصق رقم الباركود هنا..." style="flex:2;font-size:16px;text-align:center;">
+            <button class="green" onclick="manualScanFromInput()" style="font-size:16px;">🔍 بحث</button>
+        </div>
+        
         <div id="scanResult" style="margin-top:15px;text-align:center;"></div>
-        <button class="red" onclick="stopScanner()" style="margin-top:10px;width:100%;">⏹️ إيقاف المسح</button>
     </div>
 </div>
 
@@ -277,7 +279,7 @@ const request = indexedDB.open('WissamFinalV4', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
-    if (!d.objectStoreNames.contains('items')) { const s = d.createObjectStore('items', { keyPath: 'id', autoIncrement: true }); s.createIndex('name', 'name', { unique: false }); s.createIndex('barcode', 'barcode', { unique: false }); }
+   if (!d.objectStoreNames.contains('items')) { const s = d.createObjectStore('items', { keyPath: 'id', autoIncrement: true }); s.createIndex('name', 'name', { unique: false }); s.createIndex('barcode', 'barcode', { unique: false }); }
     if (!d.objectStoreNames.contains('sales')) { d.createObjectStore('sales', { keyPath: 'id', autoIncrement: true }); }
     if (!d.objectStoreNames.contains('returns')) { d.createObjectStore('returns', { keyPath: 'id', autoIncrement: true }); }
     if (!d.objectStoreNames.contains('debts')) { d.createObjectStore('debts', { keyPath: 'id', autoIncrement: true }); }
