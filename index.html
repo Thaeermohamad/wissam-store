@@ -1,4 +1,4 @@
-<!-- جزء 1 -->
+ <!-- جزء 1 -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -14,10 +14,7 @@
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .header-row h1 { color: #1e3c5c; font-size: 1.3rem; }
         body.dark .header-row h1 { color: #64b5f6; }
-
-        <button class="blue-btn small" onclick="exportAllData()" style="font-size:12px;">📥 تصدير</button>
-        <button class="green small" onclick="importAllData()" style="font-size:12px;">📤 استيراد</button>
-        <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+        
         .mode-toggle { padding: 10px 20px; border-radius: 30px; border: none; cursor: pointer; font-size: 18px; background: #2d7fc1; color: white; }
         body.dark .mode-toggle { background: #ffb74d; color: #000; }
         
@@ -92,7 +89,12 @@
 <div class="container">
     <div class="header-row">
         <h1>📦 مركز وسام للإلكترونيات</h1>
-        <button class="mode-toggle" onclick="toggleMode()">🌙</button>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button class="blue-btn small" onclick="exportAllData()" style="font-size:11px;">📥</button>
+            <button class="green small" onclick="importAllData()" style="font-size:11px;">📤</button>
+            <button class="mode-toggle" onclick="toggleMode()">🌙</button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
     </div>
     <p style="text-align:center; color:#666; margin-bottom:15px;">جميع الأسعار بالليرة السورية (ل.س)</p>
     
@@ -319,6 +321,7 @@
     </div>
     
     <!-- مسح الباركود -->
+  <!-- مسح الباركود -->
     <div id="tab-scanner" class="tab-content">
         <h3>📷 مسح باركود</h3>
         <p style="color:#888;margin-bottom:15px;">امسح الباركود بتطبيق خارجي وألصق الرقم هنا</p>
