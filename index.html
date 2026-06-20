@@ -14,7 +14,10 @@
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .header-row h1 { color: #1e3c5c; font-size: 1.3rem; }
         body.dark .header-row h1 { color: #64b5f6; }
-        
+
+        <button class="blue-btn small" onclick="exportAllData()" style="font-size:12px;">📥 تصدير</button>
+        <button class="green small" onclick="importAllData()" style="font-size:12px;">📤 استيراد</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
         .mode-toggle { padding: 10px 20px; border-radius: 30px; border: none; cursor: pointer; font-size: 18px; background: #2d7fc1; color: white; }
         body.dark .mode-toggle { background: #ffb74d; color: #000; }
         
