@@ -236,8 +236,17 @@
     <!-- المصاريف -->
     <div id="tab-expenses" class="tab-content">
         <div class="summary">
+            <div class="summary-box" style="border:2px solid #8e44ad;">
+                <div class="number" id="fundBalance" style="color:#8e44ad;">0</div>
+                <div class="label">💰 المبلغ الوارد (ل.س)</div>
+            </div>
             <div class="summary-box"><div class="number" id="totalDaily">0</div><div class="label">مصاريف اليوم (ل.س)</div></div>
             <div class="summary-box"><div class="number" id="totalMonthly">0</div><div class="label">مصاريف الشهر (ل.س)</div></div>
+        </div>
+        
+        <div class="form-row" style="background:#f3e5f5;padding:12px;border-radius:8px;">
+            <input type="number" id="fundAmount" placeholder="إضافة مبلغ وارد" step="1" style="width:150px" min="1">
+            <button class="blue-btn" onclick="addFund()" style="background:#8e44ad;">➕ إضافة للمبلغ الوارد</button>
         </div>
         
         <div class="form-row">
@@ -257,6 +266,10 @@
             <select id="expCategory" style="width:110px">
                 <option value="يومي">يومي</option>
                 <option value="شهري">شهري</option>
+            </select>
+            <select id="expSource" style="width:130px">
+                <option value="business">من أرباح المحل</option>
+                <option value="fund">من المبلغ الوارد</option>
             </select>
             <input type="date" id="expDate" style="width:130px">
             <input type="text" id="expNote" placeholder="ملاحظة (اختياري)" style="flex:1">
@@ -285,7 +298,7 @@
         <div class="summary" style="margin-top:15px;">
             <div class="summary-box" style="border:2px solid #2980b9;">
                 <div class="number" id="totalSales_2" style="color:#2980b9;">0</div>
-                <div class="label">المبيعات (ل.س)</div>
+                <div class="label">مبيعات + صيانة (ل.س)</div>
             </div>
             <div class="summary-box" style="border:2px solid #e67e22;">
                 <div class="number" id="totalReturns_2" style="color:#e67e22;">0</div>
@@ -302,7 +315,7 @@
         </div>
         
         <table>
-            <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>تصنيف</th><th>ملاحظة</th><th>حذف</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>المصدر</th><th>تصنيف</th><th>ملاحظة</th><th>حذف</th></tr></thead>
             <tbody id="expensesTable"></tbody>
         </table>
     </div>
@@ -353,7 +366,7 @@
     <!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV8', 2);
+const request = indexedDB.open('WissamFinalV9', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -363,6 +376,7 @@ request.onupgradeneeded = function(e) {
     if (!d.objectStoreNames.contains('debts')) { d.createObjectStore('debts', { keyPath: 'id', autoIncrement: true }); }
     if (!d.objectStoreNames.contains('maintenance')) { const s = d.createObjectStore('maintenance', { keyPath: 'id', autoIncrement: true }); s.createIndex('barcode', 'barcode', { unique: false }); }
     if (!d.objectStoreNames.contains('expenses')) { d.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true }); }
+    if (!d.objectStoreNames.contains('funds')) { d.createObjectStore('funds', { keyPath: 'id', autoIncrement: true }); }
 };
 
 request.onsuccess = function(e) { db = e.target.result; console.log('✅'); loadAll(); };
@@ -385,19 +399,19 @@ function showTab(tab) {
     if (tab === 'returns') { fillReturnSelect(); loadReturns(); }
     if (tab === 'debts') loadDebts();
     if (tab === 'maintenance') loadMaintenance();
-    if (tab === 'expenses') loadExpenses();
+    if (tab === 'expenses') { loadExpenses(); loadFundBalance(); }
     if (tab === 'barcodes') initBarcodes();
     if (tab === 'scanner') startScanner();
 }
 
-function loadAll() { loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); loadDebts(); loadMaintenance(); loadExpenses(); initBarcodes(); }
+function loadAll() { loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); loadDebts(); loadMaintenance(); loadExpenses(); loadFundBalance(); initBarcodes(); }
 
 function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
 
 // ==================== تصدير واستيراد ====================
 function exportAllData() {
-    const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses'];
+    const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses', 'funds'];
     const data = {};
     let done = 0;
     
@@ -407,12 +421,8 @@ function exportAllData() {
             done++;
             if (done === stores.length) {
                 const json = JSON.stringify(data);
-                
-                // حفظ في localStorage
                 try {
                     localStorage.setItem('wesam_backup', json);
-                    
-                    // محاولة التحميل كملف (للمتصفح)
                     try {
                         const blob = new Blob([json], { type: 'application/json' });
                         const url = URL.createObjectURL(blob);
@@ -423,7 +433,6 @@ function exportAllData() {
                         URL.revokeObjectURL(url);
                         showMsg('✅ تم تصدير البيانات وحفظها محلياً');
                     } catch(e) {
-                        // فشل التحميل كملف - البيانات محفوظة في localStorage
                         showMsg('✅ تم حفظ البيانات محلياً - انسخ الكود التالي للاستيراد لاحقاً');
                         showExportCode(json);
                     }
@@ -436,7 +445,6 @@ function exportAllData() {
 }
 
 function showExportCode(json) {
-    // عرض البيانات في نافذة منبثقة لنسخها يدوياً
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
     modal.innerHTML = `
@@ -452,24 +460,20 @@ function showExportCode(json) {
 }
 
 function importAllData() {
-    // محاولة استيراد من localStorage أولاً
     const saved = localStorage.getItem('wesam_backup');
-    
     if (saved) {
         if (confirm('⚠️ تم العثور على نسخة احتياطية محفوظة. هل تريد استعادتها؟')) {
             importFromJSON(saved);
             return;
         }
     }
-    
-    // إذا ما فيه نسخة محلية - نطلب ملف
     document.getElementById('importFileInput').click();
 }
 
 function importFromJSON(jsonStr) {
     try {
         const data = JSON.parse(jsonStr);
-        const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses'];
+        const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses', 'funds'];
         let done = 0;
         
         stores.forEach(store => {
@@ -484,17 +488,11 @@ function importFromJSON(jsonStr) {
                     });
                     tx.oncomplete = function() {
                         done++;
-                        if (done === stores.length) {
-                            showMsg('✅ تم استيراد البيانات بنجاح');
-                            loadAll();
-                        }
+                        if (done === stores.length) { showMsg('✅ تم استيراد البيانات بنجاح'); loadAll(); }
                     };
                 } else {
                     done++;
-                    if (done === stores.length) {
-                        showMsg('✅ تم استيراد البيانات بنجاح');
-                        loadAll();
-                    }
+                    if (done === stores.length) { showMsg('✅ تم استيراد البيانات بنجاح'); loadAll(); }
                 }
             };
         });
@@ -506,15 +504,9 @@ function importFromJSON(jsonStr) {
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
-    if (!confirm('⚠️ سيتم استبدال جميع البيانات الحالية. هل تريد المتابعة؟')) {
-        event.target.value = '';
-        return;
-    }
-    
+    if (!confirm('⚠️ سيتم استبدال جميع البيانات الحالية. هل تريد المتابعة؟')) { event.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = function(e) {
-        // حفظ النسخة المستوردة في localStorage أيضاً
         localStorage.setItem('wesam_backup', e.target.result);
         importFromJSON(e.target.result);
     };
@@ -906,23 +898,57 @@ function registerNewFromScan(code) {
     showMsg('📝 املأ بيانات الجهاز الجديد');
 }
 
+// ==================== المبلغ الوارد ====================
+function loadFundBalance() {
+    if (!db) return;
+    db.transaction('funds', 'readonly').objectStore('funds').getAll().onsuccess = function(e) {
+        const funds = e.target.result;
+        const totalIn = funds.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0);
+        const totalOut = funds.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0);
+        const balance = totalIn - totalOut;
+        document.getElementById('fundBalance').textContent = formatPrice(balance);
+    };
+}
+
+function addFund() {
+    const amount = parseFloat(document.getElementById('fundAmount').value);
+    if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
+    
+    db.transaction('funds', 'readwrite').objectStore('funds').add({
+        amount, type: 'in', date: new Date().toISOString().split('T')[0]
+    }).transaction.oncomplete = function() {
+        showMsg('✅ تم إضافة المبلغ الوارد');
+        document.getElementById('fundAmount').value = '';
+        loadFundBalance();
+    };
+}
+
 // ==================== المصاريف ====================
 function addExpense() {
     const amount = parseFloat(document.getElementById('expAmount').value);
     const type = document.getElementById('expType').value;
     const category = document.getElementById('expCategory').value;
+    const source = document.getElementById('expSource').value;
     const date = document.getElementById('expDate').value;
     const note = document.getElementById('expNote').value.trim();
     
     if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
     
+    // إذا المصدر = المبلغ الوارد، نخصم منه
+    if (source === 'fund') {
+        db.transaction('funds', 'readwrite').objectStore('funds').add({
+            amount, type: 'out', date
+        });
+    }
+    
     db.transaction('expenses', 'readwrite').objectStore('expenses').add({
-        amount, type, category, date, note
+        amount, type, category, source, date, note
     }).transaction.oncomplete = function() {
         showMsg('✅ تم حفظ المصروف');
         document.getElementById('expAmount').value = '';
         document.getElementById('expNote').value = '';
         loadExpenses();
+        loadFundBalance();
     };
 }
 
@@ -946,8 +972,8 @@ function loadExpenses() {
         const tbody = document.getElementById('expensesTable');
         if (tbody) {
             tbody.innerHTML = expenses.length ? expenses.map(ex => 
-                '<tr><td>' + (ex.date || '-') + '</td><td>' + ex.type + '</td><td>' + formatPrice(ex.amount) + '</td><td><span class="badge ' + (ex.category === 'شهري' ? 'badge-info' : 'badge-warning') + '">' + ex.category + '</span></td><td>' + (ex.note || '-') + '</td><td><button class="red small" onclick="deleteExpense(' + ex.id + ')">🗑️</button></td></tr>'
-            ).join('') : '<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد مصاريف</td></tr>';
+                '<tr><td>' + (ex.date || '-') + '</td><td>' + ex.type + '</td><td>' + formatPrice(ex.amount) + '</td><td><span class="badge ' + (ex.source === 'fund' ? 'badge-info' : 'badge-warning') + '">' + (ex.source === 'fund' ? 'وارد' : 'محل') + '</span></td><td>' + ex.category + '</td><td>' + (ex.note || '-') + '</td><td><button class="red small" onclick="deleteExpense(' + ex.id + ')">🗑️</button></td></tr>'
+            ).join('') : '<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد مصاريف</td></tr>';
         }
         
         const today = new Date().toISOString().split('T')[0];
@@ -972,7 +998,7 @@ function loadExpenses() {
                         .reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
                     
                     const expensesTotal = expenses
-                        .filter(ex => ex.type !== 'إيرادات')
+                        .filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund')
                         .reduce((s, ex) => s + ex.amount, 0);
                     
                     const revenuesTotal = expenses
@@ -982,7 +1008,6 @@ function loadExpenses() {
                     const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
                     
                     document.getElementById('totalSales_2').textContent = formatPrice(salesTotal + maintenanceTotal);
-                    document.getElementById('totalSales_2').parentElement.querySelector('.label').textContent = 'مبيعات + صيانة (ل.س)';
                     document.getElementById('totalReturns_2').textContent = formatPrice(returnsTotal);
                     document.getElementById('totalExpenses_2').textContent = formatPrice(expensesTotal);
                     document.getElementById('netProfit').textContent = formatPrice(profit);
@@ -995,7 +1020,7 @@ function loadExpenses() {
 
 function deleteExpense(id) {
     if (!confirm('حذف هذا المصروف؟')) return;
-    db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); };
+    db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); loadFundBalance(); };
 }
 <!-- نهاية جزء 6 -->
   <!-- جزء 7 -->
