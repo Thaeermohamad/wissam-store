@@ -26,9 +26,9 @@
         
         .tabs { display: flex; gap: 6px; margin-bottom: 15px; flex-wrap: wrap; }
         .tabs button { 
-            flex: 1; padding: 10px 4px; border: none; min-width: 52px; 
-            background: #ffffff; cursor: pointer; font-size: 12px; font-weight: 600; 
-            border-radius: 10px 10px 0 0; transition: 0.2s; color: #555;
+            flex: 1; padding: 10px 4px; border: none; min-width: 48px; 
+            background: #ffffff; cursor: pointer; font-size: 11px; font-weight: 600; 
+            border-radius: 10px 10px 0 0; transition: 0.2s; color: #555; position: relative;
             box-shadow: 0 -2px 8px rgba(0,0,0,0.03);
         }
         .tabs button:hover { background: #e3ecf7; transform: translateY(-2px); }
@@ -36,6 +36,11 @@
         body.dark .tabs button { background: #1a1a2e; color: #aaa; }
         body.dark .tabs button:hover { background: #252540; }
         body.dark .tabs button.active { background: #2d7fc1; color: white; }
+        .tabs .badge-tab {
+            position: absolute; top: -6px; right: -6px;
+            background: #e74c3c; color: white; font-size: 10px;
+            padding: 2px 6px; border-radius: 10px; font-weight: 700;
+        }
         
         .tab-content { 
             display: none; background: white; padding: 20px; 
@@ -79,6 +84,7 @@
         button.orange:hover { background: #d35400; }
         button.blue-btn { background: #2980b9; color: white; }
         button.blue-btn:hover { background: #2471a3; }
+        button.purple-btn { background: #8e44ad; color: white; }
         button.small { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; border-radius: 12px; overflow: hidden; }
@@ -114,6 +120,7 @@
         .badge-info { background: #d1ecf1; color: #0c5460; }
         .badge-success { background: #d4edda; color: #155724; }
         .badge-secondary { background: #e2e3e5; color: #383d41; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
         
         .cart-item { 
             background: #f8fafc; padding: 12px 14px; border-radius: 10px; 
@@ -161,7 +168,7 @@
             .form-row { flex-direction: column; } 
             input, select, textarea { width: 100%; } 
             .barcode-grid { grid-template-columns: repeat(2, 1fr); } 
-            .tabs button { font-size: 11px; padding: 10px 2px; } 
+            .tabs button { font-size: 10px; padding: 10px 2px; } 
             .header-row { padding: 10px 12px; }
             .header-row h1 { font-size: 1rem; }
         }
@@ -176,6 +183,7 @@
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
             <button class="blue-btn small" onclick="exportAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📥</button>
             <button class="green small" onclick="importAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📤</button>
+            <button class="blue-btn small" onclick="shareBackup()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📲</button>
             <button class="mode-toggle" onclick="toggleMode()">🌙</button>
         </div>
         <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
@@ -183,14 +191,15 @@
     <p style="text-align:center; color:#888; margin-bottom:12px; font-size:13px;">جميع الأسعار بالليرة السورية (ل.س)</p>
     
     <div class="tabs">
-        <button class="active" onclick="showTab('store')">🏭 المخزن</button>
-        <button onclick="showTab('sales')">💰 المبيعات</button>
-        <button onclick="showTab('returns')">🔄 المرتجعات</button>
-        <button onclick="showTab('debts')">⏳ الديون</button>
-        <button onclick="showTab('maintenance')">🔧 الصيانة</button>
-        <button onclick="showTab('expenses')">💸 المصاريف</button>
-        <button onclick="showTab('barcodes')">🏷️ الباركود</button>
-        <button onclick="showTab('scanner')">📷 مسح</button>
+        <button class="active" onclick="showTab('store')">🏭 <span class="badge-tab" id="lowStockBadge" style="display:none;">0</span></button>
+        <button onclick="showTab('sales')">💰</button>
+        <button onclick="showTab('returns')">🔄</button>
+        <button onclick="showTab('debts')">⏳</button>
+        <button onclick="showTab('maintenance')">🔧</button>
+        <button onclick="showTab('expenses')">💸</button>
+        <button onclick="showTab('reports')">📊</button>
+        <button onclick="showTab('barcodes')">🏷️</button>
+        <button onclick="showTab('scanner')">📷</button>
     </div>
     
     <!-- المخزن -->
@@ -228,7 +237,7 @@
         <button class="red small" onclick="clearCart()" style="margin-top:6px;">🗑️ تفريغ الفاتورة</button>
         <h4 style="margin-top:18px;color:#1a3a5c;">📜 سجل المبيعات</h4>
         <table>
-            <thead><tr><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th><th>النوع</th><th>الزبون</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th><th>النوع</th><th>الزبون</th><th>طباعة</th></tr></thead>
             <tbody id="salesTable"></tbody>
         </table>
     </div>
@@ -371,6 +380,32 @@
         </table>
     </div>
     
+    <!-- التقارير -->
+    <div id="tab-reports" class="tab-content">
+        <div class="summary">
+            <div class="summary-box"><div class="number" id="rptTotalSales">0</div><div class="label">إجمالي المبيعات</div></div>
+            <div class="summary-box"><div class="number" id="rptTotalProfit">0</div><div class="label">صافي الأرباح</div></div>
+            <div class="summary-box"><div class="number" id="rptTotalItems">0</div><div class="label">عدد القطع</div></div>
+            <div class="summary-box"><div class="number" id="rptTotalDevices">0</div><div class="label">أجهزة الصيانة</div></div>
+        </div>
+        
+        <div class="form-row">
+            <select id="rptMonth" style="width:150px" onchange="loadReports()"><option value="">كل الفترة</option></select>
+        </div>
+        
+        <h4>📈 أكثر القطع مبيعاً</h4>
+        <table>
+            <thead><tr><th>القطعة</th><th>عدد مرات البيع</th><th>الكمية المباعة</th><th>إجمالي المبيعات</th></tr></thead>
+            <tbody id="rptTopSelling"></tbody>
+        </table>
+        
+        <h4 style="margin-top:18px;">📊 ملخص شهري</h4>
+        <table>
+            <thead><tr><th>الشهر</th><th>المبيعات</th><th>المصاريف</th><th>الأرباح</th></tr></thead>
+            <tbody id="rptMonthly"></tbody>
+        </table>
+    </div>
+    
     <!-- الباركود -->
     <div id="tab-barcodes" class="tab-content">
         <div class="form-row">
@@ -414,10 +449,10 @@
 
 <div id="msg" class="msg"></div>
 <!-- نهاية جزء 1 -->
-    <!-- جزء 2 -->
+   <!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV9', 2);
+const request = indexedDB.open('WissamFinalV10', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -430,7 +465,7 @@ request.onupgradeneeded = function(e) {
     if (!d.objectStoreNames.contains('funds')) { d.createObjectStore('funds', { keyPath: 'id', autoIncrement: true }); }
 };
 
-request.onsuccess = function(e) { db = e.target.result; console.log('✅'); loadAll(); };
+request.onsuccess = function(e) { db = e.target.result; console.log('✅'); loadAll(); checkLowStock(); };
 request.onerror = function() { alert('❌ فشل قاعدة البيانات'); };
 
 function toggleMode() {
@@ -451,6 +486,7 @@ function showTab(tab) {
     if (tab === 'debts') loadDebts();
     if (tab === 'maintenance') loadMaintenance();
     if (tab === 'expenses') { loadExpenses(); loadFundBalance(); }
+    if (tab === 'reports') loadReports();
     if (tab === 'barcodes') initBarcodes();
     if (tab === 'scanner') startScanner();
 }
@@ -459,6 +495,65 @@ function loadAll() { loadStore(); fillSaleSelect(); loadSales(); fillReturnSelec
 
 function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
+
+// ==================== إشعارات نقص المخزون ====================
+function checkLowStock() {
+    if (!db) return;
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        const items = e.target.result;
+        const low = items.filter(i => i.quantity < 5);
+        const badge = document.getElementById('lowStockBadge');
+        
+        if (low.length > 0) {
+            badge.style.display = 'block';
+            badge.textContent = low.length;
+            
+            // تنبيه أول مرة فقط
+            if (!sessionStorage.getItem('lowStockAlertShown')) {
+                sessionStorage.setItem('lowStockAlertShown', '1');
+                const names = low.map(i => i.name + ' (' + i.quantity + ')').join('، ');
+                setTimeout(() => {
+                    if (confirm('⚠️ تنبيه: ' + low.length + ' قطع أقل من 5:\n' + names + '\n\nهل تريد الذهاب للمخزن؟')) {
+                        showTab('store');
+                    }
+                }, 500);
+            }
+        } else {
+            badge.style.display = 'none';
+        }
+    };
+}
+
+// ==================== مزامنة بين الأجهزة ====================
+function shareBackup() {
+    const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses', 'funds'];
+    const data = {};
+    let done = 0;
+    
+    stores.forEach(store => {
+        db.transaction(store, 'readonly').objectStore(store).getAll().onsuccess = function(e) {
+            data[store] = e.target.result;
+            done++;
+            if (done === stores.length) {
+                const json = JSON.stringify(data);
+                localStorage.setItem('wesam_backup', json);
+                
+                // مشاركة عبر واتساب
+                const text = '📦 نسخة احتياطية - مركز وسام\n📅 ' + new Date().toLocaleDateString('ar-SY') + '\n\nانسخ الكود التالي واستورده في التطبيق:\n\n' + json.substring(0, 500) + '...\n\n(الكود كامل محفوظ في الحافظة)';
+                
+                try {
+                    navigator.clipboard.writeText(json);
+                    const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+                    window.open(url, '_blank');
+                    showMsg('✅ تم نسخ الكود وفتح واتساب');
+                } catch(e) {
+                    showMsg('✅ تم حفظ النسخة محلياً');
+                    showExportCode(json);
+                }
+            }
+        };
+    });
+}
 
 // ==================== تصدير واستيراد ====================
 function exportAllData() {
@@ -484,11 +579,11 @@ function exportAllData() {
                         URL.revokeObjectURL(url);
                         showMsg('✅ تم تصدير البيانات وحفظها محلياً');
                     } catch(e) {
-                        showMsg('✅ تم حفظ البيانات محلياً - انسخ الكود التالي للاستيراد لاحقاً');
+                        showMsg('✅ تم حفظ البيانات محلياً');
                         showExportCode(json);
                     }
                 } catch(e) {
-                    showMsg('❌ فشل التصدير - البيانات كبيرة جداً');
+                    showMsg('❌ فشل التصدير');
                 }
             }
         };
@@ -501,7 +596,6 @@ function showExportCode(json) {
     modal.innerHTML = `
         <div style="background:white;padding:20px;border-radius:12px;max-width:90%;max-height:80%;overflow:auto;text-align:center;">
             <h3>📋 كود النسخ الاحتياطي</h3>
-            <p style="color:#888;margin:10px 0;">انسخ الكود التالي واحفظه في مكان آمن</p>
             <textarea id="backupCode" readonly style="width:100%;height:200px;font-size:11px;direction:ltr;text-align:left;padding:10px;border-radius:8px;">${json}</textarea>
             <button onclick="navigator.clipboard.writeText(document.getElementById('backupCode').value);showMsg('✅ تم النسخ');" style="margin-top:10px;width:100%;">📋 نسخ الكود</button>
             <button onclick="this.parentElement.parentElement.remove()" style="margin-top:5px;width:100%;background:#e74c3c;">❌ إغلاق</button>
@@ -513,7 +607,7 @@ function showExportCode(json) {
 function importAllData() {
     const saved = localStorage.getItem('wesam_backup');
     if (saved) {
-        if (confirm('⚠️ تم العثور على نسخة احتياطية محفوظة. هل تريد استعادتها؟')) {
+        if (confirm('⚠️ تم العثور على نسخة احتياطية. استعادتها؟')) {
             importFromJSON(saved);
             return;
         }
@@ -539,23 +633,23 @@ function importFromJSON(jsonStr) {
                     });
                     tx.oncomplete = function() {
                         done++;
-                        if (done === stores.length) { showMsg('✅ تم استيراد البيانات بنجاح'); loadAll(); }
+                        if (done === stores.length) { showMsg('✅ تم استيراد البيانات'); loadAll(); checkLowStock(); }
                     };
                 } else {
                     done++;
-                    if (done === stores.length) { showMsg('✅ تم استيراد البيانات بنجاح'); loadAll(); }
+                    if (done === stores.length) { showMsg('✅ تم استيراد البيانات'); loadAll(); checkLowStock(); }
                 }
             };
         });
     } catch (err) {
-        showMsg('❌ فشل الاستيراد - البيانات غير صالحة');
+        showMsg('❌ فشل الاستيراد');
     }
 }
 
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
-    if (!confirm('⚠️ سيتم استبدال جميع البيانات الحالية. هل تريد المتابعة؟')) { event.target.value = ''; return; }
+    if (!confirm('⚠️ سيتم استبدال جميع البيانات. متابعة؟')) { event.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = function(e) {
         localStorage.setItem('wesam_backup', e.target.result);
@@ -584,9 +678,7 @@ function addItem() {
         }).transaction.oncomplete = function() {
             showMsg('✅ تم تحديث القطعة');
             cancelEditItem();
-            loadStore();
-            fillSaleSelect();
-            fillReturnSelect();
+            loadStore(); fillSaleSelect(); fillReturnSelect(); checkLowStock();
         };
         return;
     }
@@ -597,7 +689,7 @@ function addItem() {
         const ex = e.target.result;
         if (ex) { ex.quantity += qty; ex.cost = cost; ex.price = price; if (barcode) ex.barcode = barcode; store.put(ex); showMsg('✅ تحديث: ' + name); }
         else { store.add({ name, quantity: qty, cost, price, barcode }); showMsg('✅ إضافة: ' + name); }
-        tx.oncomplete = () => { ['itemName','itemQty','itemCost','itemPrice','itemBarcode'].forEach(id => document.getElementById(id).value = ''); loadStore(); fillSaleSelect(); fillReturnSelect(); };
+        tx.oncomplete = () => { ['itemName','itemQty','itemCost','itemPrice','itemBarcode'].forEach(id => document.getElementById(id).value = ''); loadStore(); fillSaleSelect(); fillReturnSelect(); checkLowStock(); };
     };
 }
 
@@ -612,13 +704,13 @@ function loadStore() {
         const a = document.getElementById('lowStockAlert');
         a.style.display = low.length ? 'block' : 'none';
         if (low.length) a.innerHTML = '⚠️ نقص: ' + low.map(i => i.name + ' (' + i.quantity + ')').join(' | ');
+        checkLowStock();
     };
 }
 
 function editItem(id) {
     db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
-        const item = e.target.result;
-        if (!item) return;
+        const item = e.target.result; if (!item) return;
         editingItemId = id;
         document.getElementById('itemName').value = item.name;
         document.getElementById('itemQty').value = item.quantity;
@@ -635,11 +727,11 @@ function editItem(id) {
 function cancelEditItem() {
     editingItemId = null;
     ['itemName','itemQty','itemCost','itemPrice','itemBarcode'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('btnStoreSubmit').textContent = '➕';
+    document.getElementById('btnStoreSubmit').textContent = '➕ إضافة';
     document.getElementById('storeEditForm').style.display = 'none';
 }
 
-function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); }; }
+function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); checkLowStock(); }; }
 
 // ==================== المبيعات ====================
 let cart = [];
@@ -683,14 +775,42 @@ function checkoutCart() {
         const total = cart.reduce((s, c) => s + c.total, 0), items = cart.map(c => c.name + ' ×' + c.qty).join(' + '), date = new Date().toLocaleDateString('ar-SY');
         db.transaction('sales', 'readwrite').objectStore('sales').add({ itemName: items, total, type, customer: type === 'آجل' ? customer : '', date });
         if (type === 'آجل') { db.transaction('debts', 'readwrite').objectStore('debts').add({ customer, amount: total, paid: 0, date, status: 'معلق', paidDate: '' }); }
-        tx.oncomplete = () => { showMsg('✅ تم البيع! ' + formatPrice(total)); clearCart(); loadStore(); fillSaleSelect(); loadSales(); if (type === 'آجل') loadDebts(); };
+        tx.oncomplete = () => { showMsg('✅ تم البيع! ' + formatPrice(total)); clearCart(); loadStore(); fillSaleSelect(); loadSales(); if (type === 'آجل') loadDebts(); checkLowStock(); };
     }
 }
 
 function loadSales() {
     db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
-        document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(s => '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td></tr>').join('');
+        document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(s => 
+            '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td><td><button class="purple-btn small" onclick="printSaleInvoice(\'' + s.date + '\',\'' + s.itemName + '\',' + s.total + ',\'' + (s.type||'نقدي') + '\',\'' + (s.customer||'') + '\')">🖨️</button></td></tr>'
+        ).join('');
     };
+}
+
+// ==================== طباعة فاتورة بيع ====================
+function printSaleInvoice(date, items, total, type, customer) {
+    const w = window.open('', '_blank', 'width=400,height=500');
+    w.document.write('<!DOCTYPE html><html dir="rtl"><head><title>فاتورة بيع</title>');
+    w.document.write('<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;font-size:14px;}');
+    w.document.write('h2{color:#1a3a5c;margin-bottom:5px;}h4{color:#888;margin-bottom:15px;}');
+    w.document.write('.line{border-top:1px dashed #ccc;margin:12px 0;}');
+    w.document.write('.total{font-size:1.4rem;font-weight:700;color:#27ae60;margin-top:10px;}');
+    w.document.write('.footer{margin-top:25px;color:#888;font-size:11px;}');
+    w.document.write('@media print{body{margin:0;padding:15px;}}');
+    w.document.write('</style></head><body>');
+    w.document.write('<h2>🧾 مركز وسام للإلكترونيات</h2>');
+    w.document.write('<h4>فاتورة بيع</h4>');
+    w.document.write('<p><strong>التاريخ:</strong> ' + date + '</p>');
+    if (customer) w.document.write('<p><strong>الزبون:</strong> ' + customer + '</p>');
+    w.document.write('<p><strong>النوع:</strong> ' + type + '</p>');
+    w.document.write('<div class="line"></div>');
+    w.document.write('<p><strong>الأصناف:</strong><br>' + items.replace(/\+/g, '<br>') + '</p>');
+    w.document.write('<div class="line"></div>');
+    w.document.write('<p class="total">💰 ' + formatPrice(total) + '</p>');
+    w.document.write('<p class="footer">شكراً لتعاملكم معنا 🤝</p>');
+    w.document.write('</body></html>');
+    w.document.close();
+    setTimeout(() => w.print(), 500);
 }
 <!-- نهاية جزء 3 -->
     <!-- جزء 4 -->
@@ -956,15 +1076,13 @@ function loadFundBalance() {
         const funds = e.target.result;
         const totalIn = funds.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0);
         const totalOut = funds.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0);
-        const balance = totalIn - totalOut;
-        document.getElementById('fundBalance').textContent = formatPrice(balance);
+        document.getElementById('fundBalance').textContent = formatPrice(totalIn - totalOut);
     };
 }
 
 function addFund() {
     const amount = parseFloat(document.getElementById('fundAmount').value);
     if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
-    
     db.transaction('funds', 'readwrite').objectStore('funds').add({
         amount, type: 'in', date: new Date().toISOString().split('T')[0]
     }).transaction.oncomplete = function() {
@@ -985,11 +1103,8 @@ function addExpense() {
     
     if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
     
-    // إذا المصدر = المبلغ الوارد، نخصم منه
     if (source === 'fund') {
-        db.transaction('funds', 'readwrite').objectStore('funds').add({
-            amount, type: 'out', date
-        });
+        db.transaction('funds', 'readwrite').objectStore('funds').add({ amount, type: 'out', date });
     }
     
     db.transaction('expenses', 'readwrite').objectStore('expenses').add({
@@ -998,8 +1113,7 @@ function addExpense() {
         showMsg('✅ تم حفظ المصروف');
         document.getElementById('expAmount').value = '';
         document.getElementById('expNote').value = '';
-        loadExpenses();
-        loadFundBalance();
+        loadExpenses(); loadFundBalance();
     };
 }
 
@@ -1030,32 +1144,18 @@ function loadExpenses() {
         const today = new Date().toISOString().split('T')[0];
         const thisMonth = today.substring(0, 7);
         
-        const dailyTotal = expenses.filter(ex => ex.date === today).reduce((s, ex) => s + ex.amount, 0);
-        const monthlyTotal = expenses.filter(ex => ex.date && ex.date.startsWith(thisMonth)).reduce((s, ex) => s + ex.amount, 0);
-        
-        document.getElementById('totalDaily').textContent = formatPrice(dailyTotal);
-        document.getElementById('totalMonthly').textContent = formatPrice(monthlyTotal);
+        document.getElementById('totalDaily').textContent = formatPrice(expenses.filter(ex => ex.date === today).reduce((s, ex) => s + ex.amount, 0));
+        document.getElementById('totalMonthly').textContent = formatPrice(expenses.filter(ex => ex.date && ex.date.startsWith(thisMonth)).reduce((s, ex) => s + ex.amount, 0));
         
         // حساب صافي الربح
         db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
             const salesTotal = e.target.result.reduce((s, sale) => s + sale.total, 0);
-            
             db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = function(e) {
                 const returnsTotal = e.target.result.reduce((s, ret) => s + (ret.amount || 0), 0);
-                
                 db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = function(e) {
-                    const maintenanceTotal = e.target.result
-                        .filter(m => m.archived)
-                        .reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
-                    
-                    const expensesTotal = expenses
-                        .filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund')
-                        .reduce((s, ex) => s + ex.amount, 0);
-                    
-                    const revenuesTotal = expenses
-                        .filter(ex => ex.type === 'إيرادات')
-                        .reduce((s, ex) => s + ex.amount, 0);
-                    
+                    const maintenanceTotal = e.target.result.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
+                    const expensesTotal = expenses.filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund').reduce((s, ex) => s + ex.amount, 0);
+                    const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
                     const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
                     
                     document.getElementById('totalSales_2').textContent = formatPrice(salesTotal + maintenanceTotal);
@@ -1073,8 +1173,72 @@ function deleteExpense(id) {
     if (!confirm('حذف هذا المصروف؟')) return;
     db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); loadFundBalance(); };
 }
+
+// ==================== التقارير ====================
+function loadReports() {
+    if (!db) return;
+    
+    Promise.all([
+        new Promise(r => db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('debts', 'readonly').objectStore('debts').getAll().onsuccess = e => r(e.target.result))
+    ]).then(([sales, items, expenses, returns, maintenance, debts]) => {
+        const totalSales = sales.reduce((s, r) => s + r.total, 0);
+        const totalReturns = returns.reduce((s, r) => s + (r.amount || 0), 0);
+        const totalExpenses = expenses.filter(ex => ex.source !== 'fund').reduce((s, ex) => s + ex.amount, 0);
+        const maintenanceTotal = maintenance.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
+        const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
+        const profit = totalSales + maintenanceTotal + revenuesTotal - totalReturns - totalExpenses;
+        
+        document.getElementById('rptTotalSales').textContent = formatPrice(totalSales + maintenanceTotal);
+        document.getElementById('rptTotalProfit').textContent = formatPrice(profit);
+        document.getElementById('rptTotalProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+        document.getElementById('rptTotalItems').textContent = items.length + ' قطعة';
+        document.getElementById('rptTotalDevices').textContent = maintenance.length + ' جهاز';
+        
+        // أكثر القطع مبيعاً
+        const stats = {};
+        sales.forEach(s => {
+            if (!stats[s.itemName]) stats[s.itemName] = { count: 0, qty: 0, total: 0 };
+            stats[s.itemName].count++;
+            stats[s.itemName].qty += s.quantity || 0;
+            stats[s.itemName].total += s.total || 0;
+        });
+        const topSelling = Object.entries(stats).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
+        document.getElementById('rptTopSelling').innerHTML = topSelling.length ? topSelling.map(([name, s]) => 
+            '<tr><td>' + name + '</td><td>' + s.count + '</td><td>' + s.qty + '</td><td>' + formatPrice(s.total) + '</td></tr>'
+        ).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد مبيعات</td></tr>';
+        
+        // ملخص شهري
+        const monthly = {};
+        sales.forEach(s => {
+            const month = s.date ? s.date.substring(0, 7) : 'غير معروف';
+            if (!monthly[month]) monthly[month] = { sales: 0, expenses: 0 };
+            monthly[month].sales += s.total || 0;
+        });
+        expenses.forEach(ex => {
+            const month = ex.date ? ex.date.substring(0, 7) : 'غير معروف';
+            if (!monthly[month]) monthly[month] = { sales: 0, expenses: 0 };
+            monthly[month].expenses += ex.amount || 0;
+        });
+        
+        const monthSelect = document.getElementById('rptMonth');
+        const months = Object.keys(monthly).sort().reverse();
+        monthSelect.innerHTML = '<option value="">كل الفترة</option>' + months.map(m => '<option value="' + m + '">' + m + '</option>').join('');
+        
+        const filterMonth = monthSelect.value;
+        const filtered = filterMonth ? { [filterMonth]: monthly[filterMonth] } : monthly;
+        
+        document.getElementById('rptMonthly').innerHTML = Object.entries(filtered).sort((a, b) => b[0].localeCompare(a[0])).map(([month, data]) => 
+            '<tr><td>' + month + '</td><td>' + formatPrice(data.sales) + '</td><td>' + formatPrice(data.expenses) + '</td><td style="color:' + ((data.sales - data.expenses) >= 0 ? '#27ae60' : '#e74c3c') + ';font-weight:700;">' + formatPrice(data.sales - data.expenses) + '</td></tr>'
+        ).join('') || '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد بيانات</td></tr>';
+    });
+}
 <!-- نهاية جزء 6 -->
-  <!-- جزء 7 -->
+<!-- جزء 7 -->
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
