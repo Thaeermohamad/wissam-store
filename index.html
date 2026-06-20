@@ -405,22 +405,101 @@ function exportAllData() {
             data[store] = e.target.result;
             done++;
             if (done === stores.length) {
-                const json = JSON.stringify(data, null, 2);
-                const blob = new Blob([json], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'wesam-backup-' + new Date().toISOString().split('T')[0] + '.json';
-                a.click();
-                URL.revokeObjectURL(url);
-                showMsg('✅ تم تصدير البيانات بنجاح');
+                const json = JSON.stringify(data);
+                
+                // حفظ في localStorage
+                try {
+                    localStorage.setItem('wesam_backup', json);
+                    
+                    // محاولة التحميل كملف (للمتصفح)
+                    try {
+                        const blob = new Blob([json], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'wesam-backup-' + new Date().toISOString().split('T')[0] + '.json';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        showMsg('✅ تم تصدير البيانات وحفظها محلياً');
+                    } catch(e) {
+                        // فشل التحميل كملف - البيانات محفوظة في localStorage
+                        showMsg('✅ تم حفظ البيانات محلياً - انسخ الكود التالي للاستيراد لاحقاً');
+                        showExportCode(json);
+                    }
+                } catch(e) {
+                    showMsg('❌ فشل التصدير - البيانات كبيرة جداً');
+                }
             }
         };
     });
 }
 
+function showExportCode(json) {
+    // عرض البيانات في نافذة منبثقة لنسخها يدوياً
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+        <div style="background:white;padding:20px;border-radius:12px;max-width:90%;max-height:80%;overflow:auto;text-align:center;">
+            <h3>📋 كود النسخ الاحتياطي</h3>
+            <p style="color:#888;margin:10px 0;">انسخ الكود التالي واحفظه في مكان آمن</p>
+            <textarea id="backupCode" readonly style="width:100%;height:200px;font-size:11px;direction:ltr;text-align:left;padding:10px;border-radius:8px;">${json}</textarea>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('backupCode').value);showMsg('✅ تم النسخ');" style="margin-top:10px;width:100%;">📋 نسخ الكود</button>
+            <button onclick="this.parentElement.parentElement.remove()" style="margin-top:5px;width:100%;background:#e74c3c;">❌ إغلاق</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
 function importAllData() {
+    // محاولة استيراد من localStorage أولاً
+    const saved = localStorage.getItem('wesam_backup');
+    
+    if (saved) {
+        if (confirm('⚠️ تم العثور على نسخة احتياطية محفوظة. هل تريد استعادتها؟')) {
+            importFromJSON(saved);
+            return;
+        }
+    }
+    
+    // إذا ما فيه نسخة محلية - نطلب ملف
     document.getElementById('importFileInput').click();
+}
+
+function importFromJSON(jsonStr) {
+    try {
+        const data = JSON.parse(jsonStr);
+        const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses'];
+        let done = 0;
+        
+        stores.forEach(store => {
+            db.transaction(store, 'readwrite').objectStore(store).clear().onsuccess = function() {
+                if (data[store] && data[store].length) {
+                    const tx = db.transaction(store, 'readwrite');
+                    const objStore = tx.objectStore(store);
+                    data[store].forEach(record => {
+                        const newRecord = {...record};
+                        delete newRecord.id;
+                        objStore.add(newRecord);
+                    });
+                    tx.oncomplete = function() {
+                        done++;
+                        if (done === stores.length) {
+                            showMsg('✅ تم استيراد البيانات بنجاح');
+                            loadAll();
+                        }
+                    };
+                } else {
+                    done++;
+                    if (done === stores.length) {
+                        showMsg('✅ تم استيراد البيانات بنجاح');
+                        loadAll();
+                    }
+                }
+            };
+        });
+    } catch (err) {
+        showMsg('❌ فشل الاستيراد - البيانات غير صالحة');
+    }
 }
 
 function handleImportFile(event) {
@@ -434,42 +513,11 @@ function handleImportFile(event) {
     
     const reader = new FileReader();
     reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses'];
-            let done = 0;
-            
-            stores.forEach(store => {
-                db.transaction(store, 'readwrite').objectStore(store).clear().onsuccess = function() {
-                    if (data[store] && data[store].length) {
-                        const tx = db.transaction(store, 'readwrite');
-                        const objStore = tx.objectStore(store);
-                        data[store].forEach(record => {
-                            const newRecord = {...record};
-                            delete newRecord.id;
-                            objStore.add(newRecord);
-                        });
-                        tx.oncomplete = function() {
-                            done++;
-                            if (done === stores.length) {
-                                showMsg('✅ تم استيراد البيانات بنجاح');
-                                loadAll();
-                            }
-                        };
-                    } else {
-                        done++;
-                        if (done === stores.length) {
-                            showMsg('✅ تم استيراد البيانات بنجاح');
-                            loadAll();
-                        }
-                    }
-                };
-            });
-        } catch (err) {
-            showMsg('❌ فشل الاستيراد - الملف غير صالح');
-        }
+        // حفظ النسخة المستوردة في localStorage أيضاً
+        localStorage.setItem('wesam_backup', e.target.result);
+        importFromJSON(e.target.result);
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsText(file);
     event.target.value = '';
 }
 <!-- نهاية جزء 2 -->
