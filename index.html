@@ -1,4 +1,4 @@
- <!-- جزء 1 -->
+<!-- جزء 1 -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -252,6 +252,7 @@
                 <option value="أدوات">أدوات صيانة</option>
                 <option value="تغليف">تغليف</option>
                 <option value="أخرى">أخرى</option>
+                <option value="إيرادات">💰 إيرادات</option>
             </select>
             <select id="expCategory" style="width:110px">
                 <option value="يومي">يومي</option>
@@ -274,6 +275,7 @@
                 <option value="أدوات">أدوات صيانة</option>
                 <option value="تغليف">تغليف</option>
                 <option value="أخرى">أخرى</option>
+                <option value="إيرادات">💰 إيرادات</option>
             </select>
             <select id="expFilterMonth" style="width:130px" onchange="loadExpenses()">
                 <option value="">كل الشهور</option>
@@ -321,7 +323,6 @@
     </div>
     
     <!-- مسح الباركود -->
-  <!-- مسح الباركود -->
     <div id="tab-scanner" class="tab-content">
         <h3>📷 مسح باركود</h3>
         <p style="color:#888;margin-bottom:15px;">امسح الباركود بتطبيق خارجي وألصق الرقم هنا</p>
@@ -965,14 +966,28 @@ function loadExpenses() {
             db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = function(e) {
                 const returnsTotal = e.target.result.reduce((s, ret) => s + (ret.amount || 0), 0);
                 
-                const expensesTotal = expenses.reduce((s, ex) => s + ex.amount, 0);
-                const profit = salesTotal - returnsTotal - expensesTotal;
-                
-                document.getElementById('totalSales_2').textContent = formatPrice(salesTotal);
-                document.getElementById('totalReturns_2').textContent = formatPrice(returnsTotal);
-                document.getElementById('totalExpenses_2').textContent = formatPrice(expensesTotal);
-                document.getElementById('netProfit').textContent = formatPrice(profit);
-                document.getElementById('netProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+                db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = function(e) {
+                    const maintenanceTotal = e.target.result
+                        .filter(m => m.archived)
+                        .reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
+                    
+                    const expensesTotal = expenses
+                        .filter(ex => ex.type !== 'إيرادات')
+                        .reduce((s, ex) => s + ex.amount, 0);
+                    
+                    const revenuesTotal = expenses
+                        .filter(ex => ex.type === 'إيرادات')
+                        .reduce((s, ex) => s + ex.amount, 0);
+                    
+                    const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
+                    
+                    document.getElementById('totalSales_2').textContent = formatPrice(salesTotal + maintenanceTotal);
+                    document.getElementById('totalSales_2').parentElement.querySelector('.label').textContent = 'مبيعات + صيانة (ل.س)';
+                    document.getElementById('totalReturns_2').textContent = formatPrice(returnsTotal);
+                    document.getElementById('totalExpenses_2').textContent = formatPrice(expensesTotal);
+                    document.getElementById('netProfit').textContent = formatPrice(profit);
+                    document.getElementById('netProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+                };
             };
         };
     };
