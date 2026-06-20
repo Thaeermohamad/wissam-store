@@ -7,80 +7,164 @@
     <title>مركز وسام للإلكترونيات</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background: #f4f7f9; padding: 20px; transition: 0.3s; }
-        body.dark { background: #000000; color: #eee; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        body { background: #eef2f6; padding: 0; transition: 0.3s; }
+        body.dark { background: #0a0a0f; color: #eee; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 10px; }
         
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .header-row h1 { color: #1e3c5c; font-size: 1.3rem; }
-        body.dark .header-row h1 { color: #64b5f6; }
+        .header-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 18px; background: linear-gradient(135deg, #1a3a5c, #0f2b40);
+            border-radius: 16px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+            position: sticky; top: 5px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        body.dark .header-row { background: linear-gradient(135deg, #1a1a3a, #0d0d20); }
+        .header-row h1 { color: #ffffff; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
         
-        .mode-toggle { padding: 10px 20px; border-radius: 30px; border: none; cursor: pointer; font-size: 18px; background: #2d7fc1; color: white; }
-        body.dark .mode-toggle { background: #ffb74d; color: #000; }
+        .mode-toggle { padding: 8px 18px; border-radius: 25px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; font-size: 16px; background: rgba(255,255,255,0.1); color: white; transition: 0.3s; }
+        .mode-toggle:hover { background: rgba(255,255,255,0.2); }
+        body.dark .mode-toggle { background: #ffb74d; color: #000; border-color: transparent; }
         
-        .tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tabs button { flex: 1; padding: 12px 4px; border: none; min-width: 50px; background: #ddd; cursor: pointer; font-size: 11px; font-weight: bold; border-radius: 8px 8px 0 0; }
-        .tabs button.active { background: #2d7fc1; color: white; }
-        body.dark .tabs button { background: #333; color: #ccc; }
+        .tabs { display: flex; gap: 6px; margin-bottom: 15px; flex-wrap: wrap; }
+        .tabs button { 
+            flex: 1; padding: 10px 4px; border: none; min-width: 52px; 
+            background: #ffffff; cursor: pointer; font-size: 12px; font-weight: 600; 
+            border-radius: 10px 10px 0 0; transition: 0.2s; color: #555;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.03);
+        }
+        .tabs button:hover { background: #e3ecf7; transform: translateY(-2px); }
+        .tabs button.active { background: #2d7fc1; color: white; box-shadow: 0 -2px 12px rgba(45,127,193,0.3); }
+        body.dark .tabs button { background: #1a1a2e; color: #aaa; }
+        body.dark .tabs button:hover { background: #252540; }
         body.dark .tabs button.active { background: #2d7fc1; color: white; }
         
-        .tab-content { display: none; background: white; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .tab-content { 
+            display: none; background: white; padding: 20px; 
+            border-radius: 0 0 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); 
+        }
         .tab-content.active { display: block; }
-        body.dark .tab-content { background: #111111; }
-        body.dark .cart-item { background: #1a1a1a; }
-        body.dark th { background: #222222; color: #90caf9; }
-        body.dark td { border-color: #333333; }
-        body.dark .summary-box { background: #1a1a1a; }
+        body.dark .tab-content { background: #12121f; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        body.dark .cart-item { background: #1a1a2e; border: 1px solid #2a2a3a; }
+        body.dark th { background: #1a1a30; color: #90caf9; }
+        body.dark td { border-color: #2a2a3a; }
+        body.dark .summary-box { background: #1a1a2e; border: 1px solid #2a2a3a; }
         
-        .form-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
-        input, select, button, textarea { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
-        body.dark input, body.dark select, body.dark textarea { background: #0f3460; color: #eee; border-color: #333; }
-        button { background: #2d7fc1; color: white; border: none; cursor: pointer; font-weight: bold; white-space: nowrap; }
-        button.green { background: #27ae60; }
-        button.red { background: #e74c3c; }
-        button.orange { background: #e67e22; }
-        button.blue-btn { background: #2980b9; }
-        button.small { padding: 5px 10px; font-size: 12px; }
+        .form-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+        input, select, textarea { 
+            padding: 10px 14px; border-radius: 10px; border: 2px solid #e0e5ea; 
+            font-size: 14px; transition: 0.2s; background: #fafbfc; 
+        }
+        input:focus, select:focus, textarea:focus { 
+            outline: none; border-color: #2d7fc1; box-shadow: 0 0 0 3px rgba(45,127,193,0.1); 
+            background: white;
+        }
+        body.dark input, body.dark select, body.dark textarea { 
+            background: #1a1a2e; color: #eee; border-color: #333; 
+        }
+        body.dark input:focus, body.dark select:focus, body.dark textarea:focus { 
+            border-color: #64b5f6; box-shadow: 0 0 0 3px rgba(100,181,246,0.15);
+        }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-        th { background: #f0f5fe; padding: 8px; text-align: right; font-size: 11px; }
-        td { padding: 8px; border-bottom: 1px solid #eee; }
+        button { 
+            padding: 10px 16px; border-radius: 10px; border: none; font-size: 14px; 
+            cursor: pointer; font-weight: 600; white-space: nowrap; transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        button:active { transform: translateY(0); }
+        button.green { background: #27ae60; color: white; }
+        button.green:hover { background: #219a52; }
+        button.red { background: #e74c3c; color: white; }
+        button.red:hover { background: #c0392b; }
+        button.orange { background: #e67e22; color: white; }
+        button.orange:hover { background: #d35400; }
+        button.blue-btn { background: #2980b9; color: white; }
+        button.blue-btn:hover { background: #2471a3; }
+        button.small { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
         
-        .alert { background: #fff3cd; border-right: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
-        body.dark .alert { background: #3e2723; color: #ffcc80; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; border-radius: 12px; overflow: hidden; }
+        th { background: #edf2f7; padding: 10px 8px; text-align: right; font-size: 12px; font-weight: 700; color: #1a3a5c; }
+        td { padding: 10px 8px; border-bottom: 1px solid #eef2f6; }
+        tr:hover { background: #f8fafc; }
+        body.dark tr:hover { background: #1a1a30; }
+        
+        .alert { 
+            background: #fff8e1; border-right: 4px solid #ffa000; 
+            padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; 
+            font-size: 13px; font-weight: 500;
+        }
+        body.dark .alert { background: #2a1a0a; color: #ffcc80; border-right-color: #ff8f00; }
         
         .summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .summary-box { flex: 1; min-width: 100px; background: #f0f5fe; padding: 12px; border-radius: 12px; text-align: center; }
-        .summary-box .number { font-size: 1.2rem; font-weight: bold; color: #1e3c5c; }
+        .summary-box { 
+            flex: 1; min-width: 110px; background: white; 
+            padding: 14px 10px; border-radius: 14px; text-align: center; 
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04); transition: 0.2s;
+        }
+        .summary-box:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .summary-box .number { font-size: 1.3rem; font-weight: 700; color: #1a3a5c; }
         body.dark .summary-box .number { color: #90caf9; }
-        .summary-box .label { font-size: 11px; color: #666; }
+        .summary-box .label { font-size: 11px; color: #777; margin-top: 4px; }
         body.dark .summary-box .label { color: #aaa; }
         
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .badge { 
+            display: inline-block; padding: 4px 10px; border-radius: 20px; 
+            font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+        }
         .badge-warning { background: #fff3cd; color: #856404; }
         .badge-info { background: #d1ecf1; color: #0c5460; }
         .badge-success { background: #d4edda; color: #155724; }
         .badge-secondary { background: #e2e3e5; color: #383d41; }
         
-        .cart-item { background: #f9f9f9; padding: 10px; border-radius: 8px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
+        .cart-item { 
+            background: #f8fafc; padding: 12px 14px; border-radius: 10px; 
+            margin: 6px 0; display: flex; justify-content: space-between; 
+            align-items: center; flex-wrap: wrap; gap: 8px; 
+            border: 1px solid #eef2f6; transition: 0.2s;
+        }
+        .cart-item:hover { border-color: #dde4ed; }
         
-        .filter-btns { display: flex; gap: 5px; flex-wrap: wrap; margin: 10px 0; }
-        .filter-btns button { font-size: 12px; padding: 6px 12px; }
+        .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+        .filter-btns button { font-size: 12px; padding: 7px 14px; border-radius: 20px; }
         
-        .barcode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center; margin-top: 20px; }
-        .barcode-item { border: 1px dashed #ccc; padding: 15px 10px; border-radius: 8px; background: white; }
-        body.dark .barcode-item { background: #1a2744; border-color: #444; }
-        .barcode-item .code { font-size: 12px; font-weight: bold; letter-spacing: 1px; margin-top: 5px; }
+        .barcode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; margin-top: 15px; }
+        .barcode-item { 
+            border: 2px dashed #dde4ed; padding: 14px 8px; border-radius: 12px; 
+            background: white; transition: 0.2s; 
+        }
+        .barcode-item:hover { border-color: #2d7fc1; }
+        body.dark .barcode-item { background: #1a1a2e; border-color: #333; }
+        .barcode-item .code { font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-top: 6px; color: #1a3a5c; }
+        body.dark .barcode-item .code { color: #eee; }
         .barcode-item .num { font-size: 10px; color: #888; }
         
-        .msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e3c5c; color: white; padding: 12px 24px; border-radius: 30px; display: none; z-index: 999; }
+        .msg { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            background: #1a3a5c; color: white; padding: 14px 26px; border-radius: 30px; 
+            display: none; z-index: 999; font-weight: 600; font-size: 14px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: slideUp 0.3s ease;
+        }
         body.dark .msg { background: #ffb74d; color: #000; }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 500px; width: 90%; }
-        body.dark .modal-content { background: #16213e; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
         
-        @media (max-width: 600px) { .form-row { flex-direction: column; } input, select, textarea { width: 100%; } .barcode-grid { grid-template-columns: repeat(2, 1fr); } .tabs button { font-size: 10px; padding: 10px 2px; } }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { 
+            background: white; padding: 25px; border-radius: 18px; 
+            max-width: 500px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        body.dark .modal-content { background: #1a1a2e; }
+        
+        @media (max-width: 600px) { 
+            .form-row { flex-direction: column; } 
+            input, select, textarea { width: 100%; } 
+            .barcode-grid { grid-template-columns: repeat(2, 1fr); } 
+            .tabs button { font-size: 11px; padding: 10px 2px; } 
+            .header-row { padding: 10px 12px; }
+            .header-row h1 { font-size: 1rem; }
+        }
         @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
     </style>
 </head>
@@ -90,37 +174,37 @@
     <div class="header-row">
         <h1>📦 مركز وسام للإلكترونيات</h1>
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
-            <button class="blue-btn small" onclick="exportAllData()" style="font-size:11px;">📥</button>
-            <button class="green small" onclick="importAllData()" style="font-size:11px;">📤</button>
+            <button class="blue-btn small" onclick="exportAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📥</button>
+            <button class="green small" onclick="importAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📤</button>
             <button class="mode-toggle" onclick="toggleMode()">🌙</button>
         </div>
         <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
     </div>
-    <p style="text-align:center; color:#666; margin-bottom:15px;">جميع الأسعار بالليرة السورية (ل.س)</p>
+    <p style="text-align:center; color:#888; margin-bottom:12px; font-size:13px;">جميع الأسعار بالليرة السورية (ل.س)</p>
     
     <div class="tabs">
-        <button class="active" onclick="showTab('store')">🏭</button>
-        <button onclick="showTab('sales')">💰</button>
-        <button onclick="showTab('returns')">🔄</button>
-        <button onclick="showTab('debts')">⏳</button>
-        <button onclick="showTab('maintenance')">🔧</button>
-        <button onclick="showTab('expenses')">💸</button>
-        <button onclick="showTab('barcodes')">🏷️</button>
-        <button onclick="showTab('scanner')">📷</button>
+        <button class="active" onclick="showTab('store')">🏭 المخزن</button>
+        <button onclick="showTab('sales')">💰 المبيعات</button>
+        <button onclick="showTab('returns')">🔄 المرتجعات</button>
+        <button onclick="showTab('debts')">⏳ الديون</button>
+        <button onclick="showTab('maintenance')">🔧 الصيانة</button>
+        <button onclick="showTab('expenses')">💸 المصاريف</button>
+        <button onclick="showTab('barcodes')">🏷️ الباركود</button>
+        <button onclick="showTab('scanner')">📷 مسح</button>
     </div>
     
     <!-- المخزن -->
     <div id="tab-store" class="tab-content active">
-        <div id="storeEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid #dce3ec;"></div>
+        <div id="storeEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:10px;margin-bottom:12px;border:1px solid #dce3ec;"></div>
         <div class="form-row">
             <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
             <input type="number" id="itemQty" placeholder="الكمية" style="width:75px" min="1">
             <input type="number" id="itemCost" placeholder="سعر الشراء" step="1" style="width:100px" min="0">
             <input type="number" id="itemPrice" placeholder="سعر البيع" step="1" style="width:100px" min="0">
             <input type="text" id="itemBarcode" placeholder="باركود" style="width:100px">
-            <button class="green" id="btnStoreSubmit" onclick="addItem()">➕</button>
+            <button class="green" id="btnStoreSubmit" onclick="addItem()">➕ إضافة</button>
         </div>
-        <div id="lowStockAlert" class="alert"></div>
+        <div id="lowStockAlert" class="alert" style="display:none;"></div>
         <table>
             <thead><tr><th>القطعة</th><th>الكمية</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th>باركود</th><th>إجراءات</th></tr></thead>
             <tbody id="storeTable"></tbody>
@@ -132,17 +216,17 @@
         <div class="form-row">
             <select id="saleItem" style="flex:2"></select>
             <input type="number" id="saleQty" placeholder="الكمية" value="1" style="width:80px" min="1">
-            <button class="green" onclick="addToCart()">🛒</button>
+            <button class="green" onclick="addToCart()">🛒 إضافة</button>
         </div>
         <div class="form-row">
             <select id="saleType" style="width:100px"><option value="نقدي">نقدي</option><option value="آجل">آجل</option></select>
             <input type="text" id="saleCustomer" placeholder="اسم الزبون (للآجل)" style="width:150px; display:none;">
         </div>
         <div id="cartItems"></div>
-        <div style="text-align:left;font-weight:bold;margin:10px 0;">الإجمالي: <span id="cartTotal">0</span> ل.س</div>
+        <div style="text-align:left;font-weight:700;margin:12px 0;font-size:15px;">الإجمالي: <span id="cartTotal">0</span> ل.س</div>
         <button class="green" onclick="checkoutCart()" style="width:100%;">💾 إتمام البيع</button>
-        <button class="red small" onclick="clearCart()" style="margin-top:5px;">🗑️ تفريغ</button>
-        <h4 style="margin-top:20px;">📜 سجل المبيعات</h4>
+        <button class="red small" onclick="clearCart()" style="margin-top:6px;">🗑️ تفريغ الفاتورة</button>
+        <h4 style="margin-top:18px;color:#1a3a5c;">📜 سجل المبيعات</h4>
         <table>
             <thead><tr><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th><th>النوع</th><th>الزبون</th></tr></thead>
             <tbody id="salesTable"></tbody>
@@ -158,7 +242,7 @@
             <input type="number" id="returnAmount" placeholder="المبلغ" step="1" style="width:100px" min="0">
             <button class="orange" onclick="makeReturn()">📥 إرجاع</button>
         </div>
-        <div class="summary-box" style="margin-bottom:15px;"><div class="number" id="totalReturns">0</div><div class="label">إجمالي المرتجعات</div></div>
+        <div class="summary-box" style="margin-bottom:12px;"><div class="number" id="totalReturns">0</div><div class="label">إجمالي المرتجعات</div></div>
         <table>
             <thead><tr><th>التاريخ</th><th>القطعة</th><th>الكمية</th><th>المبلغ</th><th>السبب</th></tr></thead>
             <tbody id="returnsTable"></tbody>
@@ -176,7 +260,7 @@
             <thead><tr><th>الزبون</th><th>المبلغ</th><th>التاريخ</th><th>المدفوع</th><th>المتبقي</th><th>تسديد</th></tr></thead>
             <tbody id="debtsTable"></tbody>
         </table>
-        <h3 style="margin-top:20px;">✅ ديون مسددة</h3>
+        <h3 style="margin-top:18px;">✅ ديون مسددة</h3>
         <table>
             <thead><tr><th>الزبون</th><th>المبلغ</th><th>تاريخ التسديد</th></tr></thead>
             <tbody id="paidDebtsTable"></tbody>
@@ -185,7 +269,7 @@
     
     <!-- الصيانة -->
     <div id="tab-maintenance" class="tab-content">
-        <div id="maintenanceEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid #dce3ec;"></div>
+        <div id="maintenanceEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:10px;margin-bottom:12px;border:1px solid #dce3ec;"></div>
         <div class="form-row">
             <input type="text" id="mSerial" placeholder="الرقم التسلسلي" style="flex:1" required>
             <input type="text" id="mCustomer" placeholder="اسم الزبون" style="flex:2" required>
@@ -199,11 +283,11 @@
         </div>
         <div class="form-row"><textarea id="mIssue" placeholder="وصف العطل" style="flex:2;height:50px;"></textarea></div>
         
-        <div style="background:#f9f9f9;padding:12px;border-radius:8px;margin-bottom:10px;">
+        <div style="background:#f8fafc;padding:14px;border-radius:10px;margin-bottom:10px;border:1px solid #eef2f6;">
             <strong>🔩 قطع الغيار:</strong>
             <div id="mPartsList" style="margin:8px 0;font-size:13px;color:#888;">لا توجد قطع</div>
             <button class="blue-btn small" onclick="openPartsModal()">➕ إضافة قطعة</button>
-            <span id="mPartsTotal" style="margin-right:10px;font-weight:bold;color:#27ae60;"></span>
+            <span id="mPartsTotal" style="margin-right:10px;font-weight:700;color:#27ae60;"></span>
         </div>
         
         <div class="form-row">
@@ -240,11 +324,11 @@
                 <div class="number" id="fundBalance" style="color:#8e44ad;">0</div>
                 <div class="label">💰 المبلغ الوارد (ل.س)</div>
             </div>
-            <div class="summary-box"><div class="number" id="totalDaily">0</div><div class="label">مصاريف اليوم (ل.س)</div></div>
-            <div class="summary-box"><div class="number" id="totalMonthly">0</div><div class="label">مصاريف الشهر (ل.س)</div></div>
+            <div class="summary-box"><div class="number" id="totalDaily">0</div><div class="label">مصاريف اليوم</div></div>
+            <div class="summary-box"><div class="number" id="totalMonthly">0</div><div class="label">مصاريف الشهر</div></div>
         </div>
         
-        <div class="form-row" style="background:#f3e5f5;padding:12px;border-radius:8px;">
+        <div class="form-row" style="background:#f3e5f5;padding:14px;border-radius:10px;">
             <input type="number" id="fundAmount" placeholder="إضافة مبلغ وارد" step="1" style="width:150px" min="1">
             <button class="blue-btn" onclick="addFund()" style="background:#8e44ad;">➕ إضافة للمبلغ الوارد</button>
         </div>
@@ -252,66 +336,33 @@
         <div class="form-row">
             <input type="number" id="expAmount" placeholder="المبلغ" step="1" style="width:110px" min="1" required>
             <select id="expType" style="width:130px">
-                <option value="إيجار">إيجار</option>
-                <option value="كهرباء">كهرباء</option>
-                <option value="ماء">ماء</option>
-                <option value="إنترنت">إنترنت</option>
-                <option value="أجور">أجور عمال</option>
-                <option value="نقل">نقل وشحن</option>
-                <option value="أدوات">أدوات صيانة</option>
-                <option value="تغليف">تغليف</option>
-                <option value="أخرى">أخرى</option>
-                <option value="إيرادات">💰 إيرادات</option>
+                <option value="إيجار">إيجار</option><option value="كهرباء">كهرباء</option><option value="ماء">ماء</option>
+                <option value="إنترنت">إنترنت</option><option value="أجور">أجور عمال</option><option value="نقل">نقل وشحن</option>
+                <option value="أدوات">أدوات صيانة</option><option value="تغليف">تغليف</option>
+                <option value="أخرى">أخرى</option><option value="إيرادات">💰 إيرادات</option>
             </select>
-            <select id="expCategory" style="width:110px">
-                <option value="يومي">يومي</option>
-                <option value="شهري">شهري</option>
-            </select>
-            <select id="expSource" style="width:130px">
-                <option value="business">من أرباح المحل</option>
-                <option value="fund">من المبلغ الوارد</option>
-            </select>
+            <select id="expCategory" style="width:110px"><option value="يومي">يومي</option><option value="شهري">شهري</option></select>
+            <select id="expSource" style="width:130px"><option value="business">من أرباح المحل</option><option value="fund">من المبلغ الوارد</option></select>
             <input type="date" id="expDate" style="width:130px">
-            <input type="text" id="expNote" placeholder="ملاحظة (اختياري)" style="flex:1">
+            <input type="text" id="expNote" placeholder="ملاحظة" style="flex:1">
             <button class="red" onclick="addExpense()">💾 حفظ</button>
         </div>
         
         <div class="form-row">
             <select id="expFilterType" style="width:130px" onchange="loadExpenses()">
-                <option value="">كل الأنواع</option>
-                <option value="إيجار">إيجار</option>
-                <option value="كهرباء">كهرباء</option>
-                <option value="ماء">ماء</option>
-                <option value="إنترنت">إنترنت</option>
-                <option value="أجور">أجور عمال</option>
-                <option value="نقل">نقل وشحن</option>
-                <option value="أدوات">أدوات صيانة</option>
-                <option value="تغليف">تغليف</option>
-                <option value="أخرى">أخرى</option>
-                <option value="إيرادات">💰 إيرادات</option>
+                <option value="">كل الأنواع</option><option value="إيجار">إيجار</option><option value="كهرباء">كهرباء</option>
+                <option value="ماء">ماء</option><option value="إنترنت">إنترنت</option><option value="أجور">أجور عمال</option>
+                <option value="نقل">نقل وشحن</option><option value="أدوات">أدوات صيانة</option>
+                <option value="تغليف">تغليف</option><option value="أخرى">أخرى</option><option value="إيرادات">💰 إيرادات</option>
             </select>
-            <select id="expFilterMonth" style="width:130px" onchange="loadExpenses()">
-                <option value="">كل الشهور</option>
-            </select>
+            <select id="expFilterMonth" style="width:130px" onchange="loadExpenses()"><option value="">كل الشهور</option></select>
         </div>
         
         <div class="summary" style="margin-top:15px;">
-            <div class="summary-box" style="border:2px solid #2980b9;">
-                <div class="number" id="totalSales_2" style="color:#2980b9;">0</div>
-                <div class="label">مبيعات + صيانة (ل.س)</div>
-            </div>
-            <div class="summary-box" style="border:2px solid #e67e22;">
-                <div class="number" id="totalReturns_2" style="color:#e67e22;">0</div>
-                <div class="label">المرتجعات (ل.س)</div>
-            </div>
-            <div class="summary-box" style="border:2px solid #e74c3c;">
-                <div class="number" id="totalExpenses_2" style="color:#e74c3c;">0</div>
-                <div class="label">المصاريف (ل.س)</div>
-            </div>
-            <div class="summary-box" style="border:2px solid #27ae60; background:#e8f5e9;">
-                <div class="number" id="netProfit" style="color:#27ae60; font-size:1.5rem;">0</div>
-                <div class="label">💵 صافي الربح (ل.س)</div>
-            </div>
+            <div class="summary-box" style="border:2px solid #2980b9;"><div class="number" id="totalSales_2" style="color:#2980b9;">0</div><div class="label">مبيعات + صيانة (ل.س)</div></div>
+            <div class="summary-box" style="border:2px solid #e67e22;"><div class="number" id="totalReturns_2" style="color:#e67e22;">0</div><div class="label">المرتجعات (ل.س)</div></div>
+            <div class="summary-box" style="border:2px solid #e74c3c;"><div class="number" id="totalExpenses_2" style="color:#e74c3c;">0</div><div class="label">المصاريف (ل.س)</div></div>
+            <div class="summary-box" style="border:2px solid #27ae60; background:#e8f5e9;"><div class="number" id="netProfit" style="color:#27ae60; font-size:1.5rem;">0</div><div class="label">💵 صافي الربح (ل.س)</div></div>
         </div>
         
         <table>
