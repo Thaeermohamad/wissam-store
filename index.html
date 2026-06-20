@@ -390,6 +390,85 @@ function loadAll() { loadStore(); fillSaleSelect(); loadSales(); fillReturnSelec
 
 function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
+
+// ==================== تصدير واستيراد ====================
+function exportAllData() {
+    const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses'];
+    const data = {};
+    let done = 0;
+    
+    stores.forEach(store => {
+        db.transaction(store, 'readonly').objectStore(store).getAll().onsuccess = function(e) {
+            data[store] = e.target.result;
+            done++;
+            if (done === stores.length) {
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'wesam-backup-' + new Date().toISOString().split('T')[0] + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                showMsg('✅ تم تصدير البيانات بنجاح');
+            }
+        };
+    });
+}
+
+function importAllData() {
+    document.getElementById('importFileInput').click();
+}
+
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!confirm('⚠️ سيتم استبدال جميع البيانات الحالية. هل تريد المتابعة؟')) {
+        event.target.value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses'];
+            let done = 0;
+            
+            stores.forEach(store => {
+                db.transaction(store, 'readwrite').objectStore(store).clear().onsuccess = function() {
+                    if (data[store] && data[store].length) {
+                        const tx = db.transaction(store, 'readwrite');
+                        const objStore = tx.objectStore(store);
+                        data[store].forEach(record => {
+                            const newRecord = {...record};
+                            delete newRecord.id;
+                            objStore.add(newRecord);
+                        });
+                        tx.oncomplete = function() {
+                            done++;
+                            if (done === stores.length) {
+                                showMsg('✅ تم استيراد البيانات بنجاح');
+                                loadAll();
+                            }
+                        };
+                    } else {
+                        done++;
+                        if (done === stores.length) {
+                            showMsg('✅ تم استيراد البيانات بنجاح');
+                            loadAll();
+                        }
+                    }
+                };
+            });
+        } catch (err) {
+            showMsg('❌ فشل الاستيراد - الملف غير صالح');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+    event.target.value = '';
+}
 <!-- نهاية جزء 2 -->
    <!-- جزء 3 -->
 // ==================== المخزن ====================
