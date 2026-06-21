@@ -151,7 +151,7 @@
         .barcode-item .num { font-size: 10px; color: #888; }
         
         .msg { 
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
             background: #1a3a5c; color: white; padding: 14px 26px; border-radius: 30px; 
             display: none; z-index: 999; font-weight: 600; font-size: 14px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: slideUp 0.3s ease;
@@ -173,6 +173,32 @@
         #scannerArea { text-align: center; padding: 10px; border-radius: 12px; margin-top: 10px; }
         #scannerArea video { max-width: 100%; border-radius: 8px; }
         
+        /* شريط سفلي للجوال */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; padding: 8px 5px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            z-index: 99; justify-content: space-around;
+            border-radius: 16px 16px 0 0;
+        }
+        body.dark .bottom-nav { background: #1a1a2e; }
+        .bottom-nav button {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 3px; font-size: 10px; padding: 8px 6px;
+            background: transparent; box-shadow: none; color: #555;
+            border-radius: 12px; min-width: 55px;
+        }
+        .bottom-nav button:hover { background: #f0f5fe; transform: none; box-shadow: none; }
+        body.dark .bottom-nav button { color: #aaa; }
+        body.dark .bottom-nav button:hover { background: #252540; }
+        .bottom-nav button .nav-icon { font-size: 20px; }
+        
+        @media (max-width: 768px) {
+            .bottom-nav { display: flex; }
+            body { padding-bottom: 80px; }
+        }
+        
         @media (max-width: 600px) { 
             .form-row { flex-direction: column; } 
             input, select, textarea { width: 100%; } 
@@ -182,7 +208,7 @@
             .header-row h1 { font-size: 1rem; }
             .barcode-font { font-size: 32px; }
         }
-        @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
+        @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button, .bottom-nav { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
     </style>
 </head>
 <body>
@@ -474,12 +500,21 @@
     </div>
 </div>
 
+<!-- شريط سفلي للجوال -->
+<div class="bottom-nav">
+    <button onclick="showTab('store')"><span class="nav-icon">🏭</span>مخزن</button>
+    <button onclick="quickSale()"><span class="nav-icon">⚡</span>بيع سريع</button>
+    <button onclick="quickExpense()"><span class="nav-icon">💸</span>مصروف</button>
+    <button onclick="showTab('sales')"><span class="nav-icon">💰</span>مبيعات</button>
+    <button onclick="showTab('maintenance')"><span class="nav-icon">🔧</span>صيانة</button>
+</div>
+
 <div id="msg" class="msg"></div>
 <!-- نهاية جزء 1 -->
 <!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV11', 2);
+const request = indexedDB.open('WissamFinalV12', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -492,8 +527,17 @@ request.onupgradeneeded = function(e) {
     if (!d.objectStoreNames.contains('funds')) { d.createObjectStore('funds', { keyPath: 'id', autoIncrement: true }); }
 };
 
-request.onsuccess = function(e) { db = e.target.result; console.log('✅ قاعدة البيانات جاهزة'); loadAll(); checkLowStock(); };
-request.onerror = function(e) { console.error('❌ فشل قاعدة البيانات', e.target.error); alert('❌ فشل فتح قاعدة البيانات! حاول مسح بيانات التطبيق.'); };
+request.onsuccess = function(e) { 
+    db = e.target.result; 
+    console.log('✅ قاعدة البيانات جاهزة'); 
+    loadAll(); 
+    checkLowStock();
+    checkAutoBackup();
+};
+request.onerror = function(e) { 
+    console.error('❌ فشل قاعدة البيانات', e.target.error); 
+    alert('❌ فشل فتح قاعدة البيانات! حاول مسح بيانات التطبيق.'); 
+};
 
 function toggleMode() {
     document.body.classList.toggle('dark');
@@ -518,10 +562,57 @@ function showTab(tab) {
     if (tab === 'scanner') startScanner();
 }
 
-function loadAll() { loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); loadDebts(); loadMaintenance(); loadExpenses(); loadFundBalance(); initBarcodes(); }
+function loadAll() { 
+    loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); 
+    loadDebts(); loadMaintenance(); loadExpenses(); loadFundBalance(); initBarcodes(); 
+}
 
-function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
+function showMsg(t) { 
+    const m = document.getElementById('msg'); 
+    m.textContent = t; m.style.display = 'block'; 
+    setTimeout(() => m.style.display = 'none', 2500); 
+}
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
+
+// ==================== نسخ احتياطي تلقائي ====================
+function autoBackup() {
+    if (!db) return;
+    const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses', 'funds'];
+    const data = {};
+    let done = 0;
+    stores.forEach(store => {
+        db.transaction(store, 'readonly').objectStore(store).getAll().onsuccess = function(e) {
+            data[store] = e.target.result;
+            done++;
+            if (done === stores.length) {
+                localStorage.setItem('wesam_auto_backup', JSON.stringify(data));
+                console.log('💾 نسخ احتياطي تلقائي - ' + new Date().toLocaleTimeString('ar-SY'));
+            }
+        };
+    });
+}
+
+function checkAutoBackup() {
+    // استعادة تلقائية إذا كانت البيانات فاضية
+    setTimeout(() => {
+        if (!db) return;
+        db.transaction('items', 'readonly').objectStore('items').count().onsuccess = function(e) {
+            if (e.target.result === 0) {
+                const saved = localStorage.getItem('wesam_auto_backup');
+                if (saved) {
+                    if (confirm('🔍 تم العثور على نسخة احتياطية تلقائية. هل تريد استعادتها؟')) {
+                        importFromJSON(saved);
+                    }
+                }
+            }
+        };
+    }, 1000);
+    
+    // تشغيل النسخ الاحتياطي كل 5 دقائق
+    setInterval(autoBackup, 300000);
+    // أول نسخة بعد 10 ثواني
+    setTimeout(autoBackup, 10000);
+}
 
 // ==================== إشعارات نقص المخزون ====================
 function checkLowStock() {
@@ -617,7 +708,7 @@ function showExportCode(json) {
 }
 
 function importAllData() {
-    const saved = localStorage.getItem('wesam_backup');
+    const saved = localStorage.getItem('wesam_backup') || localStorage.getItem('wesam_auto_backup');
     if (saved) {
         if (confirm('⚠️ تم العثور على نسخة احتياطية. استعادتها؟')) { importFromJSON(saved); return; }
     }
@@ -639,8 +730,22 @@ function importFromJSON(jsonStr) {
                         delete newRecord.id;
                         objStore.add(newRecord);
                     });
-                    tx.oncomplete = function() { done++; if (done === stores.length) { showMsg('✅ تم الاستيراد'); loadAll(); checkLowStock(); } };
-                } else { done++; if (done === stores.length) { showMsg('✅ تم الاستيراد'); loadAll(); checkLowStock(); } }
+                    tx.oncomplete = function() { 
+                        done++; 
+                        if (done === stores.length) { 
+                            showMsg('✅ تم الاستيراد'); 
+                            loadAll(); 
+                            checkLowStock(); 
+                        } 
+                    };
+                } else { 
+                    done++; 
+                    if (done === stores.length) { 
+                        showMsg('✅ تم الاستيراد'); 
+                        loadAll(); 
+                        checkLowStock(); 
+                    } 
+                }
             };
         });
     } catch (err) { showMsg('❌ فشل الاستيراد'); }
@@ -651,12 +756,15 @@ function handleImportFile(event) {
     if (!file) return;
     if (!confirm('⚠️ سيتم استبدال جميع البيانات. متابعة؟')) { event.target.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = function(e) { localStorage.setItem('wesam_backup', e.target.result); importFromJSON(e.target.result); };
+    reader.onload = function(e) { 
+        localStorage.setItem('wesam_backup', e.target.result); 
+        importFromJSON(e.target.result); 
+    };
     reader.readAsText(file);
     event.target.value = '';
 }
-<!-- نهاية جزء 2 --> 
-  <!-- جزء 3 -->
+<!-- نهاية جزء 2 -->
+<!-- جزء 3 -->
 // ==================== المخزن ====================
 let editingItemId = null;
 
@@ -825,7 +933,51 @@ function printSaleInvoice(date, items, total, type, customer) {
     w.document.close();
     setTimeout(() => w.print(), 500);
 }
-<!-- نهاية جزء 3 --> 
+
+// ==================== بيع سريع ====================
+function quickSale() {
+    const name = prompt('⚡ بيع سريع\n\nاسم القطعة:');
+    if (!name) return;
+    
+    db.transaction('items', 'readonly').objectStore('items').index('name').get(name.trim()).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) { showMsg('❌ القطعة غير موجودة في المخزن'); return; }
+        
+        const qty = parseInt(prompt('القطعة: ' + item.name + '\nالمتوفر: ' + item.quantity + '\nالسعر: ' + formatPrice(item.price) + '\n\nأدخل الكمية:')) || 1;
+        if (isNaN(qty) || qty <= 0) return;
+        if (qty > item.quantity) { showMsg('❌ المخزون غير كافٍ! المتوفر: ' + item.quantity); return; }
+        
+        const total = item.price * qty;
+        const date = new Date().toLocaleDateString('ar-SY');
+        
+        const tx = db.transaction(['items', 'sales'], 'readwrite');
+        tx.objectStore('items').get(item.id).onsuccess = function(e) {
+            const it = e.target.result;
+            it.quantity -= qty;
+            tx.objectStore('items').put(it);
+        };
+        tx.objectStore('sales').add({ itemName: item.name, quantity: qty, total, type: 'نقدي', customer: '', date });
+        tx.oncomplete = function() {
+            showMsg('✅ بيع سريع: ' + item.name + ' ×' + qty + ' = ' + formatPrice(total));
+            loadStore(); fillSaleSelect(); loadSales(); checkLowStock();
+        };
+    };
+}
+
+// ==================== مصروف سريع ====================
+function quickExpense() {
+    const amount = parseFloat(prompt('💸 مصروف سريع\n\nأدخل المبلغ:'));
+    if (!amount || amount <= 0 || isNaN(amount)) return;
+    
+    const date = new Date().toISOString().split('T')[0];
+    db.transaction('expenses', 'readwrite').objectStore('expenses').add({
+        amount, type: 'أخرى', category: 'يومي', source: 'business', date, note: 'مصروف سريع'
+    }).transaction.oncomplete = function() {
+        showMsg('✅ تم تسجيل المصروف: ' + formatPrice(amount));
+        loadExpenses();
+    };
+}
+<!-- نهاية جزء 3 -->  
     <!-- جزء 4 -->
 // ==================== المرتجعات ====================
 function fillReturnSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('returnItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + '</option>').join(''); }; }
