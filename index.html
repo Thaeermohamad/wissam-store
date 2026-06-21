@@ -5,8 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مركز وسام للإلكترونيات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif; }
         body { background: #eef2f6; padding: 0; transition: 0.3s; }
         body.dark { background: #0a0a0f; color: #eee; }
         .container { max-width: 1000px; margin: 0 auto; padding: 10px; }
@@ -133,13 +137,15 @@
         .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
         .filter-btns button { font-size: 12px; padding: 7px 14px; border-radius: 20px; }
         
-        .barcode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; margin-top: 15px; }
+        .barcode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; margin-top: 15px; }
         .barcode-item { 
-            border: 2px dashed #dde4ed; padding: 14px 8px; border-radius: 12px; 
+            border: 2px dashed #dde4ed; padding: 16px 10px; border-radius: 12px; 
             background: white; transition: 0.2s; 
         }
         .barcode-item:hover { border-color: #2d7fc1; }
         body.dark .barcode-item { background: #1a1a2e; border-color: #333; }
+        .barcode-font { font-family: 'Libre Barcode 39', monospace; font-size: 42px; line-height: 1; }
+        body.dark .barcode-font { color: #fff; }
         .barcode-item .code { font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-top: 6px; color: #1a3a5c; }
         body.dark .barcode-item .code { color: #eee; }
         .barcode-item .num { font-size: 10px; color: #888; }
@@ -164,6 +170,9 @@
         }
         body.dark .modal-content { background: #1a1a2e; }
         
+        #scannerArea { text-align: center; padding: 10px; border-radius: 12px; margin-top: 10px; }
+        #scannerArea video { max-width: 100%; border-radius: 8px; }
+        
         @media (max-width: 600px) { 
             .form-row { flex-direction: column; } 
             input, select, textarea { width: 100%; } 
@@ -171,6 +180,7 @@
             .tabs button { font-size: 10px; padding: 10px 2px; } 
             .header-row { padding: 10px 12px; }
             .header-row h1 { font-size: 1rem; }
+            .barcode-font { font-size: 32px; }
         }
         @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
     </style>
@@ -190,7 +200,7 @@
     </div>
     <p style="text-align:center; color:#888; margin-bottom:12px; font-size:13px;">جميع الأسعار بالليرة السورية (ل.س)</p>
     
-        <div class="tabs">
+    <div class="tabs">
         <button class="active" onclick="showTab('store')">🏭 المخزن <span class="badge-tab" id="lowStockBadge" style="display:none;">0</span></button>
         <button onclick="showTab('sales')">💰 المبيعات</button>
         <button onclick="showTab('returns')">🔄 المرتجعات</button>
@@ -205,6 +215,9 @@
     <!-- المخزن -->
     <div id="tab-store" class="tab-content active">
         <div id="storeEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:10px;margin-bottom:12px;border:1px solid #dce3ec;"></div>
+        <div class="form-row">
+            <input type="text" id="storeSearch" placeholder="🔍 بحث عن قطعة..." style="flex:2" oninput="searchStore()">
+        </div>
         <div class="form-row">
             <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
             <input type="number" id="itemQty" placeholder="الكمية" style="width:75px" min="1">
@@ -301,6 +314,12 @@
         
         <div class="form-row">
             <select id="mStatus" style="width:120px"><option value="waiting">⏳ انتظار</option><option value="fixing">🔧 صيانة</option><option value="done">✅ جاهز</option></select>
+            <select id="mPaymentType" style="width:120px" onchange="togglePaymentFields()">
+                <option value="نقدي">💵 نقدي</option>
+                <option value="آجل">⏳ آجل</option>
+                <option value="جزئي">📊 جزئي</option>
+            </select>
+            <input type="number" id="mPaidAmount" placeholder="المبلغ المدفوع" step="1" style="width:120px;display:none;" min="0">
             <button class="green" id="btnAddMaintenance" onclick="addMaintenance()">➕ إضافة جهاز</button>
             <button class="green" id="btnUpdateMaintenance" style="display:none;" onclick="addMaintenance()">💾 حفظ التعديل</button>
             <button class="red small" id="btnCancelEdit" style="display:none;" onclick="cancelMaintenanceEdit()">❌ إلغاء</button>
@@ -321,7 +340,7 @@
             <button onclick="setFilter('archived')" style="background:#7f8c8d;">📦</button>
         </div>
         <table>
-            <thead><tr><th>السيريال</th><th>الزبون</th><th>الجهاز</th><th>الحالة</th><th>التكلفة</th><th>إجراءات</th></tr></thead>
+            <thead><tr><th>السيريال</th><th>الزبون</th><th>الجهاز</th><th>الحالة</th><th>الدفع</th><th>التكلفة</th><th>إجراءات</th></tr></thead>
             <tbody id="maintenanceTable"></tbody>
         </table>
     </div>
@@ -415,20 +434,28 @@
         <div class="form-row">
             <label>من:</label>
             <input type="number" id="barcodeStart" value="1" style="width:80px" min="1">
-            <button class="green" onclick="generateBarcodes()">🖨️ 20 باركود</button>
+            <button class="green" onclick="generateBarcodes()">🖨️ 15 باركود</button>
             <button class="blue-btn" onclick="printBarcodes()">🖨️ طباعة</button>
         </div>
-        <div id="barcodeArea" class="barcode-grid"><p style="color:#999;grid-column:1/-1;text-align:center;">اضغط "20 باركود" للبدء</p></div>
+        <div id="barcodeArea" class="barcode-grid"><p style="color:#999;grid-column:1/-1;text-align:center;">اضغط "15 باركود" للبدء</p></div>
     </div>
     
     <!-- مسح الباركود -->
     <div id="tab-scanner" class="tab-content">
         <h3>📷 مسح باركود</h3>
-        <p style="color:#888;margin-bottom:15px;">امسح الباركود بتطبيق خارجي وألصق الرقم هنا</p>
+        <div id="scannerArea">
+            <div id="scannerPlaceholder" style="padding:40px;text-align:center;color:#888;">
+                <p>📷 اضغط الزر لفتح الكاميرا</p>
+                <button class="green" onclick="startCameraScanner()" style="margin-top:10px;">📷 فتح الكاميرا</button>
+            </div>
+            <div id="scannerVideo" style="display:none;"></div>
+        </div>
+        <p style="text-align:center;color:#888;margin:10px 0;">--- أو ---</p>
         <div class="form-row">
-            <input type="text" id="scanBarcodeInput" placeholder="ألصق رقم الباركود هنا..." style="flex:2;font-size:16px;text-align:center;">
+            <input type="text" id="scanBarcodeInput" placeholder="ألصق رقم الباركود يدوياً..." style="flex:2;font-size:16px;text-align:center;">
             <button class="green" onclick="manualScanFromInput()" style="font-size:16px;">🔍 بحث</button>
         </div>
+        <button class="red" onclick="stopCameraScanner()" style="margin-top:10px;width:100%;display:none;" id="btnStopCamera">⏹️ إيقاف الكاميرا</button>
         <div id="scanResult" style="margin-top:15px;text-align:center;"></div>
     </div>
 </div>
@@ -449,10 +476,10 @@
 
 <div id="msg" class="msg"></div>
 <!-- نهاية جزء 1 -->
-   <!-- جزء 2 -->
+<!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV10', 2);
+const request = indexedDB.open('WissamFinalV11', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -465,8 +492,8 @@ request.onupgradeneeded = function(e) {
     if (!d.objectStoreNames.contains('funds')) { d.createObjectStore('funds', { keyPath: 'id', autoIncrement: true }); }
 };
 
-request.onsuccess = function(e) { db = e.target.result; console.log('✅'); loadAll(); checkLowStock(); };
-request.onerror = function() { alert('❌ فشل قاعدة البيانات'); };
+request.onsuccess = function(e) { db = e.target.result; console.log('✅ قاعدة البيانات جاهزة'); loadAll(); checkLowStock(); };
+request.onerror = function(e) { console.error('❌ فشل قاعدة البيانات', e.target.error); alert('❌ فشل فتح قاعدة البيانات! حاول مسح بيانات التطبيق.'); };
 
 function toggleMode() {
     document.body.classList.toggle('dark');
@@ -503,17 +530,14 @@ function checkLowStock() {
         const items = e.target.result;
         const low = items.filter(i => i.quantity < 5);
         const badge = document.getElementById('lowStockBadge');
-        
         if (low.length > 0) {
             badge.style.display = 'block';
             badge.textContent = low.length;
-            
-            // تنبيه أول مرة فقط
             if (!sessionStorage.getItem('lowStockAlertShown')) {
                 sessionStorage.setItem('lowStockAlertShown', '1');
                 const names = low.map(i => i.name + ' (' + i.quantity + ')').join('، ');
                 setTimeout(() => {
-                    if (confirm('⚠️ تنبيه: ' + low.length + ' قطع أقل من 5:\n' + names + '\n\nهل تريد الذهاب للمخزن؟')) {
+                    if (confirm('⚠️ تنبيه: ' + low.length + ' قطع أقل من 5:\n' + names + '\n\nفتح المخزن؟')) {
                         showTab('store');
                     }
                 }, 500);
@@ -524,12 +548,11 @@ function checkLowStock() {
     };
 }
 
-// ==================== مزامنة بين الأجهزة ====================
+// ==================== مزامنة ====================
 function shareBackup() {
     const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses', 'funds'];
     const data = {};
     let done = 0;
-    
     stores.forEach(store => {
         db.transaction(store, 'readonly').objectStore(store).getAll().onsuccess = function(e) {
             data[store] = e.target.result;
@@ -537,17 +560,12 @@ function shareBackup() {
             if (done === stores.length) {
                 const json = JSON.stringify(data);
                 localStorage.setItem('wesam_backup', json);
-                
-                // مشاركة عبر واتساب
-                const text = '📦 نسخة احتياطية - مركز وسام\n📅 ' + new Date().toLocaleDateString('ar-SY') + '\n\nانسخ الكود التالي واستورده في التطبيق:\n\n' + json.substring(0, 500) + '...\n\n(الكود كامل محفوظ في الحافظة)';
-                
                 try {
                     navigator.clipboard.writeText(json);
-                    const url = 'https://wa.me/?text=' + encodeURIComponent(text);
-                    window.open(url, '_blank');
-                    showMsg('✅ تم نسخ الكود وفتح واتساب');
+                    const text = '📦 نسخة احتياطية - مركز وسام\n📅 ' + new Date().toLocaleDateString('ar-SY') + '\n\nتم نسخ الكود، أرسله للجهاز الآخر';
+                    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+                    showMsg('✅ تم النسخ وفتح واتساب');
                 } catch(e) {
-                    showMsg('✅ تم حفظ النسخة محلياً');
                     showExportCode(json);
                 }
             }
@@ -560,7 +578,6 @@ function exportAllData() {
     const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses', 'funds'];
     const data = {};
     let done = 0;
-    
     stores.forEach(store => {
         db.transaction(store, 'readonly').objectStore(store).getAll().onsuccess = function(e) {
             data[store] = e.target.result;
@@ -569,21 +586,16 @@ function exportAllData() {
                 const json = JSON.stringify(data);
                 try {
                     localStorage.setItem('wesam_backup', json);
-                    try {
-                        const blob = new Blob([json], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'wesam-backup-' + new Date().toISOString().split('T')[0] + '.json';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        showMsg('✅ تم تصدير البيانات وحفظها محلياً');
-                    } catch(e) {
-                        showMsg('✅ تم حفظ البيانات محلياً');
-                        showExportCode(json);
-                    }
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'wesam-backup-' + new Date().toISOString().split('T')[0] + '.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showMsg('✅ تم التصدير');
                 } catch(e) {
-                    showMsg('❌ فشل التصدير');
+                    showExportCode(json);
                 }
             }
         };
@@ -607,10 +619,7 @@ function showExportCode(json) {
 function importAllData() {
     const saved = localStorage.getItem('wesam_backup');
     if (saved) {
-        if (confirm('⚠️ تم العثور على نسخة احتياطية. استعادتها؟')) {
-            importFromJSON(saved);
-            return;
-        }
+        if (confirm('⚠️ تم العثور على نسخة احتياطية. استعادتها؟')) { importFromJSON(saved); return; }
     }
     document.getElementById('importFileInput').click();
 }
@@ -620,7 +629,6 @@ function importFromJSON(jsonStr) {
         const data = JSON.parse(jsonStr);
         const stores = ['items', 'sales', 'returns', 'debts', 'maintenance', 'expenses', 'funds'];
         let done = 0;
-        
         stores.forEach(store => {
             db.transaction(store, 'readwrite').objectStore(store).clear().onsuccess = function() {
                 if (data[store] && data[store].length) {
@@ -631,19 +639,11 @@ function importFromJSON(jsonStr) {
                         delete newRecord.id;
                         objStore.add(newRecord);
                     });
-                    tx.oncomplete = function() {
-                        done++;
-                        if (done === stores.length) { showMsg('✅ تم استيراد البيانات'); loadAll(); checkLowStock(); }
-                    };
-                } else {
-                    done++;
-                    if (done === stores.length) { showMsg('✅ تم استيراد البيانات'); loadAll(); checkLowStock(); }
-                }
+                    tx.oncomplete = function() { done++; if (done === stores.length) { showMsg('✅ تم الاستيراد'); loadAll(); checkLowStock(); } };
+                } else { done++; if (done === stores.length) { showMsg('✅ تم الاستيراد'); loadAll(); checkLowStock(); } }
             };
         });
-    } catch (err) {
-        showMsg('❌ فشل الاستيراد');
-    }
+    } catch (err) { showMsg('❌ فشل الاستيراد'); }
 }
 
 function handleImportFile(event) {
@@ -651,17 +651,26 @@ function handleImportFile(event) {
     if (!file) return;
     if (!confirm('⚠️ سيتم استبدال جميع البيانات. متابعة؟')) { event.target.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = function(e) {
-        localStorage.setItem('wesam_backup', e.target.result);
-        importFromJSON(e.target.result);
-    };
+    reader.onload = function(e) { localStorage.setItem('wesam_backup', e.target.result); importFromJSON(e.target.result); };
     reader.readAsText(file);
     event.target.value = '';
 }
-<!-- نهاية جزء 2 -->
-   <!-- جزء 3 -->
+<!-- نهاية جزء 2 --> 
+  <!-- جزء 3 -->
 // ==================== المخزن ====================
 let editingItemId = null;
+
+function searchStore() {
+    const term = document.getElementById('storeSearch')?.value?.toLowerCase() || '';
+    if (!db) return;
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        const items = e.target.result.filter(i => 
+            i.name.toLowerCase().includes(term) || 
+            (i.barcode && i.barcode.toLowerCase().includes(term))
+        );
+        renderStoreTable(items);
+    };
+}
 
 function addItem() {
     const name = document.getElementById('itemName').value.trim();
@@ -694,18 +703,23 @@ function addItem() {
 }
 
 function loadStore() {
+    if (!db) return;
     db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
-        const items = e.target.result;
-        document.getElementById('storeTable').innerHTML = items.map(i => {
-            const p = i.price - i.cost;
-            return '<tr><td><strong>' + i.name + '</strong> ' + (i.quantity < 5 ? '<span class="badge badge-warning">⚠️</span>' : '') + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.cost) + '</td><td>' + formatPrice(i.price) + '</td><td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(p) + '</td><td>' + (i.barcode || '-') + '</td><td><button class="blue-btn small" onclick="editItem(' + i.id + ')">✏️</button> <button class="red small" onclick="deleteItem(' + i.id + ')">🗑️</button></td></tr>';
-        }).join('');
-        const low = items.filter(i => i.quantity < 5);
-        const a = document.getElementById('lowStockAlert');
-        a.style.display = low.length ? 'block' : 'none';
-        if (low.length) a.innerHTML = '⚠️ نقص: ' + low.map(i => i.name + ' (' + i.quantity + ')').join(' | ');
-        checkLowStock();
+        renderStoreTable(e.target.result);
     };
+}
+
+function renderStoreTable(items) {
+    document.getElementById('storeTable').innerHTML = items.map(i => {
+        const p = i.price - i.cost;
+        return '<tr><td><strong>' + i.name + '</strong> ' + (i.quantity < 5 ? '<span class="badge badge-warning">⚠️</span>' : '') + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.cost) + '</td><td>' + formatPrice(i.price) + '</td><td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(p) + '</td><td>' + (i.barcode || '-') + '</td><td><button class="blue-btn small" onclick="editItem(' + i.id + ')">✏️</button> <button class="red small" onclick="deleteItem(' + i.id + ')">🗑️</button></td></tr>';
+    }).join('');
+    
+    const low = items.filter(i => i.quantity < 5);
+    const a = document.getElementById('lowStockAlert');
+    a.style.display = low.length ? 'block' : 'none';
+    if (low.length) a.innerHTML = '⚠️ نقص: ' + low.map(i => i.name + ' (' + i.quantity + ')').join(' | ');
+    checkLowStock();
 }
 
 function editItem(id) {
@@ -791,15 +805,14 @@ function loadSales() {
 function printSaleInvoice(date, items, total, type, customer) {
     const w = window.open('', '_blank', 'width=400,height=500');
     w.document.write('<!DOCTYPE html><html dir="rtl"><head><title>فاتورة بيع</title>');
-    w.document.write('<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;font-size:14px;}');
+    w.document.write('<style>*{margin:0;padding:0;}body{font-family:Tajawal,sans-serif;padding:20px;text-align:center;font-size:14px;}');
     w.document.write('h2{color:#1a3a5c;margin-bottom:5px;}h4{color:#888;margin-bottom:15px;}');
     w.document.write('.line{border-top:1px dashed #ccc;margin:12px 0;}');
     w.document.write('.total{font-size:1.4rem;font-weight:700;color:#27ae60;margin-top:10px;}');
     w.document.write('.footer{margin-top:25px;color:#888;font-size:11px;}');
     w.document.write('@media print{body{margin:0;padding:15px;}}');
     w.document.write('</style></head><body>');
-    w.document.write('<h2>🧾 مركز وسام للإلكترونيات</h2>');
-    w.document.write('<h4>فاتورة بيع</h4>');
+    w.document.write('<h2>🧾 مركز وسام للإلكترونيات</h2><h4>فاتورة بيع</h4>');
     w.document.write('<p><strong>التاريخ:</strong> ' + date + '</p>');
     if (customer) w.document.write('<p><strong>الزبون:</strong> ' + customer + '</p>');
     w.document.write('<p><strong>النوع:</strong> ' + type + '</p>');
@@ -812,7 +825,7 @@ function printSaleInvoice(date, items, total, type, customer) {
     w.document.close();
     setTimeout(() => w.print(), 500);
 }
-<!-- نهاية جزء 3 -->
+<!-- نهاية جزء 3 --> 
     <!-- جزء 4 -->
 // ==================== المرتجعات ====================
 function fillReturnSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('returnItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + '</option>').join(''); }; }
@@ -855,11 +868,22 @@ function payDebt(id) {
     };
 }
 <!-- نهاية جزء 4 -->
-    <!-- جزء 5 -->
+  <!-- جزء 5 -->
 // ==================== الصيانة ====================
 let mFilter = 'all', mParts = [], editingMaintenanceId = null;
 
 function setFilter(f) { mFilter = f; loadMaintenance(); }
+
+function togglePaymentFields() {
+    const type = document.getElementById('mPaymentType').value;
+    const paidField = document.getElementById('mPaidAmount');
+    if (type === 'جزئي') {
+        paidField.style.display = 'inline';
+    } else {
+        paidField.style.display = 'none';
+        paidField.value = '';
+    }
+}
 
 function openPartsModal() {
     document.getElementById('partsModal').style.display = 'flex';
@@ -893,7 +917,21 @@ function addMaintenance() {
     if (!serial || !customer || !phone || !device) { showMsg('⚠️ املأ الحقول المطلوبة'); return; }
     
     const labor = parseFloat(document.getElementById('mLabor').value) || 0, partsTotal = mParts.reduce((s, p) => s + p.total, 0), totalCost = partsTotal + labor;
-    const data = { serial, customer, phone, device, issue: document.getElementById('mIssue').value.trim(), date: document.getElementById('mDate').value, labor, parts: JSON.parse(JSON.stringify(mParts)), partsTotal, totalCost, barcode: document.getElementById('mBarcode').value.trim(), status: document.getElementById('mStatus').value, archived: false, received: 'لا' };
+    const paymentType = document.getElementById('mPaymentType').value;
+    const paidAmount = paymentType === 'جزئي' ? (parseFloat(document.getElementById('mPaidAmount').value) || 0) : (paymentType === 'نقدي' ? totalCost : 0);
+    const remaining = totalCost - paidAmount;
+    
+    const data = { 
+        serial, customer, phone, device, 
+        issue: document.getElementById('mIssue').value.trim(), 
+        date: document.getElementById('mDate').value, 
+        labor, parts: JSON.parse(JSON.stringify(mParts)), 
+        partsTotal, totalCost, 
+        paymentType, paidAmount, remaining,
+        barcode: document.getElementById('mBarcode').value.trim(), 
+        status: document.getElementById('mStatus').value, 
+        archived: false, received: 'لا' 
+    };
     
     const tx = db.transaction(['items', 'maintenance'], 'readwrite');
     const itemsStore = tx.objectStore('items'), maintStore = tx.objectStore('maintenance');
@@ -903,12 +941,17 @@ function addMaintenance() {
     if (editingMaintenanceId) { data.id = editingMaintenanceId; maintStore.put(data); }
     else { maintStore.add(data); }
     
-    tx.oncomplete = function() { showMsg(editingMaintenanceId ? '✅ تم تحديث الجهاز' : '✅ تم إضافة الجهاز'); resetMaintenanceForm(); loadStore(); loadMaintenance(); fillSaleSelect(); fillReturnSelect(); };
+    tx.oncomplete = function() { 
+        showMsg(editingMaintenanceId ? '✅ تم تحديث الجهاز' : '✅ تم إضافة الجهاز'); 
+        resetMaintenanceForm(); loadStore(); loadMaintenance(); fillSaleSelect(); fillReturnSelect(); 
+    };
 }
 
 function resetMaintenanceForm() {
-    ['mSerial','mCustomer','mPhone','mDevice','mIssue','mLabor','mBarcode'].forEach(id => document.getElementById(id).value = '');
+    ['mSerial','mCustomer','mPhone','mDevice','mIssue','mLabor','mBarcode','mPaidAmount'].forEach(id => document.getElementById(id).value = '');
     mParts = []; renderParts(); editingMaintenanceId = null;
+    document.getElementById('mPaymentType').value = 'نقدي';
+    document.getElementById('mPaidAmount').style.display = 'none';
     document.getElementById('btnAddMaintenance').style.display = 'inline-block';
     document.getElementById('btnUpdateMaintenance').style.display = 'none';
     document.getElementById('btnCancelEdit').style.display = 'none';
@@ -930,6 +973,10 @@ function editMaintenance(id) {
         document.getElementById('mLabor').value = i.labor || '';
         document.getElementById('mBarcode').value = i.barcode || '';
         document.getElementById('mStatus').value = i.status || 'waiting';
+        document.getElementById('mPaymentType').value = i.paymentType || 'نقدي';
+        document.getElementById('mPaidAmount').value = i.paidAmount || '';
+        if (i.paymentType === 'جزئي') document.getElementById('mPaidAmount').style.display = 'inline';
+        else document.getElementById('mPaidAmount').style.display = 'none';
         mParts = i.parts ? JSON.parse(JSON.stringify(i.parts)) : []; renderParts();
         document.getElementById('btnAddMaintenance').style.display = 'none';
         document.getElementById('btnUpdateMaintenance').style.display = 'inline-block';
@@ -965,6 +1012,11 @@ function loadMaintenance() {
             if (i.parts && i.parts.length) { partsInfo = '<br><small>' + i.parts.map(p => p.name + ' ×' + p.qty).join(', ') + '</small>'; if (i.labor > 0) partsInfo += '<br><small>أجرة: ' + formatPrice(i.labor) + '</small>'; }
             else if (i.labor > 0) { partsInfo = '<br><small>أجرة: ' + formatPrice(i.labor) + '</small>'; }
             
+            let paymentBadge = '';
+            if (i.paymentType === 'نقدي') paymentBadge = '<span class="badge badge-success">💵 نقدي</span>';
+            else if (i.paymentType === 'آجل') paymentBadge = '<span class="badge badge-danger">⏳ آجل ' + formatPrice(i.totalCost || 0) + '</span>';
+            else if (i.paymentType === 'جزئي') paymentBadge = '<span class="badge badge-warning">📊 مدفوع ' + formatPrice(i.paidAmount || 0) + ' | متبقي ' + formatPrice(i.remaining || 0) + '</span>';
+            
             const cost = i.totalCost || i.labor || 0;
             let actions = '';
             if (!i.archived) {
@@ -974,8 +1026,8 @@ function loadMaintenance() {
             }
             actions += '<button class="red small" onclick="deleteMaintenance(' + i.id + ')">🗑️</button>';
             
-            return '<tr><td>' + (i.serial||'-') + '</td><td>' + (i.customer||'-') + '</td><td>' + (i.device||'-') + partsInfo + '</td><td><span class="badge ' + sb + '">' + st + '</span></td><td>' + (cost > 0 ? formatPrice(cost) : '-') + '</td><td style="white-space:nowrap;">' + actions + '</td></tr>';
-        }).join('') || '<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد أجهزة</td></tr>';
+            return '<tr><td>' + (i.serial||'-') + '</td><td>' + (i.customer||'-') + '</td><td>' + (i.device||'-') + partsInfo + '</td><td><span class="badge ' + sb + '">' + st + '</span></td><td>' + paymentBadge + '</td><td>' + (cost > 0 ? formatPrice(cost) : '-') + '</td><td style="white-space:nowrap;">' + actions + '</td></tr>';
+        }).join('') || '<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد أجهزة</td></tr>';
     };
 }
 
@@ -983,8 +1035,8 @@ function changeStatus(id, ns) { if (!ns) return; db.transaction('maintenance', '
 function archiveDevice(id) { if (!confirm('تأكيد التسليم؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.archived = true; i.received = 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } showMsg('📤 تم'); loadMaintenance(); }; }
 function toggleReceived(id) { db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.received = i.received === 'نعم' ? 'لا' : 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
 function deleteMaintenance(id) { if (!confirm('متأكد؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadMaintenance(); }; }
-<!-- نهاية جزء 5 -->
-    <!-- جزء 6 -->
+<!-- نهاية جزء 5 -->  
+<!-- جزء 6 -->
 // ==================== الباركود ====================
 let barcodeCounter = parseInt(localStorage.getItem('barcodeCounter') || '1');
 function initBarcodes() { document.getElementById('barcodeNext').textContent = barcodeCounter; document.getElementById('barcodeStart').value = barcodeCounter; }
@@ -995,31 +1047,80 @@ function generateBarcodes() {
     const prefixes = { general: 'WS-', store: 'ST-', maintenance: 'MT-' };
     const prefix = prefixes[type] || 'WS-';
     let html = '';
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 15; i++) {
         const num = start + i, code = prefix + String(num).padStart(4, '0');
-        html += '<div class="barcode-item"><svg id="bc' + i + '" style="width:100%;height:40px;"></svg><div class="code">' + code + '</div><div class="num">' + num + '</div></div>';
+        html += '<div class="barcode-item"><div class="barcode-font">*' + code + '*</div><div class="code">' + code + '</div><div class="num">' + num + '</div></div>';
     }
     document.getElementById('barcodeArea').innerHTML = html;
-    for (let i = 0; i < 20; i++) {
-        const code = prefix + String(start + i).padStart(4, '0'), svg = document.getElementById('bc' + i);
-        if (svg) { let bars = '', x = 0; for (let j = 0; j < code.length; j++) { const w = (code.charCodeAt(j) % 3) + 1; if (j % 2 === 0) bars += '<rect x="' + x + '" y="5" width="' + w + '" height="30" fill="black"/>'; x += w + 1; } svg.innerHTML = bars; svg.setAttribute('viewBox', '0 0 ' + x + ' 40'); }
-    }
-    barcodeCounter = start + 20; localStorage.setItem('barcodeCounter', barcodeCounter.toString());
+    barcodeCounter = start + 15; localStorage.setItem('barcodeCounter', barcodeCounter.toString());
     document.getElementById('barcodeNext').textContent = barcodeCounter; document.getElementById('barcodeStart').value = barcodeCounter;
-    showMsg('✅ تم إنشاء 20 باركود');
+    showMsg('✅ تم إنشاء 15 باركود');
 }
 
 function printBarcodes() {
     const area = document.getElementById('barcodeArea');
     if (!area || area.innerHTML.includes('اضغط')) { showMsg('⚠️ أنشئ الباركودات أولاً'); return; }
     const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write('<!DOCTYPE html><html dir="rtl"><head><title>باركودات</title><style>*{margin:0;padding:0;}body{font-family:"Segoe UI",Tahoma,sans-serif;padding:20px;text-align:center;}h2{margin-bottom:20px;}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;}.item{border:1px dashed #ccc;padding:15px;border-radius:8px;page-break-inside:avoid;}.code{font-size:12px;font-weight:bold;margin-top:5px;}.num{font-size:10px;color:#888;}svg{width:100%;height:40px;}@media print{body{margin:0;padding:10px;}}</style></head><body><h2>🏷️ باركودات مركز وسام</h2><div class="grid">' + area.innerHTML + '</div></body></html>');
+    w.document.write('<!DOCTYPE html><html dir="rtl"><head><title>باركودات</title>');
+    w.document.write('<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">');
+    w.document.write('<style>*{margin:0;padding:0;}body{font-family:Tajawal,sans-serif;padding:20px;text-align:center;}');
+    w.document.write('h2{margin-bottom:20px;}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}');
+    w.document.write('.item{border:1px dashed #ccc;padding:16px;border-radius:8px;page-break-inside:avoid;}');
+    w.document.write('.barcode-font{font-family:"Libre Barcode 39",monospace;font-size:42px;line-height:1;}');
+    w.document.write('.code{font-size:12px;font-weight:bold;margin-top:5px;}.num{font-size:10px;color:#888;}');
+    w.document.write('@media print{body{margin:0;padding:10px;}}');
+    w.document.write('</style></head><body><h2>🏷️ باركودات مركز وسام</h2><div class="grid">' + area.innerHTML + '</div></body></html>');
     w.document.close(); setTimeout(() => w.print(), 500);
 }
 
 // ==================== مسح الباركود ====================
-function startScanner() { document.getElementById('scanResult').innerHTML = '<p style="color:#888;">ألصق رقم الباركود في الحقل أعلاه ثم اضغط بحث</p>'; }
-function stopScanner() {}
+let html5QrCode = null;
+
+function startScanner() { 
+    document.getElementById('scanResult').innerHTML = '<p style="color:#888;">استخدم الكاميرا أو ألصق الباركود يدوياً</p>';
+}
+
+async function startCameraScanner() {
+    document.getElementById('scannerPlaceholder').style.display = 'none';
+    document.getElementById('scannerVideo').style.display = 'block';
+    document.getElementById('btnStopCamera').style.display = 'block';
+    document.getElementById('scanResult').innerHTML = '<p style="color:#888;">⏳ جاري تشغيل الكاميرا...</p>';
+    
+    try {
+        html5QrCode = new Html5Qrcode("scannerVideo");
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
+                // تم قراءة الباركود
+                html5QrCode.stop().then(() => {
+                    document.getElementById('scannerVideo').style.display = 'none';
+                    document.getElementById('btnStopCamera').style.display = 'none';
+                    document.getElementById('scannerPlaceholder').style.display = 'block';
+                    processScannedBarcode(decodedText);
+                });
+            },
+            (errorMessage) => {}
+        );
+        document.getElementById('scanResult').innerHTML = '<p style="color:#27ae60;">✅ الكاميرا جاهزة - وجه الباركود</p>';
+    } catch (err) {
+        document.getElementById('scanResult').innerHTML = '<p style="color:#e74c3c;">❌ تعذر فتح الكاميرا</p><p style="color:#888;">تأكد من فتح التطبيق عبر HTTPS أو جرب الإدخال اليدوي</p>';
+        document.getElementById('scannerVideo').style.display = 'none';
+        document.getElementById('btnStopCamera').style.display = 'none';
+        document.getElementById('scannerPlaceholder').style.display = 'block';
+    }
+}
+
+function stopCameraScanner() {
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('scannerVideo').style.display = 'none';
+            document.getElementById('btnStopCamera').style.display = 'none';
+            document.getElementById('scannerPlaceholder').style.display = 'block';
+            document.getElementById('scanResult').innerHTML = '<p style="color:#888;">تم إيقاف الكاميرا</p>';
+        });
+    }
+}
 
 function manualScanFromInput() {
     const code = document.getElementById('scanBarcodeInput').value.trim();
@@ -1030,6 +1131,9 @@ function manualScanFromInput() {
 
 function processScannedBarcode(code) {
     if (!code) return;
+    // تنظيف الباركود من النجوم إذا وجدت
+    code = code.replace(/\*/g, '');
+    
     db.transaction('maintenance', 'readonly').objectStore('maintenance').index('barcode').get(code).onsuccess = function(e) {
         const device = e.target.result;
         if (device) {
@@ -1055,6 +1159,11 @@ function fillMaintenanceFromScan(code) {
         document.getElementById('mBarcode').value = i.barcode || '';
         document.getElementById('mStatus').value = i.status || 'waiting';
         document.getElementById('mLabor').value = i.labor || '';
+        document.getElementById('mPaymentType').value = i.paymentType || 'نقدي';
+        if (i.paymentType === 'جزئي') {
+            document.getElementById('mPaidAmount').style.display = 'inline';
+            document.getElementById('mPaidAmount').value = i.paidAmount || '';
+        }
         mParts = i.parts ? JSON.parse(JSON.stringify(i.parts)) : []; renderParts();
         showTab('maintenance');
         showMsg('✅ تم تحميل بيانات الجهاز');
@@ -1063,7 +1172,7 @@ function fillMaintenanceFromScan(code) {
 
 function registerNewFromScan(code) {
     document.getElementById('mBarcode').value = code;
-    ['mSerial','mCustomer','mPhone','mDevice','mIssue','mLabor'].forEach(id => document.getElementById(id).value = '');
+    ['mSerial','mCustomer','mPhone','mDevice','mIssue','mLabor','mPaidAmount'].forEach(id => document.getElementById(id).value = '');
     mParts = []; renderParts();
     showTab('maintenance');
     showMsg('📝 املأ بيانات الجهاز الجديد');
@@ -1237,7 +1346,7 @@ function loadReports() {
         ).join('') || '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد بيانات</td></tr>';
     });
 }
-<!-- نهاية جزء 6 -->
+<!-- نهاية جزء 6 -->    
 <!-- جزء 7 -->
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
