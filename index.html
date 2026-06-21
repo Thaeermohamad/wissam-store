@@ -3,14 +3,13 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>مركز وسام للإلكترونيات</title>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; }
         body { background: #eef2f6; padding: 0; transition: 0.3s; }
         body.dark { background: #0a0a0f; color: #eee; }
         .container { max-width: 1000px; margin: 0 auto; padding: 10px; }
@@ -1147,7 +1146,7 @@ function loadMaintenance() {
         else items = items.filter(i => !i.archived);
         
         const search = document.getElementById('mSearch').value.toLowerCase();
-        if (search) items = items.filter(i => (i.serial||'').toLowerCase().includes(search) || (i.customer||'').toLowerCase().includes(search) || (i.phone||'').includes(search) || (i.device||'').toLowerCase().includes(search));
+       if (search) items = items.filter(i => (i.serial||'').toLowerCase().includes(search) || (i.customer||'').toLowerCase().includes(search) || (i.phone||'').includes(search) || (i.device||'').toLowerCase().includes(search) || (i.barcode||'').toLowerCase().includes(search));
         
         const all = e.target.result;
         document.getElementById('mWaiting').textContent = all.filter(i => i.status === 'waiting' && !i.archived).length;
