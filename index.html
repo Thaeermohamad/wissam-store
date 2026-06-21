@@ -1020,7 +1020,7 @@ function payDebt(id) {
     };
 }
 <!-- نهاية جزء 4 -->
-  <!-- جزء 5 -->
+<!-- جزء 5 -->
 // ==================== الصيانة ====================
 let mFilter = 'all', mParts = [], editingMaintenanceId = null;
 
@@ -1175,6 +1175,11 @@ function loadMaintenance() {
                 actions += '<select onchange="changeStatus(' + i.id + ',this.value)" style="width:70px;font-size:11px;padding:3px;"><option value="">تغيير</option><option value="waiting">⏳</option><option value="fixing">🔧</option><option value="done">✅</option></select> ';
                 if (i.status === 'done') actions += '<button class="green small" onclick="archiveDevice(' + i.id + ')">📤</button> ';
                 actions += '<button class="blue-btn small" onclick="editMaintenance(' + i.id + ')">✏️</button> <button class="blue-btn small" onclick="toggleReceived(' + i.id + ')">📋</button> ';
+            } else {
+                // للأجهزة المؤرشفة - إظهار حالة الدفع
+                if ((i.paymentType === 'آجل' || i.paymentType === 'جزئي') && (i.remaining || (i.totalCost - (i.paidAmount || 0))) > 0) {
+                    actions += '<button class="green small" onclick="payArchivedDevice(' + i.id + ')">💰 تسديد</button> ';
+                }
             }
             actions += '<button class="red small" onclick="deleteMaintenance(' + i.id + ')">🗑️</button>';
             
@@ -1184,10 +1189,108 @@ function loadMaintenance() {
 }
 
 function changeStatus(id, ns) { if (!ns) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.status = ns; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
-function archiveDevice(id) { if (!confirm('تأكيد التسليم؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.archived = true; i.received = 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } showMsg('📤 تم'); loadMaintenance(); }; }
-function toggleReceived(id) { db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.received = i.received === 'نعم' ? 'لا' : 'نعم'; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
-function deleteMaintenance(id) { if (!confirm('متأكد؟')) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadMaintenance(); }; }
-<!-- نهاية جزء 5 -->  
+
+function archiveDevice(id) {
+    db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) {
+        const i = e.target.result;
+        if (!i) return;
+        
+        const remaining = i.remaining || (i.totalCost - (i.paidAmount || 0));
+        
+        // إذا آجل أو جزئي ولم يكتمل الدفع
+        if ((i.paymentType === 'آجل' || i.paymentType === 'جزئي') && remaining > 0) {
+            if (confirm('⚠️ هذا الجهاز لم يكتمل دفعه.\nالمتبقي: ' + formatPrice(remaining) + '\n\nأرشفته مع متابعة الدين؟')) {
+                i.archived = true;
+                i.received = 'نعم';
+                db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i);
+                
+                // إضافة للديون
+                const debtTx = db.transaction('debts', 'readwrite');
+                debtTx.objectStore('debts').add({
+                    customer: i.customer,
+                    amount: i.totalCost || 0,
+                    paid: i.paidAmount || 0,
+                    date: i.date,
+                    status: 'معلق',
+                    paidDate: '',
+                    maintenanceId: i.id,
+                    device: i.device
+                });
+                
+                debtTx.oncomplete = function() {
+                    showMsg('📤 تم التسليم وإضافة الدين للمتابعة');
+                    loadMaintenance();
+                    loadDebts();
+                };
+            }
+            return;
+        }
+        
+        // نقدي أو تم الدفع كامل - يتأرش عادي
+        if (!confirm('تأكيد تسليم الجهاز؟')) return;
+        i.archived = true;
+        i.received = 'نعم';
+        db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i);
+        showMsg('📤 تم تسليم الجهاز');
+        loadMaintenance();
+    };
+}
+
+// تسديد دين جهاز مؤرشفة
+function payArchivedDevice(id) {
+    db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) {
+        const device = e.target.result;
+        if (!device) return;
+        
+        const remaining = device.remaining || (device.totalCost - (device.paidAmount || 0));
+        const amt = parseFloat(prompt('المتبقي: ' + formatPrice(remaining) + '\nأدخل المبلغ المراد تسديده:'));
+        if (!amt || amt <= 0 || isNaN(amt)) return;
+        
+        device.paidAmount = (device.paidAmount || 0) + amt;
+        if (device.paidAmount >= device.totalCost) {
+            device.paymentType = 'نقدي';
+            device.remaining = 0;
+        } else {
+            device.remaining = device.totalCost - device.paidAmount;
+        }
+        db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(device);
+        
+        // تحديث الدين المرتبط
+        db.transaction('debts', 'readwrite').objectStore('debts').getAll().onsuccess = function(e) {
+            const debts = e.target.result;
+            const debt = debts.find(d => d.maintenanceId === id && d.status === 'معلق');
+            if (debt) {
+                debt.paid = (debt.paid || 0) + amt;
+                if (debt.paid >= debt.amount) {
+                    debt.status = 'مسدد';
+                    debt.paidDate = new Date().toLocaleDateString('ar-SY');
+                }
+                db.transaction('debts', 'readwrite').objectStore('debts').put(debt);
+            }
+            showMsg('✅ تم التسديد: ' + formatPrice(amt));
+            loadMaintenance();
+            loadDebts();
+        };
+    };
+}
+
+function toggleReceived(id) { 
+    db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { 
+        const i = e.target.result; 
+        if (i) { i.received = i.received === 'نعم' ? 'لا' : 'نعم'; 
+        db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } 
+        loadMaintenance(); 
+    }; 
+}
+
+function deleteMaintenance(id) { 
+    if (!confirm('متأكد؟')) return; 
+    db.transaction('maintenance', 'readwrite').objectStore('maintenance').delete(id).transaction.oncomplete = () => { 
+        showMsg('🗑️ تم'); 
+        loadMaintenance(); 
+    }; 
+}
+<!-- نهاية جزء 5 --> 
 <!-- جزء 6 -->
 // ==================== الباركود ====================
 let barcodeCounter = parseInt(localStorage.getItem('barcodeCounter') || '1');
