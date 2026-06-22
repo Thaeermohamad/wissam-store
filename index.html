@@ -393,6 +393,17 @@
             </div>
         </div>
         
+        <div class="summary">
+            <div class="summary-box" style="border:2px solid #2980b9; background:#e3f2fd;">
+                <div class="number" id="moneyNetSales" style="color:#2980b9; font-size:1.3rem;">0</div>
+                <div class="label">💰 صافي المبيعات (ل.س)</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #8e44ad; background:#f3e5f5;">
+                <div class="number" id="moneyNetMaintenance" style="color:#8e44ad; font-size:1.3rem;">0</div>
+                <div class="label">🔧 صافي الصيانة (ل.س)</div>
+            </div>
+        </div>
+        
         <div class="summary-box" style="border:2px solid #27ae60; background:#e8f5e9; margin-bottom:15px; padding:18px;">
             <div class="number" id="moneyNetProfit" style="color:#27ae60; font-size:1.8rem;">0</div>
             <div class="label" style="font-size:14px;">💵 صافي الربح (ل.س)</div>
@@ -1614,8 +1625,9 @@ function loadMoney() {
         new Promise(r => db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = e => r(e.target.result)),
         new Promise(r => db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = e => r(e.target.result)),
         new Promise(r => db.transaction('debts', 'readonly').objectStore('debts').getAll().onsuccess = e => r(e.target.result)),
-        new Promise(r => db.transaction('funds', 'readonly').objectStore('funds').getAll().onsuccess = e => r(e.target.result))
-    ]).then(([sales, returns, maintenance, expenses, debts, funds]) => {
+        new Promise(r => db.transaction('funds', 'readonly').objectStore('funds').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = e => r(e.target.result))
+    ]).then(([sales, returns, maintenance, expenses, debts, funds, items]) => {
         const salesTotal = sales.reduce((s, r) => s + r.total, 0);
         const returnsTotal = returns.reduce((s, r) => s + (r.amount || 0), 0);
         const maintenanceTotal = maintenance.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
@@ -1623,12 +1635,38 @@ function loadMoney() {
         const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
         const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
         
+        // حساب صافي المبيعات (المبيعات - تكلفة القطع - المرتجعات)
+        let salesCost = 0;
+        sales.forEach(sale => {
+            const itemName = sale.itemName?.split(' ×')[0];
+            const item = items.find(i => i.name === itemName);
+            if (item) salesCost += (item.cost || 0) * (sale.quantity || 1);
+        });
+        const netSales = salesTotal - salesCost - returnsTotal;
+        
+        // حساب صافي الصيانة (الصيانة - تكلفة قطع الغيار)
+        let maintenanceCost = 0;
+        maintenance.filter(m => m.archived).forEach(m => {
+            if (m.parts && m.parts.length) {
+                m.parts.forEach(p => {
+                    const item = items.find(i => i.id === p.itemId);
+                    if (item) maintenanceCost += (item.cost || 0) * (p.qty || 1);
+                });
+            }
+        });
+        const netMaintenance = maintenanceTotal - maintenanceCost;
+        
         document.getElementById('moneySales').textContent = formatPrice(salesTotal);
         document.getElementById('moneyMaintenance').textContent = formatPrice(maintenanceTotal);
         document.getElementById('moneyReturns').textContent = formatPrice(returnsTotal);
         document.getElementById('moneyExpenses').textContent = formatPrice(expensesTotal);
         document.getElementById('moneyNetProfit').textContent = formatPrice(profit);
         document.getElementById('moneyNetProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+        
+        document.getElementById('moneyNetSales').textContent = formatPrice(netSales);
+        document.getElementById('moneyNetSales').style.color = netSales >= 0 ? '#2980b9' : '#e74c3c';
+        document.getElementById('moneyNetMaintenance').textContent = formatPrice(netMaintenance);
+        document.getElementById('moneyNetMaintenance').style.color = netMaintenance >= 0 ? '#8e44ad' : '#e74c3c';
         
         const totalIn = funds.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0);
         const totalOut = funds.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0);
@@ -1715,7 +1753,7 @@ function loadReports() {
         ).join('') || '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد بيانات</td></tr>';
     });
 }
-<!-- نهاية جزء 6 -->   
+<!-- نهاية جزء 6 -->
 <!-- جزء 7 -->
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
