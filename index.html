@@ -194,6 +194,10 @@
         body.dark .bottom-nav button:hover { background: #252540; }
         .bottom-nav button .nav-icon { font-size: 20px; }
         
+        /* صلاحيات */
+        .admin-only { }
+        .employee-view .admin-only { display: none; }
+        
         @media (max-width: 768px) {
             .bottom-nav { display: flex; }
             body { padding-bottom: 80px; }
@@ -213,21 +217,23 @@
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="appContainer">
     <div class="header-row">
         <h1>📦 مركز وسام للإلكترونيات</h1>
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
-            <button class="blue-btn small" onclick="exportAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📥</button>
-            <button class="green small" onclick="importAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📤</button>
-            <button class="blue-btn small" onclick="shareBackup()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📲</button>
+            <button class="blue-btn small admin-only" onclick="exportAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📥</button>
+            <button class="green small admin-only" onclick="importAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📤</button>
+            <button class="blue-btn small admin-only" onclick="shareBackup()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📲</button>
+            <button class="blue-btn small" onclick="toggleRole()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">👤</button>
             <button class="mode-toggle" onclick="toggleMode()">🌙</button>
         </div>
         <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
     </div>
-    <p style="text-align:center; color:#888; margin-bottom:12px; font-size:13px;">جميع الأسعار بالليرة السورية (ل.س)</p>
+    <p style="text-align:center; color:#888; margin-bottom:12px; font-size:13px;">جميع الأسعار بالليرة السورية (ل.س) | <span id="roleBadge" class="badge badge-success">مدير</span></p>
     
     <div class="tabs">
-        <button class="active" onclick="showTab('store')">🏭 المخزن <span class="badge-tab" id="lowStockBadge" style="display:none;">0</span></button>
+        <button class="active" onclick="showTab('dashboard')">🏠 الرئيسية</button>
+        <button onclick="showTab('store')">🏭 المخزن <span class="badge-tab" id="lowStockBadge" style="display:none;">0</span></button>
         <button onclick="showTab('sales')">💰 المبيعات</button>
         <button onclick="showTab('returns')">🔄 المرتجعات</button>
         <button onclick="showTab('debts')">⏳ الديون</button>
@@ -239,8 +245,51 @@
         <button onclick="showTab('scanner')">📷 مسح</button>
     </div>
     
+    <!-- لوحة التحكم -->
+    <div id="tab-dashboard" class="tab-content active">
+        <div class="summary">
+            <div class="summary-box" style="cursor:pointer;" onclick="showTab('money')">
+                <div class="number" id="dashProfit" style="color:#27ae60;">0</div>
+                <div class="label">💵 صافي الربح</div>
+            </div>
+            <div class="summary-box" style="cursor:pointer;" onclick="showTab('store')">
+                <div class="number" id="dashLowStock" style="color:#e74c3c;">0</div>
+                <div class="label">⚠️ قطع منخفضة</div>
+            </div>
+            <div class="summary-box" style="cursor:pointer;" onclick="showTab('debts')">
+                <div class="number" id="dashPendingDebts" style="color:#e67e22;">0</div>
+                <div class="label">⏳ ديون معلقة</div>
+            </div>
+            <div class="summary-box" style="cursor:pointer;" onclick="showTab('maintenance')">
+                <div class="number" id="dashDevices" style="color:#3498db;">0</div>
+                <div class="label">🔧 أجهزة بالصيانة</div>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-box" style="cursor:pointer;" onclick="showTab('sales')">
+                <div class="number" id="dashTodaySales" style="color:#2980b9;">0</div>
+                <div class="label">💰 مبيعات اليوم</div>
+            </div>
+            <div class="summary-box" style="cursor:pointer;" onclick="showTab('expenses')">
+                <div class="number" id="dashTodayExpenses" style="color:#e74c3c;">0</div>
+                <div class="label">💸 مصاريف اليوم</div>
+            </div>
+        </div>
+        
+        <h4>🔔 تنبيهات</h4>
+        <div id="dashAlerts">
+            <p style="color:#888;">كل شي تمام ✅</p>
+        </div>
+        
+        <div class="form-row" style="margin-top:15px;">
+            <button class="green" onclick="quickSale()" style="flex:1;">⚡ بيع سريع</button>
+            <button class="red" onclick="quickExpense()" style="flex:1;">💸 مصروف سريع</button>
+        </div>
+    </div>
+    
     <!-- المخزن -->
-    <div id="tab-store" class="tab-content active">
+    <div id="tab-store" class="tab-content">
         <div id="storeEditForm" style="display:none;background:#f9fcff;padding:15px;border-radius:10px;margin-bottom:12px;border:1px solid #dce3ec;"></div>
         <div class="form-row">
             <input type="text" id="storeSearch" placeholder="🔍 بحث عن قطعة..." style="flex:2" oninput="searchStore()">
@@ -270,6 +319,12 @@
         <div class="form-row">
             <select id="saleType" style="width:100px"><option value="نقدي">نقدي</option><option value="آجل">آجل</option></select>
             <input type="text" id="saleCustomer" placeholder="اسم الزبون (للآجل)" style="width:150px; display:none;">
+        </div>
+        <div class="form-row">
+            <input type="date" id="saleFilterDate" style="width:130px" onchange="loadSales()">
+            <select id="saleFilterType" style="width:100px" onchange="loadSales()">
+                <option value="">كل الأنواع</option><option value="نقدي">نقدي</option><option value="آجل">آجل</option>
+            </select>
         </div>
         <div id="cartItems"></div>
         <div style="text-align:left;font-weight:700;margin:12px 0;font-size:15px;">الإجمالي: <span id="cartTotal">0</span> ل.س</div>
@@ -567,8 +622,8 @@
 
 <!-- شريط سفلي للجوال -->
 <div class="bottom-nav">
+    <button onclick="showTab('dashboard')"><span class="nav-icon">🏠</span>رئيسية</button>
     <button onclick="showTab('money')"><span class="nav-icon">💵</span>المال</button>
-    <button onclick="showTab('store')"><span class="nav-icon">🏭</span>مخزن</button>
     <button onclick="quickSale()"><span class="nav-icon">⚡</span>بيع</button>
     <button onclick="quickExpense()"><span class="nav-icon">💸</span>مصروف</button>
     <button onclick="showTab('maintenance')"><span class="nav-icon">🔧</span>صيانة</button>
@@ -579,7 +634,8 @@
 <!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV13', 2);
+let currentRole = localStorage.getItem('userRole') || 'admin'; // admin or employee
+const request = indexedDB.open('WissamFinalV14', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -595,14 +651,39 @@ request.onupgradeneeded = function(e) {
 request.onsuccess = function(e) { 
     db = e.target.result; 
     console.log('✅ قاعدة البيانات جاهزة'); 
+    applyRole();
     loadAll(); 
     checkLowStock();
     checkAutoBackup();
+    checkMonthlyExpenses();
 };
 request.onerror = function(e) { 
     console.error('❌ فشل قاعدة البيانات', e.target.error); 
     alert('❌ فشل فتح قاعدة البيانات! حاول مسح بيانات التطبيق.'); 
 };
+
+// ==================== صلاحيات ====================
+function toggleRole() {
+    currentRole = currentRole === 'admin' ? 'employee' : 'admin';
+    localStorage.setItem('userRole', currentRole);
+    applyRole();
+    showMsg(currentRole === 'admin' ? '👑 وضع المدير' : '👤 وضع الموظف');
+}
+
+function applyRole() {
+    const container = document.getElementById('appContainer');
+    const badge = document.getElementById('roleBadge');
+    
+    if (currentRole === 'employee') {
+        container.classList.add('employee-view');
+        badge.textContent = 'موظف';
+        badge.className = 'badge badge-warning';
+    } else {
+        container.classList.remove('employee-view');
+        badge.textContent = 'مدير';
+        badge.className = 'badge badge-success';
+    }
+}
 
 function toggleMode() {
     document.body.classList.toggle('dark');
@@ -616,6 +697,7 @@ function showTab(tab) {
     document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     event.target.classList.add('active');
+    if (tab === 'dashboard') loadDashboard();
     if (tab === 'store') loadStore();
     if (tab === 'sales') { fillSaleSelect(); loadSales(); }
     if (tab === 'returns') { fillReturnSelect(); loadReturns(); }
@@ -629,7 +711,7 @@ function showTab(tab) {
 }
 
 function loadAll() { 
-    loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); 
+    loadDashboard(); loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); 
     loadDebts(); loadMaintenance(); loadMoney(); loadExpenses(); loadFundBalance(); initBarcodes(); 
 }
 
@@ -639,6 +721,76 @@ function showMsg(t) {
     setTimeout(() => m.style.display = 'none', 2500); 
 }
 function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
+
+// ==================== لوحة التحكم ====================
+function loadDashboard() {
+    if (!db) return;
+    
+    Promise.all([
+        new Promise(r => db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('debts', 'readonly').objectStore('debts').getAll().onsuccess = e => r(e.target.result))
+    ]).then(([items, sales, expenses, returns, maintenance, debts]) => {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const totalSales = sales.reduce((s, r) => s + r.total, 0);
+        const totalReturns = returns.reduce((s, r) => s + (r.amount || 0), 0);
+        const maintenanceTotal = maintenance.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
+        const expensesTotal = expenses.filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund').reduce((s, ex) => s + ex.amount, 0);
+        const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
+        const profit = totalSales + maintenanceTotal + revenuesTotal - totalReturns - expensesTotal;
+        
+        const lowStock = items.filter(i => i.quantity < 5).length;
+        const pendingDebts = debts.filter(d => d.status === 'معلق').reduce((s, d) => s + (d.amount - (d.paid || 0)), 0);
+        const devicesInProgress = maintenance.filter(m => !m.archived).length;
+        const todaySales = sales.filter(s => s.date === today).reduce((s, r) => s + r.total, 0);
+        const todayExpenses = expenses.filter(ex => ex.date === today).reduce((s, ex) => s + ex.amount, 0);
+        
+        document.getElementById('dashProfit').textContent = formatPrice(profit);
+        document.getElementById('dashProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+        document.getElementById('dashLowStock').textContent = lowStock;
+        document.getElementById('dashPendingDebts').textContent = formatPrice(pendingDebts);
+        document.getElementById('dashDevices').textContent = devicesInProgress;
+        document.getElementById('dashTodaySales').textContent = formatPrice(todaySales);
+        document.getElementById('dashTodayExpenses').textContent = formatPrice(todayExpenses);
+        
+        // تنبيهات
+        let alerts = '';
+        if (lowStock > 0) alerts += '<div class="alert" style="display:block;">⚠️ ' + lowStock + ' قطع أقل من 5</div>';
+        if (pendingDebts > 0) alerts += '<div class="alert" style="display:block;background:#ffe0b2;border-right-color:#e67e22;">⏳ ديون معلقة: ' + formatPrice(pendingDebts) + '</div>';
+        if (devicesInProgress > 0) alerts += '<div class="alert" style="display:block;background:#d1ecf1;border-right-color:#3498db;">🔧 ' + devicesInProgress + ' أجهزة قيد الصيانة</div>';
+        
+        document.getElementById('dashAlerts').innerHTML = alerts || '<p style="color:#27ae60;">✅ كل شي تمام</p>';
+    });
+}
+
+// ==================== إشعارات المصاريف الشهرية ====================
+function checkMonthlyExpenses() {
+    const today = new Date();
+    const currentMonth = today.toISOString().substring(0, 7);
+    const dayOfMonth = today.getDate();
+    
+    // تنبيه في منتصف الشهر إذا ما سجلنا إيجار أو كهرباء
+    if (dayOfMonth === 15) {
+        if (!db) return;
+        db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = function(e) {
+            const expenses = e.target.result;
+            const hasRent = expenses.some(ex => ex.type === 'إيجار' && ex.date && ex.date.startsWith(currentMonth));
+            const hasElectricity = expenses.some(ex => ex.type === 'كهرباء' && ex.date && ex.date.startsWith(currentMonth));
+            
+            let msg = '';
+            if (!hasRent) msg += '⚠️ لم تسجل إيجار هذا الشهر\n';
+            if (!hasElectricity) msg += '⚠️ لم تسجل كهرباء هذا الشهر\n';
+            
+            if (msg && confirm(msg + '\nتسجيل الآن؟')) {
+                showTab('expenses');
+            }
+        };
+    }
+}
 
 // ==================== نسخ احتياطي تلقائي ====================
 function autoBackup() {
@@ -827,7 +979,7 @@ function handleImportFile(event) {
     event.target.value = '';
 }
 <!-- نهاية جزء 2 -->
-<!-- جزء 3 -->
+  <!-- جزء 3 -->
 // ==================== المخزن ====================
 let editingItemId = null;
 
@@ -844,6 +996,7 @@ function searchStore() {
 }
 
 function addItem() {
+    if (currentRole === 'employee') { showMsg('⚠️ ليس لديك صلاحية للإضافة'); return; }
     const name = document.getElementById('itemName').value.trim();
     const qty = parseInt(document.getElementById('itemQty').value);
     const cost = parseFloat(document.getElementById('itemCost').value);
@@ -883,7 +1036,7 @@ function loadStore() {
 function renderStoreTable(items) {
     document.getElementById('storeTable').innerHTML = items.map(i => {
         const p = i.price - i.cost;
-        return '<tr><td><strong>' + i.name + '</strong> ' + (i.quantity < 5 ? '<span class="badge badge-warning">⚠️</span>' : '') + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.cost) + '</td><td>' + formatPrice(i.price) + '</td><td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(p) + '</td><td>' + (i.barcode || '-') + '</td><td><button class="blue-btn small" onclick="editItem(' + i.id + ')">✏️</button> <button class="red small" onclick="deleteItem(' + i.id + ')">🗑️</button></td></tr>';
+        return '<tr><td><strong>' + i.name + '</strong> ' + (i.quantity < 5 ? '<span class="badge badge-warning">⚠️</span>' : '') + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.cost) + '</td><td>' + formatPrice(i.price) + '</td><td style="color:' + (p >= 0 ? '#27ae60' : '#e74c3c') + ';">' + formatPrice(p) + '</td><td>' + (i.barcode || '-') + '</td><td><button class="blue-btn small" onclick="editItem(' + i.id + ')">✏️</button> <button class="red small admin-only" onclick="deleteItem(' + i.id + ')">🗑️</button></td></tr>';
     }).join('');
     
     const low = items.filter(i => i.quantity < 5);
@@ -894,6 +1047,7 @@ function renderStoreTable(items) {
 }
 
 function editItem(id) {
+    if (currentRole === 'employee') { showMsg('⚠️ ليس لديك صلاحية للتعديل'); return; }
     db.transaction('items', 'readonly').objectStore('items').get(id).onsuccess = function(e) {
         const item = e.target.result; if (!item) return;
         editingItemId = id;
@@ -916,7 +1070,11 @@ function cancelEditItem() {
     document.getElementById('storeEditForm').style.display = 'none';
 }
 
-function deleteItem(id) { if (!confirm('متأكد؟')) return; db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); checkLowStock(); }; }
+function deleteItem(id) { 
+    if (currentRole === 'employee') { showMsg('⚠️ ليس لديك صلاحية للحذف'); return; }
+    if (!confirm('متأكد؟')) return; 
+    db.transaction('items', 'readwrite').objectStore('items').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadStore(); fillSaleSelect(); fillReturnSelect(); checkLowStock(); }; 
+}
 
 // ==================== المبيعات ====================
 let cart = [];
@@ -966,7 +1124,18 @@ function checkoutCart() {
 
 function loadSales() {
     db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
-        document.getElementById('salesTable').innerHTML = e.target.result.reverse().map(s => 
+        let sales = e.target.result;
+        
+        // فلترة
+        const filterDate = document.getElementById('saleFilterDate')?.value || '';
+        const filterType = document.getElementById('saleFilterType')?.value || '';
+        
+        if (filterDate) { sales = sales.filter(s => s.date === filterDate); }
+        if (filterType) { sales = sales.filter(s => s.type === filterType); }
+        
+        sales.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        
+        document.getElementById('salesTable').innerHTML = sales.map(s => 
             '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td><td><button class="purple-btn small" onclick="printSaleInvoice(\'' + s.date + '\',\'' + s.itemName + '\',' + s.total + ',\'' + (s.type||'نقدي') + '\',\'' + (s.customer||'') + '\')">🖨️</button></td></tr>'
         ).join('');
     };
@@ -1040,7 +1209,7 @@ function quickExpense() {
         loadExpenses();
     };
 }
-<!-- نهاية جزء 3 -->  
+<!-- نهاية جزء 3 -->
     <!-- جزء 4 -->
 // ==================== المرتجعات ====================
 function fillReturnSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('returnItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + '</option>').join(''); }; }
@@ -1635,7 +1804,7 @@ function loadMoney() {
         const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
         const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
         
-        // حساب صافي المبيعات (المبيعات - تكلفة القطع - المرتجعات)
+        // صافي المبيعات
         let salesCost = 0;
         sales.forEach(sale => {
             const itemName = sale.itemName?.split(' ×')[0];
@@ -1644,7 +1813,7 @@ function loadMoney() {
         });
         const netSales = salesTotal - salesCost - returnsTotal;
         
-        // حساب صافي الصيانة (الصيانة - تكلفة قطع الغيار)
+        // صافي الصيانة
         let maintenanceCost = 0;
         maintenance.filter(m => m.archived).forEach(m => {
             if (m.parts && m.parts.length) {
