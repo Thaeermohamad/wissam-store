@@ -5,19 +5,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>مركز وسام للإلكترونيات</title>
+    <link rel="manifest" href="./manifest.json">
+    <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js');
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
         
+        :root {
+            --primary: #1a3a5c;
+            --primary-light: #2d7fc1;
+            --bg: #eef2f6;
+            --dark-bg: #0a0a0f;
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; }
-        body { background: #eef2f6; padding: 0; transition: 0.3s; }
-        body.dark { background: #0a0a0f; color: #eee; }
+        body { background: var(--bg); padding: 0; transition: 0.3s; }
+        body.dark { background: var(--dark-bg); color: #eee; }
         .container { max-width: 1000px; margin: 0 auto; padding: 10px; }
         
         .header-row { 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 12px 18px; background: linear-gradient(135deg, #1a3a5c, #0f2b40);
+            padding: 12px 18px; background: linear-gradient(135deg, var(--primary), #0f2b40);
             border-radius: 16px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
             position: sticky; top: 5px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
@@ -36,10 +49,10 @@
             box-shadow: 0 -2px 8px rgba(0,0,0,0.03);
         }
         .tabs button:hover { background: #e3ecf7; transform: translateY(-2px); }
-        .tabs button.active { background: #2d7fc1; color: white; box-shadow: 0 -2px 12px rgba(45,127,193,0.3); }
+        .tabs button.active { background: var(--primary-light); color: white; box-shadow: 0 -2px 12px rgba(45,127,193,0.3); }
         body.dark .tabs button { background: #1a1a2e; color: #aaa; }
         body.dark .tabs button:hover { background: #252540; }
-        body.dark .tabs button.active { background: #2d7fc1; color: white; }
+        body.dark .tabs button.active { background: var(--primary-light); color: white; }
         .tabs .badge-tab {
             position: absolute; top: -6px; right: -6px;
             background: #e74c3c; color: white; font-size: 10px;
@@ -63,7 +76,7 @@
             font-size: 14px; transition: 0.2s; background: #fafbfc; 
         }
         input:focus, select:focus, textarea:focus { 
-            outline: none; border-color: #2d7fc1; box-shadow: 0 0 0 3px rgba(45,127,193,0.1); 
+            outline: none; border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(45,127,193,0.1); 
             background: white;
         }
         body.dark input, body.dark select, body.dark textarea { 
@@ -92,7 +105,7 @@
         button.small { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; border-radius: 12px; overflow: hidden; }
-        th { background: #edf2f7; padding: 10px 8px; text-align: right; font-size: 12px; font-weight: 700; color: #1a3a5c; }
+        th { background: #edf2f7; padding: 10px 8px; text-align: right; font-size: 12px; font-weight: 700; color: var(--primary); }
         td { padding: 10px 8px; border-bottom: 1px solid #eef2f6; }
         tr:hover { background: #f8fafc; }
         body.dark tr:hover { background: #1a1a30; }
@@ -111,7 +124,7 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.04); transition: 0.2s;
         }
         .summary-box:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-        .summary-box .number { font-size: 1.3rem; font-weight: 700; color: #1a3a5c; }
+        .summary-box .number { font-size: 1.3rem; font-weight: 700; color: var(--primary); }
         body.dark .summary-box .number { color: #90caf9; }
         .summary-box .label { font-size: 11px; color: #777; margin-top: 4px; }
         body.dark .summary-box .label { color: #aaa; }
@@ -142,17 +155,17 @@
             border: 1px dashed #dde4ed; padding: 8px 5px; border-radius: 8px; 
             background: white; transition: 0.2s; 
         }
-        .barcode-item:hover { border-color: #2d7fc1; }
+        .barcode-item:hover { border-color: var(--primary-light); }
         body.dark .barcode-item { background: #1a1a2e; border-color: #333; }
         .barcode-font { font-family: 'Libre Barcode 39', monospace; font-size: 28px; line-height: 1; }
         body.dark .barcode-font { color: #fff; }
-        .barcode-item .code { font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 3px; color: #1a3a5c; }
+        .barcode-item .code { font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 3px; color: var(--primary); }
         body.dark .barcode-item .code { color: #eee; }
         .barcode-item .num { font-size: 8px; color: #888; }
         
         .msg { 
             position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
-            background: #1a3a5c; color: white; padding: 14px 26px; border-radius: 30px; 
+            background: var(--primary); color: white; padding: 14px 26px; border-radius: 30px; 
             display: none; z-index: 999; font-weight: 600; font-size: 14px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: slideUp 0.3s ease;
         }
@@ -194,9 +207,13 @@
         body.dark .bottom-nav button:hover { background: #252540; }
         .bottom-nav button .nav-icon { font-size: 20px; }
         
-        /* صلاحيات */
         .admin-only { }
         .employee-view .admin-only { display: none; }
+        
+        /* ثيمات */
+        .theme-btns { display: flex; gap: 4px; }
+        .theme-btns button { width: 22px; height: 22px; border-radius: 50%; border: 2px solid white; cursor: pointer; padding: 0; box-shadow: none; }
+        .theme-btns button:hover { transform: scale(1.2); }
         
         @media (max-width: 768px) {
             .bottom-nav { display: flex; }
@@ -220,7 +237,12 @@
 <div class="container" id="appContainer">
     <div class="header-row">
         <h1>📦 مركز وسام للإلكترونيات</h1>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+            <div class="theme-btns">
+                <button style="background:#1a3a5c;" onclick="changeTheme('blue')" title="أزرق"></button>
+                <button style="background:#1e7b4a;" onclick="changeTheme('green')" title="أخضر"></button>
+                <button style="background:#6a1b9a;" onclick="changeTheme('purple')" title="بنفسجي"></button>
+            </div>
             <button class="blue-btn small admin-only" onclick="exportAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📥</button>
             <button class="green small admin-only" onclick="importAllData()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📤</button>
             <button class="blue-btn small admin-only" onclick="shareBackup()" style="font-size:11px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">📲</button>
@@ -330,9 +352,9 @@
         <div style="text-align:left;font-weight:700;margin:12px 0;font-size:15px;">الإجمالي: <span id="cartTotal">0</span> ل.س</div>
         <button class="green" onclick="checkoutCart()" style="width:100%;">💾 إتمام البيع</button>
         <button class="red small" onclick="clearCart()" style="margin-top:6px;">🗑️ تفريغ الفاتورة</button>
-        <h4 style="margin-top:18px;color:#1a3a5c;">📜 سجل المبيعات</h4>
+        <h4 style="margin-top:18px;">📜 سجل المبيعات</h4>
         <table>
-            <thead><tr><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th><th>النوع</th><th>الزبون</th><th>طباعة</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>الأصناف</th><th>المبلغ</th><th>النوع</th><th>الزبون</th><th>إجراءات</th></tr></thead>
             <tbody id="salesTable"></tbody>
         </table>
     </div>
@@ -652,6 +674,7 @@ request.onsuccess = function(e) {
     db = e.target.result; 
     console.log('✅ قاعدة البيانات جاهزة'); 
     applyRole();
+    loadTheme();
     loadAll(); 
     checkLowStock();
     checkAutoBackup();
@@ -662,10 +685,28 @@ request.onerror = function(e) {
     alert('❌ فشل فتح قاعدة البيانات! حاول مسح بيانات التطبيق.'); 
 };
 
+// ==================== ثيمات ====================
+function changeTheme(theme) {
+    const themes = {
+        blue: { primary: '#1a3a5c', light: '#2d7fc1' },
+        green: { primary: '#1e7b4a', light: '#27ae60' },
+        purple: { primary: '#6a1b9a', light: '#8e44ad' }
+    };
+    
+    const t = themes[theme] || themes.blue;
+    document.documentElement.style.setProperty('--primary', t.primary);
+    document.documentElement.style.setProperty('--primary-light', t.light);
+    localStorage.setItem('appTheme', theme);
+}
+
+function loadTheme() {
+    const saved = localStorage.getItem('appTheme') || 'blue';
+    changeTheme(saved);
+}
+
 // ==================== صلاحيات ====================
 function toggleRole() {
     if (currentRole === 'employee') {
-        // الترقية لمدير - تحتاج كلمة مرور
         const password = prompt('🔐 أدخل كلمة المرور للدخول كمدير:');
         if (password === '1234') {
             currentRole = 'admin';
@@ -676,7 +717,6 @@ function toggleRole() {
             showMsg('❌ كلمة المرور غير صحيحة');
         }
     } else {
-        // العودة لموظف - بدون كلمة مرور
         currentRole = 'employee';
         localStorage.setItem('userRole', currentRole);
         applyRole();
@@ -771,7 +811,6 @@ function loadDashboard() {
         document.getElementById('dashTodaySales').textContent = formatPrice(todaySales);
         document.getElementById('dashTodayExpenses').textContent = formatPrice(todayExpenses);
         
-        // تنبيهات
         let alerts = '';
         if (lowStock > 0) alerts += '<div class="alert" style="display:block;">⚠️ ' + lowStock + ' قطع أقل من 5</div>';
         if (pendingDebts > 0) alerts += '<div class="alert" style="display:block;background:#ffe0b2;border-right-color:#e67e22;">⏳ ديون معلقة: ' + formatPrice(pendingDebts) + '</div>';
@@ -992,7 +1031,7 @@ function handleImportFile(event) {
     event.target.value = '';
 }
 <!-- نهاية جزء 2 -->
-  <!-- جزء 3 -->
+<!-- جزء 3 -->
 // ==================== المخزن ====================
 let editingItemId = null;
 
@@ -1139,7 +1178,6 @@ function loadSales() {
     db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
         let sales = e.target.result;
         
-        // فلترة
         const filterDate = document.getElementById('saleFilterDate')?.value || '';
         const filterType = document.getElementById('saleFilterType')?.value || '';
         
@@ -1149,7 +1187,10 @@ function loadSales() {
         sales.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
         
         document.getElementById('salesTable').innerHTML = sales.map(s => 
-            '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td><td><button class="purple-btn small" onclick="printSaleInvoice(\'' + s.date + '\',\'' + s.itemName + '\',' + s.total + ',\'' + (s.type||'نقدي') + '\',\'' + (s.customer||'') + '\')">🖨️</button></td></tr>'
+            '<tr><td>' + s.date + '</td><td>' + s.itemName + '</td><td>' + formatPrice(s.total) + '</td><td><span class="badge ' + (s.type === 'نقدي' ? 'badge-success' : 'badge-warning') + '">' + (s.type || 'نقدي') + '</span></td><td>' + (s.customer || '-') + '</td><td>' +
+            '<button class="purple-btn small" onclick="printSaleInvoice(\'' + s.date + '\',\'' + s.itemName + '\',' + s.total + ',\'' + (s.type||'نقدي') + '\',\'' + (s.customer||'') + '\')">🖨️</button> ' +
+            '<button class="green small" onclick="sendWhatsApp(\'' + s.date + '\',\'' + s.itemName + '\',' + s.total + ',\'' + (s.type||'نقدي') + '\',\'' + (s.customer||'') + '\')">💬</button>' +
+            '</td></tr>'
         ).join('');
     };
 }
@@ -1177,6 +1218,27 @@ function printSaleInvoice(date, items, total, type, customer) {
     w.document.write('</body></html>');
     w.document.close();
     setTimeout(() => w.print(), 500);
+}
+
+// ==================== إرسال فاتورة واتساب ====================
+function sendWhatsApp(date, items, total, type, customer) {
+    const phone = prompt('📱 أدخل رقم هاتف الزبون (مع رمز البلد):');
+    if (!phone || phone.trim() === '') {
+        showMsg('❌ يرجى إدخال رقم الهاتف للإرسال');
+        return;
+    }
+    
+    let message = '🧾 *مركز وسام للإلكترونيات*\n';
+    message += '📅 *التاريخ:* ' + date + '\n';
+    if (customer) message += '👤 *الزبون:* ' + customer + '\n';
+    message += '💳 *الدفع:* ' + type + '\n\n';
+    message += '📦 *الأصناف:*\n' + items.replace(/\+/g, '\n') + '\n\n';
+    message += '💰 *الإجمالي:* ' + formatPrice(total) + '\n\n';
+    message += 'شكراً لتعاملكم معنا 🤝';
+    
+    const url = 'https://wa.me/' + phone.replace(/\+/g, '') + '?text=' + encodeURIComponent(message);
+    window.open(url, '_blank');
+    showMsg('✅ تم فتح واتساب');
 }
 
 // ==================== بيع سريع ====================
@@ -1222,7 +1284,7 @@ function quickExpense() {
         loadExpenses();
     };
 }
-<!-- نهاية جزء 3 -->
+<!-- نهاية جزء 3 --> 
     <!-- جزء 4 -->
 // ==================== المرتجعات ====================
 function fillReturnSelect() { db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) { document.getElementById('returnItem').innerHTML = e.target.result.map(i => '<option value="' + i.id + '">' + i.name + '</option>').join(''); }; }
