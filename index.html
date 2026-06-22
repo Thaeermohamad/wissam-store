@@ -634,7 +634,7 @@
 <!-- جزء 2 -->
 <script>
 let db;
-let currentRole = localStorage.getItem('userRole') || 'admin'; // admin or employee
+let currentRole = localStorage.getItem('userRole') || 'admin';
 const request = indexedDB.open('WissamFinalV14', 2);
 
 request.onupgradeneeded = function(e) {
@@ -664,10 +664,24 @@ request.onerror = function(e) {
 
 // ==================== صلاحيات ====================
 function toggleRole() {
-    currentRole = currentRole === 'admin' ? 'employee' : 'admin';
-    localStorage.setItem('userRole', currentRole);
-    applyRole();
-    showMsg(currentRole === 'admin' ? '👑 وضع المدير' : '👤 وضع الموظف');
+    if (currentRole === 'employee') {
+        // الترقية لمدير - تحتاج كلمة مرور
+        const password = prompt('🔐 أدخل كلمة المرور للدخول كمدير:');
+        if (password === '1234') {
+            currentRole = 'admin';
+            localStorage.setItem('userRole', currentRole);
+            applyRole();
+            showMsg('👑 تم الدخول كمدير');
+        } else {
+            showMsg('❌ كلمة المرور غير صحيحة');
+        }
+    } else {
+        // العودة لموظف - بدون كلمة مرور
+        currentRole = 'employee';
+        localStorage.setItem('userRole', currentRole);
+        applyRole();
+        showMsg('👤 تم التحويل لوضع الموظف');
+    }
 }
 
 function applyRole() {
@@ -773,7 +787,6 @@ function checkMonthlyExpenses() {
     const currentMonth = today.toISOString().substring(0, 7);
     const dayOfMonth = today.getDate();
     
-    // تنبيه في منتصف الشهر إذا ما سجلنا إيجار أو كهرباء
     if (dayOfMonth === 15) {
         if (!db) return;
         db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = function(e) {
