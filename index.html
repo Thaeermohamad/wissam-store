@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+        
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; }
         body { background: #eef2f6; padding: 0; transition: 0.3s; }
         body.dark { background: #0a0a0f; color: #eee; }
@@ -136,18 +137,18 @@
         .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
         .filter-btns button { font-size: 12px; padding: 7px 14px; border-radius: 20px; }
         
-        .barcode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; margin-top: 15px; }
+        .barcode-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; text-align: center; margin-top: 15px; }
         .barcode-item { 
-            border: 2px dashed #dde4ed; padding: 16px 10px; border-radius: 12px; 
+            border: 1px dashed #dde4ed; padding: 8px 5px; border-radius: 8px; 
             background: white; transition: 0.2s; 
         }
         .barcode-item:hover { border-color: #2d7fc1; }
         body.dark .barcode-item { background: #1a1a2e; border-color: #333; }
-        .barcode-font { font-family: 'Libre Barcode 39', monospace; font-size: 42px; line-height: 1; }
+        .barcode-font { font-family: 'Libre Barcode 39', monospace; font-size: 28px; line-height: 1; }
         body.dark .barcode-font { color: #fff; }
-        .barcode-item .code { font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-top: 6px; color: #1a3a5c; }
+        .barcode-item .code { font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 3px; color: #1a3a5c; }
         body.dark .barcode-item .code { color: #eee; }
-        .barcode-item .num { font-size: 10px; color: #888; }
+        .barcode-item .num { font-size: 8px; color: #888; }
         
         .msg { 
             position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
@@ -201,11 +202,11 @@
         @media (max-width: 600px) { 
             .form-row { flex-direction: column; } 
             input, select, textarea { width: 100%; } 
-            .barcode-grid { grid-template-columns: repeat(2, 1fr); } 
+            .barcode-grid { grid-template-columns: repeat(3, 1fr); } 
             .tabs button { font-size: 10px; padding: 10px 2px; } 
             .header-row { padding: 10px 12px; }
             .header-row h1 { font-size: 1rem; }
-            .barcode-font { font-size: 32px; }
+            .barcode-font { font-size: 22px; }
         }
         @media print { body { background: white; padding: 0; } .tabs, .header-row, .msg, button, .bottom-nav { display: none !important; } .tab-content { display: block !important; box-shadow: none; padding: 10px; } }
     </style>
@@ -231,6 +232,7 @@
         <button onclick="showTab('returns')">🔄 المرتجعات</button>
         <button onclick="showTab('debts')">⏳ الديون</button>
         <button onclick="showTab('maintenance')">🔧 الصيانة</button>
+        <button onclick="showTab('money')">💵 المال</button>
         <button onclick="showTab('expenses')">💸 المصاريف</button>
         <button onclick="showTab('reports')">📊 التقارير</button>
         <button onclick="showTab('barcodes')">🏷️ الباركود</button>
@@ -370,6 +372,58 @@
         </table>
     </div>
     
+    <!-- المال -->
+    <div id="tab-money" class="tab-content">
+        <div class="summary">
+            <div class="summary-box" style="border:2px solid #2980b9;">
+                <div class="number" id="moneySales" style="color:#2980b9;">0</div>
+                <div class="label">💰 المبيعات (ل.س)</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #8e44ad;">
+                <div class="number" id="moneyMaintenance" style="color:#8e44ad;">0</div>
+                <div class="label">🔧 الصيانة (ل.س)</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #e67e22;">
+                <div class="number" id="moneyReturns" style="color:#e67e22;">0</div>
+                <div class="label">🔄 المرتجعات (ل.س)</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #e74c3c;">
+                <div class="number" id="moneyExpenses" style="color:#e74c3c;">0</div>
+                <div class="label">💸 المصاريف (ل.س)</div>
+            </div>
+        </div>
+        
+        <div class="summary-box" style="border:2px solid #27ae60; background:#e8f5e9; margin-bottom:15px; padding:18px;">
+            <div class="number" id="moneyNetProfit" style="color:#27ae60; font-size:1.8rem;">0</div>
+            <div class="label" style="font-size:14px;">💵 صافي الربح (ل.س)</div>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-box" style="border:2px solid #8e44ad;">
+                <div class="number" id="moneyFund" style="color:#8e44ad;">0</div>
+                <div class="label">💰 المبلغ الوارد</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #e74c3c;">
+                <div class="number" id="moneyPendingDebts" style="color:#e74c3c;">0</div>
+                <div class="label">⏳ ديون معلقة</div>
+            </div>
+            <div class="summary-box" style="border:2px solid #27ae60;">
+                <div class="number" id="moneyPaidDebts" style="color:#27ae60;">0</div>
+                <div class="label">✅ ديون مسددة</div>
+            </div>
+        </div>
+        
+        <div class="form-row" style="background:#f3e5f5;padding:14px;border-radius:10px;margin-bottom:12px;">
+            <input type="number" id="moneyFundAmount" placeholder="إضافة مبلغ وارد" step="1" style="width:150px" min="1">
+            <button class="blue-btn" onclick="addFundFromMoney()" style="background:#8e44ad;">➕ إضافة</button>
+        </div>
+        
+        <div class="form-row">
+            <button class="green" onclick="quickSale()" style="flex:1;">⚡ بيع سريع</button>
+            <button class="red" onclick="quickExpense()" style="flex:1;">💸 مصروف سريع</button>
+        </div>
+    </div>
+    
     <!-- المصاريف -->
     <div id="tab-expenses" class="tab-content">
         <div class="summary">
@@ -412,7 +466,8 @@
         </div>
         
         <div class="summary" style="margin-top:15px;">
-            <div class="summary-box" style="border:2px solid #2980b9;"><div class="number" id="totalSales_2" style="color:#2980b9;">0</div><div class="label">مبيعات + صيانة (ل.س)</div></div>
+            <div class="summary-box" style="border:2px solid #2980b9;"><div class="number" id="totalSales_2" style="color:#2980b9;">0</div><div class="label">💰 المبيعات (ل.س)</div></div>
+            <div class="summary-box" style="border:2px solid #8e44ad;"><div class="number" id="totalMaintenance_2" style="color:#8e44ad;">0</div><div class="label">🔧 الصيانة (ل.س)</div></div>
             <div class="summary-box" style="border:2px solid #e67e22;"><div class="number" id="totalReturns_2" style="color:#e67e22;">0</div><div class="label">المرتجعات (ل.س)</div></div>
             <div class="summary-box" style="border:2px solid #e74c3c;"><div class="number" id="totalExpenses_2" style="color:#e74c3c;">0</div><div class="label">المصاريف (ل.س)</div></div>
             <div class="summary-box" style="border:2px solid #27ae60; background:#e8f5e9;"><div class="number" id="netProfit" style="color:#27ae60; font-size:1.5rem;">0</div><div class="label">💵 صافي الربح (ل.س)</div></div>
@@ -459,10 +514,10 @@
         <div class="form-row">
             <label>من:</label>
             <input type="number" id="barcodeStart" value="1" style="width:80px" min="1">
-            <button class="green" onclick="generateBarcodes()">🖨️ 15 باركود</button>
+            <button class="green" onclick="generateBarcodes()">🖨️ 50 باركود</button>
             <button class="blue-btn" onclick="printBarcodes()">🖨️ طباعة</button>
         </div>
-        <div id="barcodeArea" class="barcode-grid"><p style="color:#999;grid-column:1/-1;text-align:center;">اضغط "15 باركود" للبدء</p></div>
+        <div id="barcodeArea" class="barcode-grid"><p style="color:#999;grid-column:1/-1;text-align:center;">اضغط "50 باركود" للبدء</p></div>
     </div>
     
     <!-- مسح الباركود -->
@@ -501,10 +556,10 @@
 
 <!-- شريط سفلي للجوال -->
 <div class="bottom-nav">
+    <button onclick="showTab('money')"><span class="nav-icon">💵</span>المال</button>
     <button onclick="showTab('store')"><span class="nav-icon">🏭</span>مخزن</button>
-    <button onclick="quickSale()"><span class="nav-icon">⚡</span>بيع سريع</button>
+    <button onclick="quickSale()"><span class="nav-icon">⚡</span>بيع</button>
     <button onclick="quickExpense()"><span class="nav-icon">💸</span>مصروف</button>
-    <button onclick="showTab('sales')"><span class="nav-icon">💰</span>مبيعات</button>
     <button onclick="showTab('maintenance')"><span class="nav-icon">🔧</span>صيانة</button>
 </div>
 
@@ -513,7 +568,7 @@
 <!-- جزء 2 -->
 <script>
 let db;
-const request = indexedDB.open('WissamFinalV12', 2);
+const request = indexedDB.open('WissamFinalV13', 2);
 
 request.onupgradeneeded = function(e) {
     const d = e.target.result;
@@ -555,6 +610,7 @@ function showTab(tab) {
     if (tab === 'returns') { fillReturnSelect(); loadReturns(); }
     if (tab === 'debts') loadDebts();
     if (tab === 'maintenance') loadMaintenance();
+    if (tab === 'money') loadMoney();
     if (tab === 'expenses') { loadExpenses(); loadFundBalance(); }
     if (tab === 'reports') loadReports();
     if (tab === 'barcodes') initBarcodes();
@@ -563,7 +619,7 @@ function showTab(tab) {
 
 function loadAll() { 
     loadStore(); fillSaleSelect(); loadSales(); fillReturnSelect(); loadReturns(); 
-    loadDebts(); loadMaintenance(); loadExpenses(); loadFundBalance(); initBarcodes(); 
+    loadDebts(); loadMaintenance(); loadMoney(); loadExpenses(); loadFundBalance(); initBarcodes(); 
 }
 
 function showMsg(t) { 
@@ -592,7 +648,6 @@ function autoBackup() {
 }
 
 function checkAutoBackup() {
-    // استعادة تلقائية إذا كانت البيانات فاضية
     setTimeout(() => {
         if (!db) return;
         db.transaction('items', 'readonly').objectStore('items').count().onsuccess = function(e) {
@@ -607,9 +662,7 @@ function checkAutoBackup() {
         };
     }, 1000);
     
-    // تشغيل النسخ الاحتياطي كل 5 دقائق
     setInterval(autoBackup, 300000);
-    // أول نسخة بعد 10 ثواني
     setTimeout(autoBackup, 10000);
 }
 
@@ -1301,14 +1354,14 @@ function generateBarcodes() {
     const prefixes = { general: 'WS-', store: 'ST-', maintenance: 'MT-' };
     const prefix = prefixes[type] || 'WS-';
     let html = '';
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 50; i++) {
         const num = start + i, code = prefix + String(num).padStart(4, '0');
         html += '<div class="barcode-item"><div class="barcode-font">*' + code + '*</div><div class="code">' + code + '</div><div class="num">' + num + '</div></div>';
     }
     document.getElementById('barcodeArea').innerHTML = html;
-    barcodeCounter = start + 15; localStorage.setItem('barcodeCounter', barcodeCounter.toString());
+    barcodeCounter = start + 50; localStorage.setItem('barcodeCounter', barcodeCounter.toString());
     document.getElementById('barcodeNext').textContent = barcodeCounter; document.getElementById('barcodeStart').value = barcodeCounter;
-    showMsg('✅ تم إنشاء 15 باركود');
+    showMsg('✅ تم إنشاء 50 باركود');
 }
 
 function printBarcodes() {
@@ -1318,10 +1371,10 @@ function printBarcodes() {
     w.document.write('<!DOCTYPE html><html dir="rtl"><head><title>باركودات</title>');
     w.document.write('<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">');
     w.document.write('<style>*{margin:0;padding:0;}body{font-family:Tajawal,sans-serif;padding:20px;text-align:center;}');
-    w.document.write('h2{margin-bottom:20px;}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}');
-    w.document.write('.item{border:1px dashed #ccc;padding:16px;border-radius:8px;page-break-inside:avoid;}');
-    w.document.write('.barcode-font{font-family:"Libre Barcode 39",monospace;font-size:42px;line-height:1;}');
-    w.document.write('.code{font-size:12px;font-weight:bold;margin-top:5px;}.num{font-size:10px;color:#888;}');
+    w.document.write('h2{margin-bottom:20px;}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}');
+    w.document.write('.item{border:1px dashed #ccc;padding:8px;border-radius:8px;page-break-inside:avoid;}');
+    w.document.write('.barcode-font{font-family:"Libre Barcode 39",monospace;font-size:28px;line-height:1;}');
+    w.document.write('.code{font-size:10px;font-weight:bold;margin-top:3px;}.num{font-size:8px;color:#888;}');
     w.document.write('@media print{body{margin:0;padding:10px;}}');
     w.document.write('</style></head><body><h2>🏷️ باركودات مركز وسام</h2><div class="grid">' + area.innerHTML + '</div></body></html>');
     w.document.close(); setTimeout(() => w.print(), 500);
@@ -1335,10 +1388,16 @@ function startScanner() {
 }
 
 async function startCameraScanner() {
-    document.getElementById('scannerPlaceholder').style.display = 'none';
-    document.getElementById('scannerVideo').style.display = 'block';
-    document.getElementById('btnStopCamera').style.display = 'block';
-    document.getElementById('scanResult').innerHTML = '<p style="color:#888;">⏳ جاري تشغيل الكاميرا...</p>';
+    const placeholder = document.getElementById('scannerPlaceholder');
+    const videoDiv = document.getElementById('scannerVideo');
+    const btnStop = document.getElementById('btnStopCamera');
+    const resultDiv = document.getElementById('scanResult');
+    
+    placeholder.style.display = 'none';
+    videoDiv.style.display = 'block';
+    videoDiv.innerHTML = '';
+    btnStop.style.display = 'block';
+    resultDiv.innerHTML = '<p style="color:#888;">⏳ جاري تشغيل الكاميرا...</p>';
     
     try {
         html5QrCode = new Html5Qrcode("scannerVideo");
@@ -1346,22 +1405,24 @@ async function startCameraScanner() {
             { facingMode: "environment" },
             { fps: 10, qrbox: { width: 250, height: 150 } },
             (decodedText) => {
-                // تم قراءة الباركود
                 html5QrCode.stop().then(() => {
-                    document.getElementById('scannerVideo').style.display = 'none';
-                    document.getElementById('btnStopCamera').style.display = 'none';
-                    document.getElementById('scannerPlaceholder').style.display = 'block';
+                    videoDiv.style.display = 'none';
+                    videoDiv.innerHTML = '';
+                    btnStop.style.display = 'none';
+                    placeholder.style.display = 'block';
                     processScannedBarcode(decodedText);
                 });
             },
             (errorMessage) => {}
         );
-        document.getElementById('scanResult').innerHTML = '<p style="color:#27ae60;">✅ الكاميرا جاهزة - وجه الباركود</p>';
+        resultDiv.innerHTML = '<p style="color:#27ae60;">✅ الكاميرا جاهزة - وجه الباركود</p>';
     } catch (err) {
-        document.getElementById('scanResult').innerHTML = '<p style="color:#e74c3c;">❌ تعذر فتح الكاميرا</p><p style="color:#888;">تأكد من فتح التطبيق عبر HTTPS أو جرب الإدخال اليدوي</p>';
-        document.getElementById('scannerVideo').style.display = 'none';
-        document.getElementById('btnStopCamera').style.display = 'none';
-        document.getElementById('scannerPlaceholder').style.display = 'block';
+        console.log('خطأ الكاميرا:', err);
+        resultDiv.innerHTML = '<p style="color:#e74c3c;">❌ تعذر فتح الكاميرا في التطبيق</p><p style="color:#888;">استخدم تطبيق سكانر خارجي وألصق الباركود في الحقل أدناه</p>';
+        videoDiv.style.display = 'none';
+        videoDiv.innerHTML = '';
+        btnStop.style.display = 'none';
+        placeholder.style.display = 'block';
     }
 }
 
@@ -1369,9 +1430,15 @@ function stopCameraScanner() {
     if (html5QrCode) {
         html5QrCode.stop().then(() => {
             document.getElementById('scannerVideo').style.display = 'none';
+            document.getElementById('scannerVideo').innerHTML = '';
             document.getElementById('btnStopCamera').style.display = 'none';
             document.getElementById('scannerPlaceholder').style.display = 'block';
             document.getElementById('scanResult').innerHTML = '<p style="color:#888;">تم إيقاف الكاميرا</p>';
+        }).catch(err => {
+            document.getElementById('scannerVideo').style.display = 'none';
+            document.getElementById('scannerVideo').innerHTML = '';
+            document.getElementById('btnStopCamera').style.display = 'none';
+            document.getElementById('scannerPlaceholder').style.display = 'block';
         });
     }
 }
@@ -1385,7 +1452,6 @@ function manualScanFromInput() {
 
 function processScannedBarcode(code) {
     if (!code) return;
-    // تنظيف الباركود من النجوم إذا وجدت
     code = code.replace(/\*/g, '');
     
     db.transaction('maintenance', 'readonly').objectStore('maintenance').index('barcode').get(code).onsuccess = function(e) {
@@ -1521,7 +1587,8 @@ function loadExpenses() {
                     const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
                     const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
                     
-                    document.getElementById('totalSales_2').textContent = formatPrice(salesTotal + maintenanceTotal);
+                    document.getElementById('totalSales_2').textContent = formatPrice(salesTotal);
+                    document.getElementById('totalMaintenance_2').textContent = formatPrice(maintenanceTotal);
                     document.getElementById('totalReturns_2').textContent = formatPrice(returnsTotal);
                     document.getElementById('totalExpenses_2').textContent = formatPrice(expensesTotal);
                     document.getElementById('netProfit').textContent = formatPrice(profit);
@@ -1535,6 +1602,56 @@ function loadExpenses() {
 function deleteExpense(id) {
     if (!confirm('حذف هذا المصروف؟')) return;
     db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); loadFundBalance(); };
+}
+
+// ==================== تبويب المال ====================
+function loadMoney() {
+    if (!db) return;
+    
+    Promise.all([
+        new Promise(r => db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('debts', 'readonly').objectStore('debts').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('funds', 'readonly').objectStore('funds').getAll().onsuccess = e => r(e.target.result))
+    ]).then(([sales, returns, maintenance, expenses, debts, funds]) => {
+        const salesTotal = sales.reduce((s, r) => s + r.total, 0);
+        const returnsTotal = returns.reduce((s, r) => s + (r.amount || 0), 0);
+        const maintenanceTotal = maintenance.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
+        const expensesTotal = expenses.filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund').reduce((s, ex) => s + ex.amount, 0);
+        const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
+        const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
+        
+        document.getElementById('moneySales').textContent = formatPrice(salesTotal);
+        document.getElementById('moneyMaintenance').textContent = formatPrice(maintenanceTotal);
+        document.getElementById('moneyReturns').textContent = formatPrice(returnsTotal);
+        document.getElementById('moneyExpenses').textContent = formatPrice(expensesTotal);
+        document.getElementById('moneyNetProfit').textContent = formatPrice(profit);
+        document.getElementById('moneyNetProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+        
+        const totalIn = funds.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0);
+        const totalOut = funds.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0);
+        document.getElementById('moneyFund').textContent = formatPrice(totalIn - totalOut);
+        
+        const pending = debts.filter(d => d.status === 'معلق').reduce((s, d) => s + (d.amount - (d.paid || 0)), 0);
+        const paid = debts.filter(d => d.status === 'مسدد').reduce((s, d) => s + (d.paid || d.amount), 0);
+        document.getElementById('moneyPendingDebts').textContent = formatPrice(pending);
+        document.getElementById('moneyPaidDebts').textContent = formatPrice(paid);
+    });
+}
+
+function addFundFromMoney() {
+    const amount = parseFloat(document.getElementById('moneyFundAmount').value);
+    if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
+    db.transaction('funds', 'readwrite').objectStore('funds').add({
+        amount, type: 'in', date: new Date().toISOString().split('T')[0]
+    }).transaction.oncomplete = function() {
+        showMsg('✅ تم إضافة المبلغ الوارد');
+        document.getElementById('moneyFundAmount').value = '';
+        loadMoney();
+        loadFundBalance();
+    };
 }
 
 // ==================== التقارير ====================
@@ -1562,7 +1679,6 @@ function loadReports() {
         document.getElementById('rptTotalItems').textContent = items.length + ' قطعة';
         document.getElementById('rptTotalDevices').textContent = maintenance.length + ' جهاز';
         
-        // أكثر القطع مبيعاً
         const stats = {};
         sales.forEach(s => {
             if (!stats[s.itemName]) stats[s.itemName] = { count: 0, qty: 0, total: 0 };
@@ -1575,7 +1691,6 @@ function loadReports() {
             '<tr><td>' + name + '</td><td>' + s.count + '</td><td>' + s.qty + '</td><td>' + formatPrice(s.total) + '</td></tr>'
         ).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد مبيعات</td></tr>';
         
-        // ملخص شهري
         const monthly = {};
         sales.forEach(s => {
             const month = s.date ? s.date.substring(0, 7) : 'غير معروف';
@@ -1600,7 +1715,7 @@ function loadReports() {
         ).join('') || '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد بيانات</td></tr>';
     });
 }
-<!-- نهاية جزء 6 -->    
+<!-- نهاية جزء 6 -->   
 <!-- جزء 7 -->
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
