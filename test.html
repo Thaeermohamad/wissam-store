@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مركز وسام للإلكترونيات</title>
+    <link rel="manifest" href="./manifest.json">
+    <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js');}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+        :root{--primary:#1a3a5c;--primary-light:#2d7fc1;--bg:#eef2f6;--dark-bg:#0a0a0f;}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Tajawal','Segoe UI',Tahoma,Arial,sans-serif;}
+        body{background:var(--bg);padding:0;transition:0.3s;}
+        body.dark{background:var(--dark-bg);color:#eee;}
+        .container{max-width:1000px;margin:0 auto;padding:10px;}
+        .header-row{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:linear-gradient(135deg,var(--primary),#0f2b40);border-radius:16px;margin-bottom:12px;flex-wrap:wrap;gap:8px;position:sticky;top:5px;z-index:100;}
+        .header-row h1{color:#fff;font-size:1.2rem;font-weight:700;}
+        .tabs{display:flex;gap:6px;margin-bottom:15px;flex-wrap:wrap;}
+        .tabs button{flex:1;padding:10px 4px;border:none;min-width:48px;background:#fff;cursor:pointer;font-size:11px;font-weight:600;border-radius:10px 10px 0 0;transition:0.2s;color:#555;position:relative;}
+        .tabs button.active{background:var(--primary-light);color:white;}
+        body.dark .tabs button{background:#1a1a2e;color:#aaa;}
+        body.dark .tabs button.active{background:var(--primary-light);color:white;}
+        .tabs .badge-tab{position:absolute;top:-6px;right:-6px;background:#e74c3c;color:white;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700;}
+        .tab-content{display:none;background:white;padding:20px;border-radius:0 0 16px 16px;box-shadow:0 4px 20px rgba(0,0,0,0.06);}
+        .tab-content.active{display:block;}
+        body.dark .tab-content{background:#12121f;}
+        .form-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+        input,select,textarea{padding:10px 14px;border-radius:10px;border:2px solid #e0e5ea;font-size:14px;background:#fafbfc;font-family:'Segoe UI',Tahoma,Arial,sans-serif;}
+        body.dark input,body.dark select,body.dark textarea{background:#1a1a2e;color:#eee;border-color:#333;}
+        button{padding:10px 16px;border-radius:10px;border:none;font-size:14px;cursor:pointer;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+        button.green{background:#27ae60;color:white;}
+        button.red{background:#e74c3c;color:white;}
+        button.orange{background:#e67e22;color:white;}
+        button.blue-btn{background:#2980b9;color:white;}
+        button.small{padding:6px 12px;font-size:12px;border-radius:8px;}
+        table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;}
+        th{background:#edf2f7;padding:10px 8px;text-align:right;font-size:12px;font-weight:700;color:var(--primary);}
+        body.dark th{background:#1a1a30;color:#90caf9;}
+        td{padding:10px 8px;border-bottom:1px solid #eef2f6;}
+        body.dark td{border-color:#2a2a3a;}
+        .summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;}
+        .summary-box{flex:1;min-width:110px;background:white;padding:14px 10px;border-radius:14px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.04);}
+        body.dark .summary-box{background:#1a1a2e;border:1px solid #2a2a3a;}
+        .summary-box .number{font-size:1.3rem;font-weight:700;color:var(--primary);}
+        body.dark .summary-box .number{color:#90caf9;}
+        .summary-box .label{font-size:11px;color:#777;}
+        .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+        .badge-warning{background:#fff3cd;color:#856404;}
+        .badge-info{background:#d1ecf1;color:#0c5460;}
+        .badge-success{background:#d4edda;color:#155724;}
+        .msg{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--primary);color:white;padding:14px 26px;border-radius:30px;display:none;z-index:999;}
+        body.dark .msg{background:#ffb74d;color:#000;}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;justify-content:center;align-items:center;}
+        .modal-content{background:white;padding:25px;border-radius:18px;max-width:500px;width:90%;}
+        body.dark .modal-content{background:#1a1a2e;}
+        .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:white;padding:8px 5px;box-shadow:0 -4px 20px rgba(0,0,0,0.1);z-index:99;justify-content:space-around;border-radius:16px 16px 0 0;}
+        body.dark .bottom-nav{background:#1a1a2e;}
+        .bottom-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;padding:8px 6px;background:transparent;color:#555;border-radius:12px;}
+        .bottom-nav button .nav-icon{font-size:20px;}
+        .admin-only{}.employee-view .admin-only{display:none;}
+        .theme-btns{display:flex;gap:4px;}
+        .theme-btns button{width:22px;height:22px;border-radius:50%;border:2px solid white;cursor:pointer;padding:0;}
+        .barcode-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;margin-top:15px;}
+        .barcode-item{border:1px dashed #dde4ed;padding:8px 5px;border-radius:8px;background:white;}
+        body.dark .barcode-item{background:#1a1a2e;}
+        .barcode-font{font-family:'Libre Barcode 39',monospace;font-size:28px;line-height:1;}
+        @media(max-width:768px){.bottom-nav{display:flex;}body{padding-bottom:80px;}}
+        @media(max-width:600px){.barcode-grid{grid-template-columns:repeat(3,1fr);}.tabs button{font-size:10px;}.barcode-font{font-size:22px;}}
+    </style>
+</head>
+<body>
+<div class="container" id="appContainer">
+    <div class="header-row">
+        <h1>📦 مركز وسام للإلكترونيات</h1>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <div class="theme-btns">
+                <button style="background:#1a3a5c;" onclick="changeTheme('blue')"></button>
+                <button style="background:#1e7b4a;" onclick="changeTheme('green')"></button>
+                <button style="background:#6a1b9a;" onclick="changeTheme('purple')"></button>
+            </div>
+            <button class="blue-btn small" onclick="toggleRole()" style="background:rgba(255,255,255,0.2);color:white;">👤</button>
+            <button class="mode-toggle" onclick="toggleMode()" style="background:rgba(255,255,255,0.2);color:white;">🌙</button>
+        </div>
+    </div>
+    <div class="tabs">
+        <button class="active" onclick="showTab('store')">🏭</button>
+        <button onclick="showTab('sales')">💰</button>
+        <button onclick="showTab('maintenance')">🔧</button>
+        <button onclick="showTab('expenses')">💸</button>
+    </div>
+    
+    <!-- المخزن -->
+    <div id="tab-store" class="tab-content active">
+        <h3>📦 المخزن</h3>
+        <div class="form-row">
+            <input type="text" id="itemName" placeholder="اسم القطعة" style="flex:2">
+            <input type="number" id="itemQty" placeholder="الكمية" value="1" style="width:80px">
+            <input type="number" id="itemPrice" placeholder="السعر" step="1" style="width:100px">
+            <button class="green" onclick="addItem()">➕ إضافة</button>
+        </div>
+        <table><thead><tr><th>القطعة</th><th>الكمية</th><th>السعر</th></tr></thead><tbody id="storeTable"></tbody></table>
+    </div>
+    
+    <!-- المبيعات -->
+    <div id="tab-sales" class="tab-content">
+        <h3>💰 المبيعات</h3>
+        <p>قريباً...</p>
+    </div>
+    
+    <!-- الصيانة -->
+    <div id="tab-maintenance" class="tab-content">
+        <h3>🔧 الصيانة</h3>
+        <p>قريباً...</p>
+    </div>
+    
+    <!-- المصاريف -->
+    <div id="tab-expenses" class="tab-content">
+        <h3>💸 المصاريف</h3>
+        <p>قريباً...</p>
+    </div>
+</div>
+<div id="msg" class="msg"></div>
+
+<script>
+// ==================== قاعدة البيانات ====================
+let db;
+const request = indexedDB.open('WissamTest', 1);
+request.onupgradeneeded = function(e) {
+    if (!e.target.result.objectStoreNames.contains('items')) {
+        e.target.result.createObjectStore('items', { keyPath: 'id', autoIncrement: true });
+    }
+};
+request.onsuccess = function(e) { db = e.target.result; console.log('✅ جاهز'); loadStore(); };
+request.onerror = function(e) { alert('❌ فشل قاعدة البيانات'); };
+
+// ==================== دوال أساسية ====================
+function showMsg(t) { const m = document.getElementById('msg'); m.textContent = t; m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 2500); }
+function formatPrice(n) { return Number(n).toLocaleString('ar-SY') + ' ل.س'; }
+function toggleMode() { document.body.classList.toggle('dark'); }
+function changeTheme(t) { console.log('Theme:', t); }
+function toggleRole() { showMsg('👤 تم التبديل'); }
+
+// ==================== تبويبات ====================
+function showTab(tab) {
+    console.log('تبديل إلى:', tab);
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    event.target.classList.add('active');
+    if (tab === 'store') loadStore();
+}
+
+// ==================== المخزن ====================
+function addItem() {
+    const name = document.getElementById('itemName').value.trim();
+    const qty = parseInt(document.getElementById('itemQty').value) || 1;
+    const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+    if (!name) { showMsg('⚠️ أدخل اسم القطعة'); return; }
+    const tx = db.transaction('items', 'readwrite');
+    tx.objectStore('items').add({ name, quantity: qty, price });
+    tx.oncomplete = function() {
+        showMsg('✅ تمت الإضافة');
+        document.getElementById('itemName').value = '';
+        loadStore();
+    };
+}
+
+function loadStore() {
+    db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = function(e) {
+        const items = e.target.result;
+        document.getElementById('storeTable').innerHTML = items.map(i => 
+            '<tr><td>' + i.name + '</td><td>' + i.quantity + '</td><td>' + formatPrice(i.price) + '</td></tr>'
+        ).join('');
+    };
+}
+</script>
+</body>
+</html>
