@@ -1446,6 +1446,56 @@ function editMaintenance(id) {
     };
 }
 
+// ==================== واتساب ====================
+function sendWhatsAppToCustomer(id) {
+    db.transaction('maintenance', 'readonly').objectStore('maintenance').get(id).onsuccess = function(e) {
+        const i = e.target.result;
+        if (!i) { showMsg('⚠️ لم يتم العثور على الجهاز'); return; }
+        
+        // التحقق من رقم الهاتف
+        if (!i.phone || i.phone.trim() === '') {
+            showMsg('⚠️ لم يتم إرسال الرسالة - يجب إدخال رقم هاتف صحيح للعميل');
+            return;
+        }
+        
+        // تنظيف الرقم
+        let phoneNumber = i.phone.trim().replace(/^\+963/, '').replace(/^963/, '').replace(/^0/, '');
+        if (!/^\d{9,10}$/.test(phoneNumber)) {
+            showMsg('⚠️ لم يتم إرسال الرسالة - رقم الهاتف غير صحيح');
+            return;
+        }
+        
+        const cost = i.totalCost || i.labor || 0;
+        const paid = i.paidAmount || 0;
+        const remaining = i.remaining || (cost - paid);
+        
+        // بناء نص الرسالة
+        let message = 'مرحباً ' + i.customer + ' 🌷\n\n';
+        message += '📢 إشعار من مركز وسام للإلكترونيات\n\n';
+        message += 'يسرنا إعلامكم بأن جهازكم جاهز للتسليم:\n';
+        message += '🔹 النوع: ' + i.device + '\n';
+        message += '🔹 الرقم التسلسلي: ' + (i.serial || 'غير محدد') + '\n';
+        message += '💰 التكلفة الكاملة: ' + formatPrice(cost) + '\n';
+        
+        // إظهار المدفوع والمتبقي فقط إذا كان هناك متبقي
+        if (remaining > 0) {
+            message += '💳 المدفوع: ' + formatPrice(paid) + '\n';
+            message += '💵 المتبقي: ' + formatPrice(remaining) + '\n';
+        }
+        
+        message += '📅 تاريخ الإرسال: ' + new Date().toLocaleDateString('ar-SY') + '\n\n';
+        message += 'الرجاء الحضور لاستلامه خلال 3 أيام 🕒\n\n';
+        message += '📍 العنوان: ريف دمشق - مخيم السيدة زينب\n';
+        message += '📞 للتواصل: 0937572101 / 0956562865\n\n';
+        message += 'نشكر ثقتكم بنا، ودمتم بخير 🌹';
+        
+        // فتح واتساب
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappURL = 'https://wa.me/963' + phoneNumber + '?text=' + encodedMessage;
+        window.open(whatsappURL, '_blank', 'noopener,noreferrer');
+    };
+}
+
 function loadMaintenance() {
     db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = function(e) {
         let items = e.target.result;
@@ -1477,9 +1527,24 @@ function loadMaintenance() {
             else if (i.paymentType === 'جزئي') paymentBadge = '<span class="badge badge-warning">📊 مدفوع ' + formatPrice(i.paidAmount || 0) + ' | متبقي ' + formatPrice(i.remaining || 0) + '</span>';
             
             const cost = i.totalCost || i.labor || 0;
+            
+            // رقم الهاتف للإجراءات
+            const hasPhone = i.phone && i.phone.trim() !== '';
+            const isDone = i.status === 'done';
+            
             let actions = '';
             if (!i.archived) {
                 actions += '<select onchange="changeStatus(' + i.id + ',this.value)" style="width:70px;font-size:11px;padding:3px;"><option value="">تغيير</option><option value="waiting">⏳</option><option value="fixing">🔧</option><option value="done">✅</option></select> ';
+                
+                // زر واتساب - يظهر فقط للحالة "جاهز" (done)
+                if (isDone) {
+                    if (hasPhone) {
+                        actions += '<button class="green small" onclick="sendWhatsAppToCustomer(' + i.id + ')" title="إرسال واتساب">📱</button> ';
+                    } else {
+                        actions += '<button class="green small" style="opacity:0.4;" disabled title="يجب إدخال رقم الهاتف">📱❌</button> ';
+                    }
+                }
+                
                 if (i.status === 'done') actions += '<button class="green small" onclick="archiveDevice(' + i.id + ')">📤</button> ';
                 actions += '<button class="blue-btn small" onclick="editMaintenance(' + i.id + ')">✏️</button> <button class="blue-btn small" onclick="toggleReceived(' + i.id + ')">📋</button> ';
             } else {
@@ -1495,7 +1560,27 @@ function loadMaintenance() {
     };
 }
 
-function changeStatus(id, ns) { if (!ns) return; db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { const i = e.target.result; if (i) { i.status = ns; db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i); } loadMaintenance(); }; }
+function changeStatus(id, ns) { 
+    if (!ns) return; 
+    db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) { 
+        const i = e.target.result; 
+        if (i) { 
+            i.status = ns; 
+            db.transaction('maintenance', 'readwrite').objectStore('maintenance').put(i).transaction.oncomplete = function() {
+                loadMaintenance();
+                
+                // إذا تغيرت الحالة إلى "جاهز" ولدى العميل رقم هاتف - اقتراح إرسال واتساب
+                if (ns === 'done' && i.phone && i.phone.trim() !== '') {
+                    if (confirm('✅ تم تغيير الحالة إلى "جاهز للتسليم"\n\nهل تريد إرسال رسالة واتساب للعميل ' + i.customer + ' الآن؟')) {
+                        sendWhatsAppToCustomer(id);
+                    }
+                } else if (ns === 'done' && (!i.phone || i.phone.trim() === '')) {
+                    showMsg('⚠️ الحالة "جاهز للتسليم" ولكن رقم الهاتف غير مسجل - لن يتم إرسال إشعار');
+                }
+            };
+        }
+    }; 
+}
 
 function archiveDevice(id) {
     db.transaction('maintenance', 'readwrite').objectStore('maintenance').get(id).onsuccess = function(e) {
@@ -1597,7 +1682,7 @@ function deleteMaintenance(id) {
         loadMaintenance(); 
     }; 
 }
-<!-- نهاية جزء 5 --> 
+<!-- نهاية جزء 5 -->
 <!-- جزء 6 -->
 // ==================== الباركود ====================
 let barcodeCounter = parseInt(localStorage.getItem('barcodeCounter') || '1');
