@@ -553,218 +553,97 @@ function printBarcodes() {
 
 // ==================== مسح الباركود ====================
 let html5QrCode = null;
-
-function startScanner() { 
-    document.getElementById('scanResult').innerHTML = '<p style="color:#888;">استخدم الكاميرا أو ألصق الباركود يدوياً</p>';
-}
-
+function startScanner() { document.getElementById('scanResult').innerHTML = '<p style="color:#888;">استخدم الكاميرا أو ألصق الباركود يدوياً</p>'; }
 async function startCameraScanner() {
     document.getElementById('scannerPlaceholder').style.display = 'none';
     document.getElementById('scannerVideo').style.display = 'block';
     document.getElementById('btnStopCamera').style.display = 'block';
     document.getElementById('scanResult').innerHTML = '<p style="color:#888;">⏳ جاري تشغيل الكاميرا...</p>';
-    
     try {
         html5QrCode = new Html5Qrcode("scannerVideo");
-        await html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 150 } },
-            (decodedText) => {
-                // تم قراءة الباركود
-                html5QrCode.stop().then(() => {
-                    document.getElementById('scannerVideo').style.display = 'none';
-                    document.getElementById('btnStopCamera').style.display = 'none';
-                    document.getElementById('scannerPlaceholder').style.display = 'block';
-                    processScannedBarcode(decodedText);
-                });
-            },
+        await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => { html5QrCode.stop().then(() => { document.getElementById('scannerVideo').style.display = 'none'; document.getElementById('btnStopCamera').style.display = 'none'; document.getElementById('scannerPlaceholder').style.display = 'block'; processScannedBarcode(decodedText); }); },
             (errorMessage) => {}
         );
         document.getElementById('scanResult').innerHTML = '<p style="color:#27ae60;">✅ الكاميرا جاهزة - وجه الباركود</p>';
     } catch (err) {
         document.getElementById('scanResult').innerHTML = '<p style="color:#e74c3c;">❌ تعذر فتح الكاميرا</p><p style="color:#888;">تأكد من فتح التطبيق عبر HTTPS أو جرب الإدخال اليدوي</p>';
-        document.getElementById('scannerVideo').style.display = 'none';
-        document.getElementById('btnStopCamera').style.display = 'none';
-        document.getElementById('scannerPlaceholder').style.display = 'block';
+        document.getElementById('scannerVideo').style.display = 'none'; document.getElementById('btnStopCamera').style.display = 'none'; document.getElementById('scannerPlaceholder').style.display = 'block';
     }
 }
-
-function stopCameraScanner() {
-    if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-            document.getElementById('scannerVideo').style.display = 'none';
-            document.getElementById('btnStopCamera').style.display = 'none';
-            document.getElementById('scannerPlaceholder').style.display = 'block';
-            document.getElementById('scanResult').innerHTML = '<p style="color:#888;">تم إيقاف الكاميرا</p>';
-        });
-    }
-}
-
-function manualScanFromInput() {
-    const code = document.getElementById('scanBarcodeInput').value.trim();
-    if (!code) { showMsg('⚠️ ألصق رقم الباركود أولاً'); return; }
-    processScannedBarcode(code);
-    document.getElementById('scanBarcodeInput').value = '';
-}
-
-function processScannedBarcode(code) {
-    if (!code) return;
-    // تنظيف الباركود من النجوم إذا وجدت
-    code = code.replace(/\*/g, '');
-    
-    db.transaction('maintenance', 'readonly').objectStore('maintenance').index('barcode').get(code).onsuccess = function(e) {
-        const device = e.target.result;
-        if (device) {
-            document.getElementById('scanResult').innerHTML = '<div class="alert" style="display:block;background:#d4edda;color:#155724;">✅ جهاز: <strong>' + device.device + '</strong> | ' + device.customer + ' | <button class="green small" onclick="fillMaintenanceFromScan(\'' + code + '\')">📝 تحميل البيانات</button></div>';
-            return;
-        }
-        db.transaction('items', 'readonly').objectStore('items').index('barcode').get(code).onsuccess = function(e) {
-            const item = e.target.result;
-            if (item) { document.getElementById('scanResult').innerHTML = '<div class="alert" style="display:block;background:#d4edda;color:#155724;">✅ قطعة مخزن: <strong>' + item.name + '</strong> | كمية: ' + item.quantity + ' | سعر: ' + formatPrice(item.price) + '</div>'; }
-            else { document.getElementById('scanResult').innerHTML = '<div class="alert" style="display:block;background:#fff3cd;color:#856404;">⚠️ باركود غير مسجل. <button class="green small" onclick="registerNewFromScan(\'' + code + '\')">➕ تسجيل جهاز جديد</button></div>'; }
-        };
-    };
-}
-
-function fillMaintenanceFromScan(code) {
-    db.transaction('maintenance', 'readonly').objectStore('maintenance').index('barcode').get(code).onsuccess = function(e) {
-        const i = e.target.result; if (!i) return;
-        document.getElementById('mSerial').value = i.serial || '';
-        document.getElementById('mCustomer').value = i.customer || '';
-        document.getElementById('mPhone').value = i.phone || '';
-        document.getElementById('mDevice').value = i.device || '';
-        document.getElementById('mIssue').value = i.issue || '';
-        document.getElementById('mBarcode').value = i.barcode || '';
-        document.getElementById('mStatus').value = i.status || 'waiting';
-        document.getElementById('mLabor').value = i.labor || '';
-        document.getElementById('mPaymentType').value = i.paymentType || 'نقدي';
-        if (i.paymentType === 'جزئي') {
-            document.getElementById('mPaidAmount').style.display = 'inline';
-            document.getElementById('mPaidAmount').value = i.paidAmount || '';
-        }
-        mParts = i.parts ? JSON.parse(JSON.stringify(i.parts)) : []; renderParts();
-        showTab('maintenance');
-        showMsg('✅ تم تحميل بيانات الجهاز');
-    };
-}
-
-function registerNewFromScan(code) {
-    document.getElementById('mBarcode').value = code;
-    ['mSerial','mCustomer','mPhone','mDevice','mIssue','mLabor','mPaidAmount'].forEach(id => document.getElementById(id).value = '');
-    mParts = []; renderParts();
-    showTab('maintenance');
-    showMsg('📝 املأ بيانات الجهاز الجديد');
-}
+function stopCameraScanner() { if (html5QrCode) { html5QrCode.stop().then(() => { document.getElementById('scannerVideo').style.display = 'none'; document.getElementById('btnStopCamera').style.display = 'none'; document.getElementById('scannerPlaceholder').style.display = 'block'; document.getElementById('scanResult').innerHTML = '<p style="color:#888;">تم إيقاف الكاميرا</p>'; }); } }
+function manualScanFromInput() { const code = document.getElementById('scanBarcodeInput').value.trim(); if (!code) { showMsg('⚠️ ألصق رقم الباركود أولاً'); return; } processScannedBarcode(code); document.getElementById('scanBarcodeInput').value = ''; }
+function processScannedBarcode(code) { if (!code) return; code = code.replace(/\*/g, ''); db.transaction('maintenance', 'readonly').objectStore('maintenance').index('barcode').get(code).onsuccess = function(e) { const device = e.target.result; if (device) { document.getElementById('scanResult').innerHTML = '<div class="alert" style="display:block;background:#d4edda;color:#155724;">✅ جهاز: <strong>' + device.device + '</strong> | ' + device.customer + ' | <button class="green small" onclick="fillMaintenanceFromScan(\'' + code + '\')">📝 تحميل البيانات</button></div>'; return; } db.transaction('items', 'readonly').objectStore('items').index('barcode').get(code).onsuccess = function(e) { const item = e.target.result; if (item) { document.getElementById('scanResult').innerHTML = '<div class="alert" style="display:block;background:#d4edda;color:#155724;">✅ قطعة مخزن: <strong>' + item.name + '</strong> | كمية: ' + item.quantity + ' | سعر: ' + formatPrice(item.price) + '</div>'; } else { document.getElementById('scanResult').innerHTML = '<div class="alert" style="display:block;background:#fff3cd;color:#856404;">⚠️ باركود غير مسجل. <button class="green small" onclick="registerNewFromScan(\'' + code + '\')">➕ تسجيل جهاز جديد</button></div>'; } }; }; }
+function fillMaintenanceFromScan(code) { db.transaction('maintenance', 'readonly').objectStore('maintenance').index('barcode').get(code).onsuccess = function(e) { const i = e.target.result; if (!i) return; document.getElementById('mSerial').value = i.serial || ''; document.getElementById('mCustomer').value = i.customer || ''; document.getElementById('mPhone').value = i.phone || ''; document.getElementById('mDevice').value = i.device || ''; document.getElementById('mIssue').value = i.issue || ''; document.getElementById('mBarcode').value = i.barcode || ''; document.getElementById('mStatus').value = i.status || 'waiting'; document.getElementById('mLabor').value = i.labor || ''; document.getElementById('mPaymentType').value = i.paymentType || 'نقدي'; if (i.paymentType === 'جزئي') { document.getElementById('mPaidAmount').style.display = 'inline'; document.getElementById('mPaidAmount').value = i.paidAmount || ''; } mParts = i.parts ? JSON.parse(JSON.stringify(i.parts)) : []; renderParts(); showTab('maintenance'); showMsg('✅ تم تحميل بيانات الجهاز'); }; }
+function registerNewFromScan(code) { document.getElementById('mBarcode').value = code; ['mSerial','mCustomer','mPhone','mDevice','mIssue','mLabor','mPaidAmount'].forEach(id => document.getElementById(id).value = ''); mParts = []; renderParts(); showTab('maintenance'); showMsg('📝 املأ بيانات الجهاز الجديد'); }
 
 // ==================== المبلغ الوارد ====================
-function loadFundBalance() {
-    if (!db) return;
-    db.transaction('funds', 'readonly').objectStore('funds').getAll().onsuccess = function(e) {
-        const funds = e.target.result;
-        const totalIn = funds.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0);
-        const totalOut = funds.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0);
-        document.getElementById('fundBalance').textContent = formatPrice(totalIn - totalOut);
-    };
-}
-
-function addFund() {
-    const amount = parseFloat(document.getElementById('fundAmount').value);
-    if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
-    db.transaction('funds', 'readwrite').objectStore('funds').add({
-        amount, type: 'in', date: new Date().toISOString().split('T')[0]
-    }).transaction.oncomplete = function() {
-        showMsg('✅ تم إضافة المبلغ الوارد');
-        document.getElementById('fundAmount').value = '';
-        loadFundBalance();
-    };
-}
+function loadFundBalance() { if (!db) return; db.transaction('funds', 'readonly').objectStore('funds').getAll().onsuccess = function(e) { const funds = e.target.result; const totalIn = funds.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0); const totalOut = funds.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0); document.getElementById('fundBalance').textContent = formatPrice(totalIn - totalOut); }; }
+function addFund() { const amount = parseFloat(document.getElementById('fundAmount').value); if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; } db.transaction('funds', 'readwrite').objectStore('funds').add({ amount, type: 'in', date: new Date().toISOString().split('T')[0] }).transaction.oncomplete = function() { showMsg('✅ تم إضافة المبلغ الوارد'); document.getElementById('fundAmount').value = ''; loadFundBalance(); }; }
 
 // ==================== المصاريف ====================
-function addExpense() {
-    const amount = parseFloat(document.getElementById('expAmount').value);
-    const type = document.getElementById('expType').value;
-    const category = document.getElementById('expCategory').value;
-    const source = document.getElementById('expSource').value;
-    const date = document.getElementById('expDate').value;
-    const note = document.getElementById('expNote').value.trim();
-    
-    if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
-    
-    if (source === 'fund') {
-        db.transaction('funds', 'readwrite').objectStore('funds').add({ amount, type: 'out', date });
-    }
-    
-    db.transaction('expenses', 'readwrite').objectStore('expenses').add({
-        amount, type, category, source, date, note
-    }).transaction.oncomplete = function() {
-        showMsg('✅ تم حفظ المصروف');
-        document.getElementById('expAmount').value = '';
-        document.getElementById('expNote').value = '';
-        loadExpenses(); loadFundBalance();
-    };
-}
+function addExpense() { const amount = parseFloat(document.getElementById('expAmount').value); const type = document.getElementById('expType').value; const category = document.getElementById('expCategory').value; const source = document.getElementById('expSource').value; const date = document.getElementById('expDate').value; const note = document.getElementById('expNote').value.trim(); if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; } if (source === 'fund') { db.transaction('funds', 'readwrite').objectStore('funds').add({ amount, type: 'out', date }); } db.transaction('expenses', 'readwrite').objectStore('expenses').add({ amount, type, category, source, date, note }).transaction.oncomplete = function() { showMsg('✅ تم حفظ المصروف'); document.getElementById('expAmount').value = ''; document.getElementById('expNote').value = ''; loadExpenses(); loadFundBalance(); }; }
+function loadExpenses() { if (!db) return; db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = function(e) { let expenses = e.target.result; const filterType = document.getElementById('expFilterType')?.value || ''; if (filterType) { expenses = expenses.filter(ex => ex.type === filterType); } const filterMonth = document.getElementById('expFilterMonth')?.value || ''; if (filterMonth) { expenses = expenses.filter(ex => ex.date && ex.date.startsWith(filterMonth)); } expenses.sort((a, b) => (b.date || '').localeCompare(a.date || '')); const months = [...new Set(e.target.result.map(ex => ex.date ? ex.date.substring(0, 7) : '').filter(Boolean))].sort().reverse(); const monthSelect = document.getElementById('expFilterMonth'); if (monthSelect) { monthSelect.innerHTML = '<option value="">كل الشهور</option>' + months.map(m => '<option value="' + m + '">' + m + '</option>').join(''); } const tbody = document.getElementById('expensesTable'); if (tbody) { tbody.innerHTML = expenses.length ? expenses.map(ex => '<tr><td>' + (ex.date || '-') + '</td><td>' + ex.type + '</td><td>' + formatPrice(ex.amount) + '</td><td><span class="badge ' + (ex.source === 'fund' ? 'badge-info' : 'badge-warning') + '">' + (ex.source === 'fund' ? 'وارد' : 'محل') + '</span></td><td>' + ex.category + '</td><td>' + (ex.note || '-') + '</td><td><button class="red small" onclick="deleteExpense(' + ex.id + ')">🗑️</button></td></tr>').join('') : '<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد مصاريف</td></tr>'; } const today = new Date().toISOString().split('T')[0]; const thisMonth = today.substring(0, 7); document.getElementById('totalDaily').textContent = formatPrice(expenses.filter(ex => ex.date === today).reduce((s, ex) => s + ex.amount, 0)); document.getElementById('totalMonthly').textContent = formatPrice(expenses.filter(ex => ex.date && ex.date.startsWith(thisMonth)).reduce((s, ex) => s + ex.amount, 0)); db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) { const salesTotal = e.target.result.reduce((s, sale) => s + sale.total, 0); db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = function(e) { const returnsTotal = e.target.result.reduce((s, ret) => s + (ret.amount || 0), 0); db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = function(e) { const maintenanceTotal = e.target.result.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0); const expensesTotal = expenses.filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund').reduce((s, ex) => s + ex.amount, 0); const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0); const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal; document.getElementById('totalSales_2').textContent = formatPrice(salesTotal + maintenanceTotal); document.getElementById('totalReturns_2').textContent = formatPrice(returnsTotal); document.getElementById('totalExpenses_2').textContent = formatPrice(expensesTotal); document.getElementById('netProfit').textContent = formatPrice(profit); document.getElementById('netProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c'; }; }; }; }
+function deleteExpense(id) { if (!confirm('حذف هذا المصروف؟')) return; db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); loadFundBalance(); }; }
 
-function loadExpenses() {
+// ==================== تبويب المال ====================
+function loadMoney() {
     if (!db) return;
-    db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = function(e) {
-        let expenses = e.target.result;
+    Promise.all([
+        new Promise(r => db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('expenses', 'readonly').objectStore('expenses').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('debts', 'readonly').objectStore('debts').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('funds', 'readonly').objectStore('funds').getAll().onsuccess = e => r(e.target.result)),
+        new Promise(r => db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = e => r(e.target.result))
+    ]).then(([sales, returns, maintenance, expenses, debts, funds, items]) => {
+        const salesTotal = sales.reduce((s, r) => s + r.total, 0);
+        const returnsTotal = returns.reduce((s, r) => s + (r.amount || 0), 0);
+        const maintenanceTotal = maintenance.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
+        const expensesTotal = expenses.filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund').reduce((s, ex) => s + ex.amount, 0);
+        const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
+        const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
         
-        const filterType = document.getElementById('expFilterType')?.value || '';
-        if (filterType) { expenses = expenses.filter(ex => ex.type === filterType); }
+        let salesCost = 0;
+        sales.forEach(sale => { const itemName = sale.itemName?.split(' ×')[0]; const item = items.find(i => i.name === itemName); if (item) salesCost += (item.cost || 0) * (sale.quantity || 1); });
+        const netSales = salesTotal - salesCost - returnsTotal;
         
-        const filterMonth = document.getElementById('expFilterMonth')?.value || '';
-        if (filterMonth) { expenses = expenses.filter(ex => ex.date && ex.date.startsWith(filterMonth)); }
+        let maintenanceCost = 0;
+        maintenance.filter(m => m.archived).forEach(m => { if (m.parts && m.parts.length) { m.parts.forEach(p => { const item = items.find(i => i.id === p.itemId); if (item) maintenanceCost += (item.cost || 0) * (p.qty || 1); }); } });
+        const netMaintenance = maintenanceTotal - maintenanceCost;
         
-        expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        document.getElementById('moneySales').textContent = formatPrice(salesTotal);
+        document.getElementById('moneyMaintenance').textContent = formatPrice(maintenanceTotal);
+        document.getElementById('moneyReturns').textContent = formatPrice(returnsTotal);
+        document.getElementById('moneyExpenses').textContent = formatPrice(expensesTotal);
+        document.getElementById('moneyNetProfit').textContent = formatPrice(profit);
+        document.getElementById('moneyNetProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+        document.getElementById('moneyNetSales').textContent = formatPrice(netSales);
+        document.getElementById('moneyNetSales').style.color = netSales >= 0 ? '#2980b9' : '#e74c3c';
+        document.getElementById('moneyNetMaintenance').textContent = formatPrice(netMaintenance);
+        document.getElementById('moneyNetMaintenance').style.color = netMaintenance >= 0 ? '#8e44ad' : '#e74c3c';
         
-        const months = [...new Set(e.target.result.map(ex => ex.date ? ex.date.substring(0, 7) : '').filter(Boolean))].sort().reverse();
-        const monthSelect = document.getElementById('expFilterMonth');
-        if (monthSelect) { monthSelect.innerHTML = '<option value="">كل الشهور</option>' + months.map(m => '<option value="' + m + '">' + m + '</option>').join(''); }
+        const totalIn = funds.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0);
+        const totalOut = funds.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0);
+        document.getElementById('moneyFund').textContent = formatPrice(totalIn - totalOut);
         
-        const tbody = document.getElementById('expensesTable');
-        if (tbody) {
-            tbody.innerHTML = expenses.length ? expenses.map(ex => 
-                '<tr><td>' + (ex.date || '-') + '</td><td>' + ex.type + '</td><td>' + formatPrice(ex.amount) + '</td><td><span class="badge ' + (ex.source === 'fund' ? 'badge-info' : 'badge-warning') + '">' + (ex.source === 'fund' ? 'وارد' : 'محل') + '</span></td><td>' + ex.category + '</td><td>' + (ex.note || '-') + '</td><td><button class="red small" onclick="deleteExpense(' + ex.id + ')">🗑️</button></td></tr>'
-            ).join('') : '<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد مصاريف</td></tr>';
-        }
-        
-        const today = new Date().toISOString().split('T')[0];
-        const thisMonth = today.substring(0, 7);
-        
-        document.getElementById('totalDaily').textContent = formatPrice(expenses.filter(ex => ex.date === today).reduce((s, ex) => s + ex.amount, 0));
-        document.getElementById('totalMonthly').textContent = formatPrice(expenses.filter(ex => ex.date && ex.date.startsWith(thisMonth)).reduce((s, ex) => s + ex.amount, 0));
-        
-        // حساب صافي الربح
-        db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = function(e) {
-            const salesTotal = e.target.result.reduce((s, sale) => s + sale.total, 0);
-            db.transaction('returns', 'readonly').objectStore('returns').getAll().onsuccess = function(e) {
-                const returnsTotal = e.target.result.reduce((s, ret) => s + (ret.amount || 0), 0);
-                db.transaction('maintenance', 'readonly').objectStore('maintenance').getAll().onsuccess = function(e) {
-                    const maintenanceTotal = e.target.result.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
-                    const expensesTotal = expenses.filter(ex => ex.type !== 'إيرادات' && ex.source !== 'fund').reduce((s, ex) => s + ex.amount, 0);
-                    const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
-                    const profit = salesTotal + maintenanceTotal + revenuesTotal - returnsTotal - expensesTotal;
-                    
-                    document.getElementById('totalSales_2').textContent = formatPrice(salesTotal + maintenanceTotal);
-                    document.getElementById('totalReturns_2').textContent = formatPrice(returnsTotal);
-                    document.getElementById('totalExpenses_2').textContent = formatPrice(expensesTotal);
-                    document.getElementById('netProfit').textContent = formatPrice(profit);
-                    document.getElementById('netProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
-                };
-            };
-        };
-    };
+        const pending = debts.filter(d => d.status === 'معلق').reduce((s, d) => s + (d.amount - (d.paid || 0)), 0);
+        const paid = debts.filter(d => d.status === 'مسدد').reduce((s, d) => s + (d.paid || d.amount), 0);
+        document.getElementById('moneyPendingDebts').textContent = formatPrice(pending);
+        document.getElementById('moneyPaidDebts').textContent = formatPrice(paid);
+    });
 }
 
-function deleteExpense(id) {
-    if (!confirm('حذف هذا المصروف؟')) return;
-    db.transaction('expenses', 'readwrite').objectStore('expenses').delete(id).transaction.oncomplete = () => { showMsg('🗑️ تم'); loadExpenses(); loadFundBalance(); };
+function addFundFromMoney() {
+    const amount = parseFloat(document.getElementById('moneyFundAmount').value);
+    if (!amount || amount <= 0) { showMsg('⚠️ أدخل المبلغ'); return; }
+    db.transaction('funds', 'readwrite').objectStore('funds').add({ amount, type: 'in', date: new Date().toISOString().split('T')[0] }).transaction.oncomplete = function() { showMsg('✅ تم إضافة المبلغ الوارد'); document.getElementById('moneyFundAmount').value = ''; loadMoney(); loadFundBalance(); };
 }
 
 // ==================== التقارير ====================
 function loadReports() {
     if (!db) return;
-    
     Promise.all([
         new Promise(r => db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = e => r(e.target.result)),
         new Promise(r => db.transaction('items', 'readonly').objectStore('items').getAll().onsuccess = e => r(e.target.result)),
@@ -779,49 +658,24 @@ function loadReports() {
         const maintenanceTotal = maintenance.filter(m => m.archived).reduce((s, m) => s + (m.totalCost || m.labor || 0), 0);
         const revenuesTotal = expenses.filter(ex => ex.type === 'إيرادات').reduce((s, ex) => s + ex.amount, 0);
         const profit = totalSales + maintenanceTotal + revenuesTotal - totalReturns - totalExpenses;
-        
         document.getElementById('rptTotalSales').textContent = formatPrice(totalSales + maintenanceTotal);
         document.getElementById('rptTotalProfit').textContent = formatPrice(profit);
         document.getElementById('rptTotalProfit').style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
         document.getElementById('rptTotalItems').textContent = items.length + ' قطعة';
         document.getElementById('rptTotalDevices').textContent = maintenance.length + ' جهاز';
-        
-        // أكثر القطع مبيعاً
         const stats = {};
-        sales.forEach(s => {
-            if (!stats[s.itemName]) stats[s.itemName] = { count: 0, qty: 0, total: 0 };
-            stats[s.itemName].count++;
-            stats[s.itemName].qty += s.quantity || 0;
-            stats[s.itemName].total += s.total || 0;
-        });
+        sales.forEach(s => { if (!stats[s.itemName]) stats[s.itemName] = { count: 0, qty: 0, total: 0 }; stats[s.itemName].count++; stats[s.itemName].qty += s.quantity || 0; stats[s.itemName].total += s.total || 0; });
         const topSelling = Object.entries(stats).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
-        document.getElementById('rptTopSelling').innerHTML = topSelling.length ? topSelling.map(([name, s]) => 
-            '<tr><td>' + name + '</td><td>' + s.count + '</td><td>' + s.qty + '</td><td>' + formatPrice(s.total) + '</td></tr>'
-        ).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد مبيعات</td></tr>';
-        
-        // ملخص شهري
+        document.getElementById('rptTopSelling').innerHTML = topSelling.length ? topSelling.map(([name, s]) => '<tr><td>' + name + '</td><td>' + s.count + '</td><td>' + s.qty + '</td><td>' + formatPrice(s.total) + '</td></tr>').join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد مبيعات</td></tr>';
         const monthly = {};
-        sales.forEach(s => {
-            const month = s.date ? s.date.substring(0, 7) : 'غير معروف';
-            if (!monthly[month]) monthly[month] = { sales: 0, expenses: 0 };
-            monthly[month].sales += s.total || 0;
-        });
-        expenses.forEach(ex => {
-            const month = ex.date ? ex.date.substring(0, 7) : 'غير معروف';
-            if (!monthly[month]) monthly[month] = { sales: 0, expenses: 0 };
-            monthly[month].expenses += ex.amount || 0;
-        });
-        
+        sales.forEach(s => { const month = s.date ? s.date.substring(0, 7) : 'غير معروف'; if (!monthly[month]) monthly[month] = { sales: 0, expenses: 0 }; monthly[month].sales += s.total || 0; });
+        expenses.forEach(ex => { const month = ex.date ? ex.date.substring(0, 7) : 'غير معروف'; if (!monthly[month]) monthly[month] = { sales: 0, expenses: 0 }; monthly[month].expenses += ex.amount || 0; });
         const monthSelect = document.getElementById('rptMonth');
         const months = Object.keys(monthly).sort().reverse();
         monthSelect.innerHTML = '<option value="">كل الفترة</option>' + months.map(m => '<option value="' + m + '">' + m + '</option>').join('');
-        
         const filterMonth = monthSelect.value;
         const filtered = filterMonth ? { [filterMonth]: monthly[filterMonth] } : monthly;
-        
-        document.getElementById('rptMonthly').innerHTML = Object.entries(filtered).sort((a, b) => b[0].localeCompare(a[0])).map(([month, data]) => 
-            '<tr><td>' + month + '</td><td>' + formatPrice(data.sales) + '</td><td>' + formatPrice(data.expenses) + '</td><td style="color:' + ((data.sales - data.expenses) >= 0 ? '#27ae60' : '#e74c3c') + ';font-weight:700;">' + formatPrice(data.sales - data.expenses) + '</td></tr>'
-        ).join('') || '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد بيانات</td></tr>';
+        document.getElementById('rptMonthly').innerHTML = Object.entries(filtered).sort((a, b) => b[0].localeCompare(a[0])).map(([month, data]) => '<tr><td>' + month + '</td><td>' + formatPrice(data.sales) + '</td><td>' + formatPrice(data.expenses) + '</td><td style="color:' + ((data.sales - data.expenses) >= 0 ? '#27ae60' : '#e74c3c') + ';font-weight:700;">' + formatPrice(data.sales - data.expenses) + '</td></tr>').join('') || '<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد بيانات</td></tr>';
     });
 }
 <!-- نهاية جزء 6 -->
